@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产监控仪表盘 - 农夫山泉智能工厂</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ========== CSS Reset & Base ========== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0A0E1A;
+            --bg-secondary: #111827;
+            --bg-card: #151C2E;
+            --bg-card-hover: #1A2340;
+            --border-color: rgba(56, 189, 248, 0.12);
+            --border-glow: rgba(56, 189, 248, 0.25);
+            --cyan: #38BDF8;
+            --cyan-dim: rgba(56, 189, 248, 0.15);
+            --cyan-glow: rgba(56, 189, 248, 0.4);
+            --green: #34D399;
+            --green-dim: rgba(52, 211, 153, 0.15);
+            --orange: #FB923C;
+            --orange-dim: rgba(251, 146, 60, 0.15);
+            --red: #F87171;
+            --red-dim: rgba(248, 113, 113, 0.15);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --font-display: 'Orbitron', monospace;
+            --font-body: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+
+        html {
+            font-size: 14px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ========== Background Atmosphere ========== */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse 800px 600px at 20% 10%, rgba(56, 189, 248, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 600px 400px at 80% 80%, rgba(52, 211, 153, 0.03) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 500px at 50% 50%, rgba(56, 189, 248, 0.02) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ========== Grid Lines Background ========== */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ========== Navigation Bar ========== */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .navbar-logo .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--cyan), var(--green));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--bg-primary);
+            font-weight: 700;
+        }
+
+        .navbar-logo .logo-text {
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+        }
+
+        .navbar-logo .logo-sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--border-color);
+        }
+
+        .nav-page-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--cyan);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-page-title i {
+            font-size: 0.85rem;
+        }
+
+        .navbar-center {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .live-clock {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--cyan);
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .live-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .factory-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.45rem 1rem;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .factory-select:hover,
+        .factory-select:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px var(--cyan-dim);
+        }
+
+        .factory-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1.2rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* ========== Main Dashboard Container ========== */
+        .dashboard {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem 2rem;
+        }
+
+        /* ========== Dashboard Header ========== */
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .dashboard-title span {
+            color: var(--cyan);
+        }
+
+        .dashboard-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.8rem;
+            background: var(--green-dim);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--green);
+            font-weight: 500;
+        }
+
+        .header-badge.warning {
+            background: var(--orange-dim);
+            border-color: rgba(251, 146, 60, 0.2);
+            color: var(--orange);
+        }
+
+        /* ========== Grid Layout ========== */
+        .grid-row {
+            display: grid;
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-8-4 { grid-template-columns: 8fr 4fr; }
+        .grid-6-6 { grid-template-columns: 6fr 6fr; }
+        .grid-4-4-4 { grid-template-columns: repeat(3, 1fr); }
+
+        /* ========== Card Base ========== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-glow);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title i {
+            font-size: 0.9rem;
+            color: var(--cyan);
+        }
+
+        .card-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .badge-live {
+            background: var(--green-dim);
+            color: var(--green);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+
+        /* ========== KPI Cards ========== */
+        .kpi-card {
+            position: relative;
+        }
+
+        .kpi-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .kpi-icon.cyan { background: var(--cyan-dim); color: var(--cyan); }
+        .kpi-icon.green { background: var(--green-dim); color: var(--green); }
+        .kpi-icon.orange { background: var(--orange-dim); color: var(--orange); }
+        .kpi-icon.purple { background: rgba(168, 85, 247, 0.15); color: #A855F7; }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+        }
+
+        .kpi-value {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-unit {
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 0.3rem;
+        }
+
+        .kpi-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .kpi-change.up {
+            color: var(--green);
+            background: var(--green-dim);
+        }
+
+        .kpi-change.down {
+            color: var(--green);
+            background: var(--green-dim);
+        }
+
+        .kpi-change.down-good {
+            color: var(--green);
+            background: var(--green-dim);
+        }
+
+        .kpi-sparkline {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            opacity: 0.15;
+        }
+
+        /* ========== Chart Container ========== */
+        .chart-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .chart-container canvas {
+            width: 100% !important;
+            display: block;
+        }
+
+        /* ========== Equipment Status List ========== */
+        .equipment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .equipment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0.85rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .equipment-item:hover {
+            background: rgba(56, 189, 248, 0.04);
+            border-color: var(--border-color);
+        }
+
+        .equipment-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .equipment-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .equipment-status-dot.running {
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+        }
+
+        .equipment-status-dot.warning {
+            background: var(--orange);
+            box-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
+        }
+
+        .equipment-status-dot.stopped {
+            background: var(--red);
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
+        }
+
+        .equipment-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .equipment-status-text {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .equipment-metrics {
+            text-align: right;
+        }
+
+        .equipment-speed {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--cyan);
+        }
+
+        .equipment-speed-unit {
+            font-family: var(--font-body);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .equipment-progress {
+            width: 60px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 2px;
+            margin-top: 4px;
+            margin-left: auto;
+        }
+
+        .equipment-progress-bar {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 1s ease;
+        }
+
+        /* ========== Alert List ========== */
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0.85rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            border-left: 3px solid;
+            transition: all 0.25s ease;
+        }
+
+        .alert-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .alert-item.level-critical {
+            border-left-color: var(--red);
+        }
+
+        .alert-item.level-warning {
+            border-left-color: var(--orange);
+        }
+
+        .alert-item.level-info {
+            border-left-color: var(--cyan);
+        }
+
+        .alert-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .alert-item.level-critical .alert-icon {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+
+        .alert-item.level-warning .alert-icon {
+            background: var(--orange-dim);
+            color: var(--orange);
+        }
+
+        .alert-item.level-info .alert-icon {
+            background: var(--cyan-dim);
+            color: var(--cyan);
+        }
+
+        .alert-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .alert-message {
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .alert-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.3rem;
+        }
+
+        .alert-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .alert-source {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .alert-level-tag {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .alert-item.level-critical .alert-level-tag {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+
+        .alert-item.level-warning .alert-level-tag {
+            background: var(--orange-dim);
+            color: var(--orange);
+        }
+
+        .alert-item.level-info .alert-level-tag {
+            background: var(--cyan-dim);
+            color: var(--cyan);
+        }
+
+        /* ========== Inventory Cards ========== */
+        .inventory-card {
+            text-align: center;
+        }
+
+        .inventory-icon-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.3rem;
+        }
+
+        .inventory-icon-wrap.water { background: rgba(56, 189, 248, 0.1); color: var(--cyan); }
+        .inventory-icon-wrap.material { background: rgba(251, 146, 60, 0.1); color: var(--orange); }
+        .inventory-icon-wrap.product { background: rgba(52, 211, 153, 0.1); color: var(--green); }
+
+        .inventory-label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .inventory-value {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .inventory-unit {
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .inventory-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 3px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .inventory-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .inventory-bar-fill.water { background: linear-gradient(90deg, var(--cyan), rgba(56, 189, 248, 0.6)); }
+        .inventory-bar-fill.material { background: linear-gradient(90deg, var(--orange), rgba(251, 146, 60, 0.6)); }
+        .inventory-bar-fill.product { background: linear-gradient(90deg, var(--green), rgba(52, 211, 153, 0.6)); }
+
+        .inventory-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* ========== Footer ========== */
+        .footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 1rem;
+        }
+
+        .footer-text {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .footer-text span {
+            color: var(--cyan);
+        }
+
+        /* ========== Animations ========== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        .delay-5 { animation-delay: 0.5s; }
+        .delay-6 { animation-delay: 0.6s; }
+
+        /* ========== Scrollbar ========== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.2);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.35);
+        }
+
+        /* ========== Responsive ========== */
+        @media (max-width: 1200px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-8-4 { grid-template-columns: 1fr; }
+            .grid-6-6 { grid-template-columns: 1fr; }
+            .grid-4-4-4 { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .grid-4 { grid-template-columns: 1fr; }
+            .navbar { padding: 0 1rem; }
+            .dashboard { padding: 1rem; }
+            .navbar-center { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========== Navigation Bar ========== -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="navbar-logo">
+                <div class="logo-icon"><i class="fas fa-water"></i></div>
+                <div>
+                    <div class="logo-text">农夫山泉</div>
+                    <div class="logo-sub">Smart Factory</div>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <div class="nav-page-title">
+                <i class="fas fa-chart-line"></i>
+                生产监控仪表盘
+            </div>
+        </div>
+
+        <div class="navbar-center">
+            <div>
+                <div class="live-clock" id="liveClock">--:--:--</div>
+                <div class="live-date" id="liveDate">----/--/--</div>
+            </div>
+        </div>
+
+        <div class="navbar-right">
+            <div class="status-dot"></div>
+            <select class="factory-select" id="factorySelect">
+                <option value="qiandao">千岛湖工厂</option>
+                <option value="danjiangkou">丹江口工厂</option>
+                <option value="wanfo">万绿湖工厂</option>
+                <option value="taibai">太白山工厂</option>
+                <option value="emerging">峨眉山工厂</option>
+            </select>
+            <a href="../index.html" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                返回平台
+            </a>
+        </div>
+    </nav>
+
+    <!-- ========== Dashboard Content ========== -->
+    <main class="dashboard">
+
+        <!-- Dashboard Header -->
+        <div class="dashboard-header animate-in">
+            <div>
+                <div class="dashboard-title">实时生产<span>监控中心</span></div>
+                <div class="dashboard-subtitle">Production Real-time Monitoring Dashboard</div>
+            </div>
+            <div class="header-actions">
+                <div class="header-badge">
+                    <div class="status-dot"></div>
+                    系统运行正常
+                </div>
+                <div class="header-badge warning">
+                    <i class="fas fa-bell"></i>
+                    2 条待处理告警
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 1: KPI Cards -->
+        <div class="grid-row grid-4">
+            <div class="card kpi-card animate-in delay-1">
+                <div class="kpi-icon cyan">
+                    <i class="fas fa-industry"></i>
+                </div>
+                <div class="kpi-label">今日产量</div>
+                <div class="kpi-value">
+                    <span class="counter" data-target="128560" data-decimals="0">0</span>
+                    <span class="kpi-unit">瓶</span>
+                </div>
+                <div class="kpi-change up">
+                    <i class="fas fa-arrow-up"></i>
+                    12.3% 较昨日
+                </div>
+                <canvas class="kpi-sparkline" id="sparkline1"></canvas>
+            </div>
+
+            <div class="card kpi-card animate-in delay-2">
+                <div class="kpi-icon green">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="kpi-label">设备稼动率</div>
+                <div class="kpi-value">
+                    <span class="counter" data-target="94.7" data-decimals="1">0</span>
+                    <span class="kpi-unit">%</span>
+                </div>
+                <div class="kpi-change up">
+                    <i class="fas fa-arrow-up"></i>
+                    2.1% 较昨日
+                </div>
+                <canvas class="kpi-sparkline" id="sparkline2"></canvas>
+            </div>
+
+            <div class="card kpi-card animate-in delay-3">
+                <div class="kpi-icon orange">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="kpi-label">良品率</div>
+                <div class="kpi-value">
+                    <span class="counter" data-target="99.82" data-decimals="2">0</span>
+                    <span class="kpi-unit">%</span>
+                </div>
+                <div class="kpi-change up">
+                    <i class="fas fa-arrow-up"></i>
+                    0.05% 较昨日
+                </div>
+                <canvas class="kpi-sparkline" id="sparkline3"></canvas>
+            </div>
+
+            <div class="card kpi-card animate-in delay-4">
+                <div class="kpi-icon purple">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="kpi-label">能耗效率</div>
+                <div class="kpi-value">
+                    <span class="counter" data-target="87.3" data-decimals="1">0</span>
+                    <span class="kpi-unit">kWh/千瓶</span>
+                </div>
+                <div class="kpi-change down-good">
+                    <i class="fas fa-arrow-down"></i>
+                    3.2% 较昨日
+                </div>
+                <canvas class="kpi-sparkline" id="sparkline4"></canvas>
+            </div>
+        </div>
+
+        <!-- Row 2: Production Trend + Equipment Status -->
+        <div class="grid-row grid-8-4">
+            <div class="card animate-in delay-3">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-chart-area"></i>
+                        产量趋势（最近7天）
+                    </div>
+                    <span class="card-badge badge-live"><i class="fas fa-circle" style="font-size:6px;margin-right:4px;"></i> 实时</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="productionChart" height="280"></canvas>
+                </div>
+            </div>
+
+            <div class="card animate-in delay-4">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-server"></i>
+                        设备状态
+                    </div>
+                    <span class="card-badge badge-live">6 条产线</span>
+                </div>
+                <div class="equipment-list" id="equipmentList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Quality Monitor + Alerts -->
+        <div class="grid-row grid-6-6">
+            <div class="card animate-in delay-4">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-shield-alt"></i>
+                        质量监控
+                    </div>
+                    <span class="card-badge badge-live">合格</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="qualityChart" height="280"></canvas>
+                </div>
+            </div>
+
+            <div class="card animate-in delay-5">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        告警信息
+                    </div>
+                    <span class="card-badge" style="background:var(--orange-dim);color:var(--orange);">5 条记录</span>
+                </div>
+                <div class="alert-list" id="alertList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 4: Inventory Cards -->
+        <div class="grid-row grid-4-4-4">
+            <div class="card inventory-card animate-in delay-4">
+                <div class="inventory-icon-wrap water">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <div class="inventory-label">水源库存</div>
+                <div class="inventory-value">
+                    <span class="counter" data-target="8520" data-decimals="0">0</span>
+                    <span class="inventory-unit">吨</span>
+                </div>
+                <div class="inventory-bar">
+                    <div class="inventory-bar-fill water" style="width: 0%;" data-width="78%"></div>
+                </div>
+                <div class="inventory-detail">
+                    <span>容量: 10,900 吨</span>
+                    <span style="color: var(--cyan);">78%</span>
+                </div>
+            </div>
+
+            <div class="card inventory-card animate-in delay-5">
+                <div class="inventory-icon-wrap material">
+                    <i class="fas fa-boxes-stacked"></i>
+                </div>
+                <div class="inventory-label">包材库存</div>
+                <div class="inventory-value">
+                    <span class="counter" data-target="234" data-decimals="0">0</span>
+                    <span class="inventory-unit">万套</span>
+                </div>
+                <div class="inventory-bar">
+                    <div class="inventory-bar-fill material" style="width: 0%;" data-width="62%"></div>
+                </div>
+                <div class="inventory-detail">
+                    <span>预计可用: 3.2 天</span>
+                    <span style="color: var(--orange);">62%</span>
+                </div>
+            </div>
+
+            <div class="card inventory-card animate-in delay-6">
+                <div class="inventory-icon-wrap product">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div class="inventory-label">成品库存</div>
+                <div class="inventory-value">
+                    <span class="counter" data-target="1867" data-decimals="0">0</span>
+                    <span class="inventory-unit">箱</span>
+                </div>
+                <div class="inventory-bar">
+                    <div class="inventory-bar-fill product" style="width: 0%;" data-width="45%"></div>
+                </div>
+                <div class="inventory-detail">
+                    <span>待发货: 1,240 箱</span>
+                    <span style="color: var(--green);">45%</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ========== Footer ========== -->
+    <footer class="footer">
+        <div class="footer-text">
+            <span>IBM Consulting</span> &middot; Richard Chen &middot; &copy; 2026 农夫山泉智能工厂平台
+        </div>
+    </footer>
+
+    <!-- ========== JavaScript ========== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ==================== Live Clock ====================
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('liveClock').textContent = `${h}:${m}:${s}`;
+
+            const y = now.getFullYear();
+            const mo = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            document.getElementById('liveDate').textContent = `${y}/${mo}/${d} ${weekdays[now.getDay()]}`;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ==================== Counter Animation ====================
+        function animateCounters() {
+            const counters = document.querySelectorAll('.counter');
+            counters.forEach(counter => {
+                const target = parseFloat(counter.getAttribute('data-target'));
+                const decimals = parseInt(counter.getAttribute('data-decimals')) || 0;
+                const duration = 2000;
+                const startTime = performance.now();
+
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    // Ease out cubic
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    const current = target * eased;
+
+                    if (decimals === 0) {
+                        counter.textContent = Math.floor(current).toLocaleString();
+                    } else {
+                        counter.textContent = current.toFixed(decimals);
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        if (decimals === 0) {
+                            counter.textContent = target.toLocaleString();
+                        } else {
+                            counter.textContent = target.toFixed(decimals);
+                        }
+                    }
+                }
+                requestAnimationFrame(update);
+            });
+        }
+
+        // ==================== Inventory Bar Animation ====================
+        function animateInventoryBars() {
+            document.querySelectorAll('.inventory-bar-fill').forEach(bar => {
+                const targetWidth = bar.getAttribute('data-width');
+                setTimeout(() => {
+                    bar.style.width = targetWidth;
+                }, 500);
+            });
+        }
+
+        // ==================== Sparkline Charts ====================
+        function drawSparkline(canvasId, data, color) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * 2;
+            canvas.height = 80;
+            ctx.scale(2, 1);
+
+            const w = rect.width;
+            const h = 80;
+            const max = Math.max(...data);
+            const min = Math.min(...data);
+            const range = max - min || 1;
+            const padding = 4;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Gradient fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, h);
+            gradient.addColorStop(0, color.replace(')', ', 0.3)').replace('rgb', 'rgba'));
+            gradient.addColorStop(1, color.replace(')', ', 0.0)').replace('rgb', 'rgba'));
+
+            ctx.beginPath();
+            ctx.moveTo(padding, h - padding);
+
+            data.forEach((val, i) => {
+                const x = padding + (i / (data.length - 1)) * (w - 2 * padding);
+                const y = h - padding - ((val - min) / range) * (h - 2 * padding);
+                if (i === 0) ctx.lineTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+
+            ctx.lineTo(w - padding, h - padding);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Line
+            ctx.beginPath();
+            data.forEach((val, i) => {
+                const x = padding + (i / (data.length - 1)) * (w - 2 * padding);
+                const y = h - padding - ((val - min) / range) * (h - 2 * padding);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // ==================== Production Trend Chart ====================
+        function drawProductionChart() {
+            const canvas = document.getElementById('productionChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = 280 * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = '280px';
+            ctx.scale(dpr, dpr);
+
+            const w = rect.width;
+            const h = 280;
+            const padding = { top: 30, right: 30, bottom: 50, left: 65 };
+
+            const days = ['05/08', '05/09', '05/10', '05/11', '05/12', '05/13', '05/14'];
+            const production = [112400, 118200, 115800, 124600, 121300, 126800, 128560];
+            const target = [120000, 120000, 120000, 120000, 120000, 120000, 120000];
+
+            const chartW = w - padding.left - padding.right;
+            const chartH = h - padding.top - padding.bottom;
+            const maxVal = 140000;
+            const minVal = 100000;
+            const range = maxVal - minVal;
+
+            function getX(i) { return padding.left + (i / (days.length - 1)) * chartW; }
+            function getY(val) { return padding.top + (1 - (val - minVal) / range) * chartH; }
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Grid lines
+            const gridSteps = [100000, 110000, 120000, 130000, 140000];
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            gridSteps.forEach(val => {
+                const y = getY(val);
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(w - padding.right, y);
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+
+            // Y-axis labels
+            ctx.fillStyle = '#64748B';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            gridSteps.forEach(val => {
+                const y = getY(val);
+                ctx.fillText((val / 10000).toFixed(1) + '万', padding.left - 10, y);
+            });
+
+            // X-axis labels
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            days.forEach((day, i) => {
+                const x = getX(i);
+                ctx.fillText(day, x, h - padding.bottom + 12);
+            });
+
+            // Target line (dashed)
+            ctx.strokeStyle = 'rgba(251, 146, 60, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            target.forEach((val, i) => {
+                const x = getX(i);
+                const y = getY(val);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Target label
+            ctx.fillStyle = 'rgba(251, 146, 60, 0.7)';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('目标产量', w - padding.right - 55, getY(120000) - 12);
+
+            // Production area gradient
+            const areaGradient = ctx.createLinearGradient(0, padding.top, 0, h - padding.bottom);
+            areaGradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+            areaGradient.addColorStop(0.5, 'rgba(56, 189, 248, 0.08)');
+            areaGradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+            ctx.beginPath();
+            ctx.moveTo(getX(0), h - padding.bottom);
+            production.forEach((val, i) => {
+                ctx.lineTo(getX(i), getY(val));
+            });
+            ctx.lineTo(getX(production.length - 1), h - padding.bottom);
+            ctx.closePath();
+            ctx.fillStyle = areaGradient;
+            ctx.fill();
+
+            // Production line
+            const lineGradient = ctx.createLinearGradient(padding.left, 0, w - padding.right, 0);
+            lineGradient.addColorStop(0, 'rgba(56, 189, 248, 0.6)');
+            lineGradient.addColorStop(0.5, 'rgba(56, 189, 248, 1)');
+            lineGradient.addColorStop(1, 'rgba(56, 189, 248, 1)');
+
+            ctx.beginPath();
+            production.forEach((val, i) => {
+                const x = getX(i);
+                const y = getY(val);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = lineGradient;
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Data points
+            production.forEach((val, i) => {
+                const x = getX(i);
+                const y = getY(val);
+
+                // Glow
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                ctx.fill();
+
+                // Point
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#38BDF8';
+                ctx.fill();
+
+                // Inner
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#0A0E1A';
+                ctx.fill();
+
+                // Value label
+                if (i === production.length - 1 || i === 0) {
+                    ctx.fillStyle = '#F1F5F9';
+                    ctx.font = 'bold 11px Orbitron, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText((val / 10000).toFixed(1) + '万', x, y - 14);
+                }
+            });
+
+            // Highlight last point with pulse
+            const lastX = getX(production.length - 1);
+            const lastY = getY(production[production.length - 1]);
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+            ctx.fill();
+        }
+
+        // ==================== Quality Bar Chart ====================
+        function drawQualityChart() {
+            const canvas = document.getElementById('qualityChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = 280 * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = '280px';
+            ctx.scale(dpr, dpr);
+
+            const w = rect.width;
+            const h = 280;
+            const padding = { top: 20, right: 20, bottom: 55, left: 50 };
+
+            const categories = ['密封性', '容量偏差', '标签贴附', '瓶盖扭矩', '外观检测', '微生物'];
+            const values = [99.95, 99.88, 99.92, 99.78, 99.96, 99.99];
+            const threshold = 99.5;
+
+            const chartW = w - padding.left - padding.right;
+            const chartH = h - padding.top - padding.bottom;
+            const barWidth = Math.min(40, chartW / categories.length * 0.55);
+            const gap = (chartW - barWidth * categories.length) / (categories.length + 1);
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Background grid
+            const ySteps = [99.0, 99.2, 99.4, 99.5, 99.6, 99.8, 100.0];
+            ySteps.forEach(val => {
+                const y = padding.top + (1 - (val - 99.0) / 1.0) * chartH;
+                ctx.strokeStyle = val === 99.5 ? 'rgba(251, 146, 60, 0.3)' : 'rgba(56, 189, 248, 0.05)';
+                ctx.lineWidth = val === 99.5 ? 1.5 : 1;
+                ctx.setLineDash(val === 99.5 ? [6, 4] : [3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(w - padding.right, y);
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+
+            // Threshold label
+            const threshY = padding.top + (1 - (threshold - 99.0) / 1.0) * chartH;
+            ctx.fillStyle = 'rgba(251, 146, 60, 0.6)';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('合格线 99.5%', w - padding.right, threshY - 6);
+
+            // Y-axis labels
+            ctx.fillStyle = '#64748B';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            [99.0, 99.5, 100.0].forEach(val => {
+                const y = padding.top + (1 - (val - 99.0) / 1.0) * chartH;
+                ctx.fillText(val.toFixed(1) + '%', padding.left - 8, y);
+            });
+
+            // Bars
+            categories.forEach((cat, i) => {
+                const x = padding.left + gap + i * (barWidth + gap);
+                const barH = ((values[i] - 99.0) / 1.0) * chartH;
+                const y = padding.top + chartH - barH;
+
+                // Bar gradient
+                const barGrad = ctx.createLinearGradient(0, y, 0, padding.top + chartH);
+                const color = values[i] >= 99.9 ? '#34D399' : values[i] >= 99.5 ? '#38BDF8' : '#FB923C';
+                barGrad.addColorStop(0, color);
+                barGrad.addColorStop(1, color.replace(')', ', 0.3)').replace('rgb', 'rgba').replace('#34D399', 'rgba(52, 211, 153, 0.3)').replace('#38BDF8', 'rgba(56, 189, 248, 0.3)').replace('#FB923C', 'rgba(251, 146, 60, 0.3)'));
+
+                // Bar shadow/glow
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetY = 0;
+
+                // Rounded top bar
+                const radius = Math.min(4, barWidth / 2);
+                ctx.beginPath();
+                ctx.moveTo(x, padding.top + chartH);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.lineTo(x + barWidth - radius, y);
+                ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius);
+                ctx.lineTo(x + barWidth, padding.top + chartH);
+                ctx.closePath();
+                ctx.fillStyle = barGrad;
+                ctx.fill();
+
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+
+                // Value on top
+                ctx.fillStyle = '#F1F5F9';
+                ctx.font = 'bold 10px Orbitron, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(values[i].toFixed(2), x + barWidth / 2, y - 6);
+
+                // Category label
+                ctx.fillStyle = '#94A3B8';
+                ctx.font = '11px "Noto Sans SC", sans-serif';
+                ctx.textBaseline = 'top';
+                ctx.fillText(cat, x + barWidth / 2, padding.top + chartH + 10);
+            });
+        }
+
+        // ==================== Equipment Status ====================
+        function renderEquipmentList() {
+            const equipment = [
+                { name: '1号产线 - 550ml天然水', status: 'running', statusText: '运行中', speed: 42, speedUnit: '千瓶/时', progress: 95, progressColor: 'var(--green)' },
+                { name: '2号产线 - 550ml天然水', status: 'running', statusText: '运行中', speed: 38, speedUnit: '千瓶/时', progress: 88, progressColor: 'var(--green)' },
+                { name: '3号产线 - 380ml饮用天然水', status: 'running', statusText: '运行中', speed: 35, speedUnit: '千瓶/时', progress: 82, progressColor: 'var(--green)' },
+                { name: '4号产线 - 茶π系列', status: 'warning', statusText: '降速运行', speed: 22, speedUnit: '千瓶/时', progress: 55, progressColor: 'var(--orange)' },
+                { name: '5号产线 - 东方树叶', status: 'running', statusText: '运行中', speed: 28, speedUnit: '千瓶/时', progress: 76, progressColor: 'var(--green)' },
+                { name: '6号产线 - 维他命水', status: 'stopped', statusText: '维护中', speed: 0, speedUnit: '千瓶/时', progress: 0, progressColor: 'var(--red)' }
+            ];
+
+            const container = document.getElementById('equipmentList');
+            container.innerHTML = equipment.map(eq => `
+                <div class="equipment-item">
+                    <div class="equipment-info">
+                        <div class="equipment-status-dot ${eq.status}"></div>
+                        <div>
+                            <div class="equipment-name">${eq.name}</div>
+                            <div class="equipment-status-text">${eq.statusText}</div>
+                        </div>
+                    </div>
+                    <div class="equipment-metrics">
+                        <div class="equipment-speed">${eq.speed} <span class="equipment-speed-unit">${eq.speedUnit}</span></div>
+                        <div class="equipment-progress">
+                            <div class="equipment-progress-bar" style="width: ${eq.progress}%; background: ${eq.progressColor};"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== Alert List ====================
+        function renderAlertList() {
+            const alerts = [
+                {
+                    level: 'critical',
+                    icon: 'fas fa-exclamation-circle',
+                    message: '6号产线主电机温度过高，已自动停机保护',
+                    time: '14:32:18',
+                    source: '6号产线'
+                },
+                {
+                    level: 'warning',
+                    icon: 'fas fa-exclamation-triangle',
+                    message: '4号产线贴标机偏差超出阈值，当前偏差 0.8mm',
+                    time: '14:15:42',
+                    source: '4号产线'
+                },
+                {
+                    level: 'warning',
+                    icon: 'fas fa-thermometer-half',
+                    message: '杀菌机C3区温度波动，当前 84.2°C（标准 85±1°C）',
+                    time: '13:58:05',
+                    source: '2号产线'
+                },
+                {
+                    level: 'info',
+                    icon: 'fas fa-info-circle',
+                    message: '包材库存低于安全线，当前可用 3.2 天，建议补货',
+                    time: '13:42:30',
+                    source: '仓储系统'
+                },
+                {
+                    level: 'info',
+                    icon: 'fas fa-clock',
+                    message: '1号产线计划维护窗口：今日 22:00 - 次日 06:00',
+                    time: '12:00:00',
+                    source: '排产系统'
+                }
+            ];
+
+            const levelLabels = { critical: '严重', warning: '警告', info: '通知' };
+
+            const container = document.getElementById('alertList');
+            container.innerHTML = alerts.map(alert => `
+                <div class="alert-item level-${alert.level}">
+                    <div class="alert-icon"><i class="${alert.icon}"></i></div>
+                    <div class="alert-content">
+                        <div class="alert-message">${alert.message}</div>
+                        <div class="alert-meta">
+                            <span class="alert-level-tag">${levelLabels[alert.level]}</span>
+                            <span class="alert-source"><i class="fas fa-map-marker-alt" style="margin-right:3px;font-size:9px;"></i>${alert.source}</span>
+                            <span class="alert-time"><i class="far fa-clock" style="margin-right:3px;font-size:9px;"></i>${alert.time}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== Initialize ====================
+        function init() {
+            renderEquipmentList();
+            renderAlertList();
+
+            // Delay for animation effect
+            setTimeout(() => {
+                animateCounters();
+                animateInventoryBars();
+            }, 300);
+
+            // Draw charts after DOM ready
+            setTimeout(() => {
+                drawProductionChart();
+                drawQualityChart();
+
+                // Sparklines
+                drawSparkline('sparkline1', [95, 102, 98, 108, 105, 112, 115], 'rgb(56, 189, 248)');
+                drawSparkline('sparkline2', [89, 91, 90, 93, 92, 94, 95], 'rgb(52, 211, 153)');
+                drawSparkline('sparkline3', [99.7, 99.75, 99.72, 99.78, 99.8, 99.79, 99.82], 'rgb(251, 146, 60)');
+                drawSparkline('sparkline4', [92, 91, 90, 89, 88, 88, 87], 'rgb(168, 85, 247)');
+            }, 100);
+        }
+
+        // Handle resize
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                drawProductionChart();
+                drawQualityChart();
+            }, 200);
+        });
+
+        // Start
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+
+</body>
+</html>

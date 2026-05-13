@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>从瓶盖开始 · 本体推理动态演示 | IBM Ontology POC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0A0E1A;
+            --bg-secondary: #111827;
+            --bg-card: #1A2035;
+            --node-default: #054ADA;
+            --node-active: #00D4AA;
+            --node-warn: #FF6B6B;
+            --text-primary: #E8ECF4;
+            --text-secondary: #8892A8;
+            --text-muted: #5A6478;
+            --border: #1E2A45;
+            --glow-blue: rgba(5, 74, 218, 0.4);
+            --glow-green: rgba(0, 212, 170, 0.4);
+            --glow-red: rgba(255, 107, 107, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(10, 14, 26, 0.9);
+            backdrop-filter: blur(12px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #054ADA, #00D4AA);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .header-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--node-active);
+            color: var(--node-active);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            padding-top: 72px;
+            min-height: 100vh;
+        }
+
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            border-color: var(--node-active);
+            background: rgba(0, 212, 170, 0.08);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #054ADA, #0338B0);
+            border-color: #054ADA;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0655F0, #054ADA);
+            border-color: #0655F0;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00D4AA, #00A88A);
+            border-color: #00D4AA;
+            color: #0A0E1A;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #00E8BB, #00D4AA);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: auto;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .step-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background: var(--node-active);
+            box-shadow: 0 0 8px var(--glow-green);
+        }
+
+        .step-dot.completed {
+            background: var(--node-default);
+        }
+
+        /* Canvas */
+        .canvas-wrapper {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            position: relative;
+            min-height: 520px;
+        }
+
+        #reasoningCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Right Panel */
+        .info-panel {
+            width: 380px;
+            border-left: 1px solid var(--border);
+            background: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .panel-header p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 24px;
+        }
+
+        .step-detail {
+            display: none;
+        }
+
+        .step-detail.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        .step-badge.blue { background: rgba(5, 74, 218, 0.15); color: #5B9BFF; border: 1px solid rgba(5, 74, 218, 0.3); }
+        .step-badge.green { background: rgba(0, 212, 170, 0.15); color: #00D4AA; border: 1px solid rgba(0, 212, 170, 0.3); }
+        .step-badge.orange { background: rgba(255, 170, 51, 0.15); color: #FFAA33; border: 1px solid rgba(255, 170, 51, 0.3); }
+        .step-badge.red { background: rgba(255, 107, 107, 0.15); color: #FF6B6B; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .step-badge.purple { background: rgba(168, 85, 247, 0.15); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+        .detail-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .detail-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            color: #C8D0E0;
+            overflow-x: auto;
+        }
+
+        .code-block .keyword { color: #FF79C6; }
+        .code-block .string { color: #50FA7B; }
+        .code-block .uri { color: #8BE9FD; }
+        .code-block .number { color: #FFB86C; }
+        .code-block .comment { color: #5A6478; }
+
+        .detail-list {
+            list-style: none;
+        }
+
+        .detail-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(30, 42, 69, 0.5);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .detail-list li:last-child { border-bottom: none; }
+
+        .detail-list li i {
+            margin-top: 3px;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .detail-list li .label {
+            color: var(--text-secondary);
+            min-width: 70px;
+            flex-shrink: 0;
+        }
+
+        /* Summary Panel */
+        .summary-panel {
+            display: none;
+            padding: 24px;
+        }
+
+        .summary-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .summary-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .summary-header .icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(5, 74, 218, 0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 24px;
+            color: var(--node-active);
+        }
+
+        .summary-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .summary-header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .summary-chain {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .chain-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            position: relative;
+        }
+
+        .chain-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 15px;
+            bottom: -4px;
+            width: 2px;
+            height: 16px;
+            background: var(--border);
+        }
+
+        .chain-num {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--node-default);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .chain-step.warn .chain-num {
+            background: var(--node-warn);
+        }
+
+        .chain-step.action .chain-num {
+            background: var(--node-active);
+            color: #0A0E1A;
+        }
+
+        .chain-text {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .chain-text strong {
+            color: var(--text-primary);
+        }
+
+        .chain-text span {
+            color: var(--text-secondary);
+        }
+
+        .summary-result {
+            background: rgba(255, 107, 107, 0.08);
+            border: 1px solid rgba(255, 107, 107, 0.25);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-result .label {
+            font-size: 11px;
+            color: var(--node-warn);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .summary-result .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Bottom Bar */
+        .bottom-bar {
+            padding: 12px 24px;
+            border-top: 1px solid var(--border);
+            background: rgba(10, 14, 26, 0.9);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .standard-ref {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .standard-ref .tag {
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .tag-owl { background: rgba(168, 85, 247, 0.15); color: #A855F7; }
+        .tag-swrl { background: rgba(255, 170, 51, 0.15); color: #FFAA33; }
+        .tag-palantir { background: rgba(5, 74, 218, 0.15); color: #5B9BFF; }
+        .tag-rdf { background: rgba(0, 212, 170, 0.15); color: #00D4AA; }
+
+        .copyright {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .info-panel { width: 320px; }
+        }
+
+        @media (max-width: 900px) {
+            .main-container { flex-direction: column; }
+            .info-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); max-height: 400px; }
+            .canvas-wrapper { min-height: 400px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="header-logo">ON</div>
+            <div>
+                <div class="header-title">从瓶盖开始 · 本体推理动态演示</div>
+                <div class="header-subtitle">Ontology Reasoning Dynamic Demo — Cap Supply Chain Scenario</div>
+            </div>
+        </div>
+        <a href="../index.html" class="btn-back">
+            <i class="fas fa-arrow-left"></i> 返回平台
+        </a>
+    </div>
+
+    <!-- Main -->
+    <div class="main-container">
+        <div class="canvas-area">
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn btn-primary" id="btnPrev" disabled>
+                    <i class="fas fa-chevron-left"></i> 上一步
+                </button>
+                <button class="btn btn-success" id="btnNext">
+                    下一步 <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn" id="btnAutoPlay">
+                    <i class="fas fa-play"></i> 连续播放
+                </button>
+                <button class="btn" id="btnReset">
+                    <i class="fas fa-redo"></i> 重置
+                </button>
+                <div class="step-indicator">
+                    <span id="stepLabel">步骤 0 / 6</span>
+                    <div class="step-dots" id="stepDots"></div>
+                </div>
+            </div>
+
+            <!-- Canvas -->
+            <div class="canvas-wrapper">
+                <canvas id="reasoningCanvas"></canvas>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="bottom-bar">
+                <div class="standard-ref" id="standardRef">
+                    <i class="fas fa-book"></i>
+                    <span>点击"下一步"开始推理演示</span>
+                </div>
+                <div class="copyright">IBM Consulting &middot; Richard Chen</div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="info-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-info-circle" style="color: var(--node-active); margin-right: 6px;"></i>推理步骤详情</h3>
+                <p>当前激活步骤的本体建模说明</p>
+            </div>
+            <div class="panel-content">
+                <!-- Step 0: Intro -->
+                <div class="step-detail active" data-step="0">
+                    <div class="step-badge blue"><i class="fas fa-rocket"></i> 准备就绪</div>
+                    <div class="detail-title">本体推理引擎演示</div>
+                    <div class="detail-subtitle">
+                        本演示展示如何基于OWL本体和SWRL规则，对瓶盖供应链进行自动化推理。
+                        <br><br>
+                        <strong>场景：</strong>金富科技瓶盖产能利用率降至82%，低于90%安全阈值，系统自动触发调拨预警并启用备用供应商。
+                    </div>
+                    <div class="detail-section">
+                        <h4>推理链概览</h4>
+                        <ul class="detail-list">
+                            <li><i class="fas fa-cube" style="color: #5B9BFF;"></i><span class="label">Step 1</span>定义瓶盖类 (Object Type)</li>
+                            <li><i class="fas fa-fingerprint" style="color: #00D4AA;"></i><span class="label">Step 2</span>创建实例 (Instance)</li>
+                            <li><i class="fas fa-sliders-h" style="color: #FFAA33;"></i><span class="label">Step 3</span>属性赋值 (Property)</li>
+                            <li><i class="fas fa-link" style="color: #A855F7;"></i><span class="label">Step 4</span>关系映射 (Relation)</li>
+                            <li><i class="fas fa-gavel" style="color: #FF6B6B;"></i><span class="label">Step 5</span>规则触发 (Axiom/Rule)</li>
+                            <li><i class="fas fa-bolt" style="color: #00D4AA;"></i><span class="label">Step 6</span>执行动作 (Action)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 1: Object Type -->
+                <div class="step-detail" data-step="1">
+                    <div class="step-badge blue"><i class="fas fa-cube"></i> Step 1 / Object Type</div>
+                    <div class="detail-title">类定义 — Cap / 瓶盖</div>
+                    <div class="detail-subtitle">在本体中定义"瓶盖"这一概念类，作为后续推理的基础类型。</div>
+                    <div class="detail-section">
+                        <h4>OWL 定义</h4>
+                        <div class="code-block">
+                            <span class="keyword">owl:Class</span> <span class="uri">nfs:Cap</span><br>
+                            &nbsp;&nbsp;<span class="keyword">rdfs:label</span> <span class="string">"瓶盖"</span> ;<br>
+                            &nbsp;&nbsp;<span class="keyword">rdfs:subClassOf</span> <span class="uri">nfs:PackagingComponent</span> ;<br>
+                            &nbsp;&nbsp;<span class="keyword">rdfs:comment</span> <span class="string">"用于密封饮料瓶的塑料组件"</span> ;
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h4>关键属性</h4>
+                        <ul class="detail-list">
+                            <li><i class="fas fa-check" style="color: #00D4AA;"></i><span class="label">类型</span>PackagingComponent 子类</li>
+                            <li><i class="fas fa-check" style="color: #00D4AA;"></i><span class="label">领域</span>饮用水包装供应链</li>
+                            <li><i class="fas fa-check" style="color: #00D4AA;"></i><span class="label">约束</span>必须关联供应商和产能数据</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 2: Instance -->
+                <div class="step-detail" data-step="2">
+                    <div class="step-badge green"><i class="fas fa-fingerprint"></i> Step 2 / Instance</div>
+                    <div class="detail-title">实例创建 — Jinfu-2026-Batch-047</div>
+                    <div class="detail-subtitle">金富科技2026年第47批瓶盖，作为Cap类的具体实例录入本体。</div>
+                    <div class="detail-section">
+                        <h4>RDF 实例声明</h4>
+                        <div class="code-block">
+                            <span class="uri">nfs:Jinfu-2026-Batch-047</span><br>
+                            &nbsp;&nbsp;<span class="keyword">a</span> <span class="uri">nfs:Cap</span> ;<br>
+                            &nbsp;&nbsp;<span class="keyword">rdfs:label</span> <span class="string">"金富科技2026年第47批"</span> ;<br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:producedBy</span> <span class="uri">nfs:JinfuTechnology</span> ;<br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:batchNumber</span> <span class="string">"B047"</span> ;<br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:productionYear</span> <span class="number">"2026"</span> ;
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h4>实例信息</h4>
+                        <ul class="detail-list">
+                            <li><i class="fas fa-industry" style="color: #5B9BFF;"></i><span class="label">供应商</span>金富科技 (Jinfu Technology)</li>
+                            <li><i class="fas fa-barcode" style="color: #FFAA33;"></i><span class="label">批次号</span>B047</li>
+                            <li><i class="fas fa-calendar" style="color: #A855F7;"></i><span class="label">年份</span>2026</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 3: Property -->
+                <div class="step-detail" data-step="3">
+                    <div class="step-badge orange"><i class="fas fa-sliders-h"></i> Step 3 / Property</div>
+                    <div class="detail-title">属性赋值 — capacity_utilization = 82%</div>
+                    <div class="detail-subtitle">该批次瓶盖的产能利用率为82%，低于90%安全阈值，构成潜在风险。</div>
+                    <div class="detail-section">
+                        <h4>OWL 数据属性</h4>
+                        <div class="code-block">
+                            <span class="uri">nfs:Jinfu-2026-Batch-047</span><br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:capacityUtilization</span> <span class="number">"82"</span>^^xsd:decimal ;<br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:safetyThreshold</span> <span class="number">"90"</span>^^xsd:decimal ;<br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:status</span> <span class="string">"below_threshold"</span> ;
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h4>数据指标</h4>
+                        <ul class="detail-list">
+                            <li><i class="fas fa-tachometer-alt" style="color: #FF6B6B;"></i><span class="label">产能利用率</span><strong style="color:#FF6B6B;">82%</strong> (低于阈值)</li>
+                            <li><i class="fas fa-shield-alt" style="color: #00D4AA;"></i><span class="label">安全阈值</span>90%</li>
+                            <li><i class="fas fa-exclamation-triangle" style="color: #FFAA33;"></i><span class="label">偏差</span>-8个百分点</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 4: Relation -->
+                <div class="step-detail" data-step="4">
+                    <div class="step-badge purple"><i class="fas fa-link"></i> Step 4 / Relation</div>
+                    <div class="detail-title">关系映射 — supplies_to 农夫山泉灌装线</div>
+                    <div class="detail-subtitle">建立金富科技瓶盖到农夫山泉灌装线的供应链关系，用于追踪影响范围。</div>
+                    <div class="detail-section">
+                        <h4>OWL 对象属性</h4>
+                        <div class="code-block">
+                            <span class="keyword">owl:ObjectProperty</span> <span class="uri">nfs:suppliesTo</span> ;<br>
+                            <br>
+                            <span class="uri">nfs:Jinfu-2026-Batch-047</span><br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:suppliesTo</span> <span class="uri">nfs:NFS-Filling-Line-HZ01</span> ;<br>
+                            <br>
+                            <span class="uri">nfs:NFS-Filling-Line-HZ01</span><br>
+                            &nbsp;&nbsp;<span class="keyword">rdfs:label</span> <span class="string">"农夫山泉杭州灌装线01"</span> ;<br>
+                            &nbsp;&nbsp;<span class="keyword">nfs:dailyCapacity</span> <span class="number">"500000"</span>^^xsd:integer ;
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h4>关系详情</h4>
+                        <ul class="detail-list">
+                            <li><i class="fas fa-arrow-right" style="color: #A855F7;"></i><span class="label">方向</span>金富科技 → 农夫山泉</li>
+                            <li><i class="fas fa-map-marker-alt" style="color: #5B9BFF;"></i><span class="label">目标</span>杭州灌装线 HZ01</li>
+                            <li><i class="fas fa-cogs" style="color: #FFAA33;"></i><span class="label">日产能</span>500,000 瓶</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 5: Axiom/Rule -->
+                <div class="step-detail" data-step="5">
+                    <div class="step-badge red"><i class="fas fa-gavel"></i> Step 5 / Axiom & Rule</div>
+                    <div class="detail-title">规则触发 — IF capacity &lt; 90% THEN 调拨预警</div>
+                    <div class="detail-subtitle">SWRL推理规则检测到产能低于阈值，自动触发调拨预警条件。</div>
+                    <div class="detail-section">
+                        <h4>SWRL 规则</h4>
+                        <div class="code-block">
+                            <span class="keyword">nfs:Cap</span>(<span class="uri">?cap</span>) <span class="keyword">^</span><br>
+                            <span class="keyword">nfs:capacityUtilization</span>(<span class="uri">?cap</span>, <span class="uri">?util</span>) <span class="keyword">^</span><br>
+                            <span class="keyword">nfs:safetyThreshold</span>(<span class="uri">?cap</span>, <span class="uri">?threshold</span>) <span class="keyword">^</span><br>
+                            <span class="keyword">swrlb:lessThan</span>(<span class="uri">?util</span>, <span class="uri">?threshold</span>)<br>
+                            &nbsp;&nbsp;<span class="keyword">-></span> <span class="keyword">nfs:triggerReallocation</span>(<span class="uri">?cap</span>)
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h4>规则分析</h4>
+                        <ul class="detail-list">
+                            <li><i class="fas fa-check-circle" style="color: #00D4AA;"></i><span class="label">条件1</span>?cap 是 Cap 类实例</li>
+                            <li><i class="fas fa-check-circle" style="color: #00D4AA;"></i><span class="label">条件2</span>capacity_utilization = 82</li>
+                            <li><i class="fas fa-check-circle" style="color: #00D4AA;"></i><span class="label">条件3</span>82 &lt; 90 (true)</li>
+                            <li><i class="fas fa-bolt" style="color: #FF6B6B;"></i><span class="label">结论</span><strong style="color:#FF6B6B;">触发调拨预警</strong></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 6: Action -->
+                <div class="step-detail" data-step="6">
+                    <div class="step-badge green"><i class="fas fa-bolt"></i> Step 6 / Action Type</div>
+                    <div class="detail-title">执行动作 — 自动调拨预警</div>
+                    <div class="detail-subtitle">系统自动启用备用供应商华冠科技，确保灌装线供应连续性。</div>
+                    <div class="detail-section">
+                        <h4>Palantir Foundry 动作定义</h4>
+                        <div class="code-block">
+                            <span class="keyword">Action:</span> <span class="uri">nfs:AutoReallocationAlert</span><br>
+                            <span class="keyword">Trigger:</span> <span class="string">capacity_utilization &lt; 90%</span><br>
+                            <span class="keyword">Parameters:</span><br>
+                            &nbsp;&nbsp;primary: <span class="uri">nfs:JinfuTechnology</span><br>
+                            &nbsp;&nbsp;backup:&nbsp; <span class="uri">nfs:HuaguanTechnology</span><br>
+                            &nbsp;&nbsp;target:&nbsp; <span class="uri">nfs:NFS-Filling-Line-HZ01</span><br>
+                            <span class="keyword">Priority:</span> <span class="number">HIGH</span>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h4>执行结果</h4>
+                        <ul class="detail-list">
+                            <li><i class="fas fa-bell" style="color: #FF6B6B;"></i><span class="label">预警</span>已发送至供应链管理团队</li>
+                            <li><i class="fas fa-exchange-alt" style="color: #00D4AA;"></i><span class="label">调拨</span>华冠科技接收30%订单</li>
+                            <li><i class="fas fa-clock" style="color: #FFAA33;"></i><span class="label">响应时间</span>&lt; 15分钟</li>
+                            <li><i class="fas fa-shield-alt" style="color: #5B9BFF;"></i><span class="label">供应保障</span>灌装线零停机</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-panel" id="summaryPanel">
+                    <div class="summary-header">
+                        <div class="icon"><i class="fas fa-check-double"></i></div>
+                        <h3>推理链完成</h3>
+                        <p>6步本体推理全部执行完毕</p>
+                    </div>
+                    <div class="summary-chain">
+                        <div class="chain-step">
+                            <div class="chain-num">1</div>
+                            <div class="chain-text"><strong>类定义</strong> <span>— Cap / 瓶盖</span></div>
+                        </div>
+                        <div class="chain-step">
+                            <div class="chain-num">2</div>
+                            <div class="chain-text"><strong>实例化</strong> <span>— Jinfu-2026-Batch-047</span></div>
+                        </div>
+                        <div class="chain-step warn">
+                            <div class="chain-num">3</div>
+                            <div class="chain-text"><strong>属性赋值</strong> <span>— 产能 82% &lt; 90%</span></div>
+                        </div>
+                        <div class="chain-step">
+                            <div class="chain-num">4</div>
+                            <div class="chain-text"><strong>关系映射</strong> <span>— → 农夫山泉灌装线</span></div>
+                        </div>
+                        <div class="chain-step warn">
+                            <div class="chain-num">5</div>
+                            <div class="chain-text"><strong>规则触发</strong> <span>— SWRL 调拨预警</span></div>
+                        </div>
+                        <div class="chain-step action">
+                            <div class="chain-num">6</div>
+                            <div class="chain-text"><strong>执行动作</strong> <span>— 启用华冠科技</span></div>
+                        </div>
+                    </div>
+                    <div class="summary-result">
+                        <div class="label"><i class="fas fa-exclamation-circle"></i> 推理结论</div>
+                        <div class="value">
+                            金富科技产能82%低于阈值90%<br>
+                            自动调拨30%订单至华冠科技<br>
+                            灌装线供应连续性已保障
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // ==================== Configuration ====================
+        const STEPS = [
+            {
+                id: 0,
+                label: '准备',
+                icon: '\uf135', // rocket
+                color: '#5B9BFF',
+                badge: 'blue',
+                standard: null
+            },
+            {
+                id: 1,
+                label: 'Object Type',
+                sublabel: '类定义',
+                icon: '\uf1b2', // cube
+                color: '#5B9BFF',
+                badge: 'blue',
+                standard: { tags: ['OWL 2 DL', 'W3C Recommendation'], classes: ['tag-owl', 'tag-rdf'] }
+            },
+            {
+                id: 2,
+                label: 'Instance',
+                sublabel: '实例',
+                icon: '\uf577', // fingerprint
+                color: '#00D4AA',
+                badge: 'green',
+                standard: { tags: ['RDF/S', 'OWL NamedIndividual'], classes: ['tag-rdf', 'tag-owl'] }
+            },
+            {
+                id: 3,
+                label: 'Property',
+                sublabel: '属性',
+                icon: '\uf1de', // sliders
+                color: '#FFAA33',
+                badge: 'orange',
+                standard: { tags: ['OWL DatatypeProperty', 'XSD Decimal'], classes: ['tag-owl', 'tag-rdf'] }
+            },
+            {
+                id: 4,
+                label: 'Relation',
+                sublabel: '关系',
+                icon: '\uf0c1', // link
+                color: '#A855F7',
+                badge: 'purple',
+                standard: { tags: ['OWL ObjectProperty', 'Palantir Ontology'], classes: ['tag-owl', 'tag-palantir'] }
+            },
+            {
+                id: 5,
+                label: 'Axiom / Rule',
+                sublabel: '公理/规则',
+                icon: '\uf0e3', // gavel
+                color: '#FF6B6B',
+                badge: 'red',
+                standard: { tags: ['SWRL Rule', 'OWL Axiom'], classes: ['tag-swrl', 'tag-owl'] }
+            },
+            {
+                id: 6,
+                label: 'Action Type',
+                sublabel: '动作',
+                icon: '\uf0e7', // bolt
+                color: '#00D4AA',
+                badge: 'green',
+                standard: { tags: ['Palantir Foundry Pipeline', 'SWRL Action'], classes: ['tag-palantir', 'tag-swrl'] }
+            }
+        ];
+
+        // ==================== State ====================
+        let currentStep = 0;
+        let isAutoPlaying = false;
+        let autoPlayTimer = null;
+        let animationFrame = null;
+        let pulsePhase = 0;
+
+        // ==================== Canvas Setup ====================
+        const canvas = document.getElementById('reasoningCanvas');
+        const ctx = canvas.getContext('2d');
+        let W, H;
+
+        function resizeCanvas() {
+            const wrapper = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+            W = wrapper.clientWidth;
+            H = wrapper.clientHeight;
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+        resizeCanvas();
+
+        // ==================== Node Layout ====================
+        function getNodes() {
+            const cx = W / 2;
+            const cy = H / 2;
+            const rx = Math.min(W * 0.35, 280);
+            const ry = Math.min(H * 0.32, 170);
+
+            const positions = [
+                { x: cx, y: cy - ry },           // Step 1 - top
+                { x: cx + rx, y: cy - ry * 0.5 }, // Step 2 - top right
+                { x: cx + rx, y: cy + ry * 0.5 }, // Step 3 - bottom right
+                { x: cx, y: cy + ry },            // Step 4 - bottom
+                { x: cx - rx, y: cy + ry * 0.5 }, // Step 5 - bottom left
+                { x: cx - rx, y: cy - ry * 0.5 }, // Step 6 - top left
+            ];
+
+            const nodeW = 160;
+            const nodeH = 72;
+
+            return positions.map((pos, i) => ({
+                x: pos.x,
+                y: pos.y,
+                w: nodeW,
+                h: nodeH,
+                step: i + 1,
+                label: STEPS[i + 1].label,
+                sublabel: STEPS[i + 1].sublabel,
+                icon: STEPS[i + 1].icon,
+                color: STEPS[i + 1].color,
+                active: currentStep === i + 1,
+                completed: currentStep > i + 1
+            }));
+        }
+
+        // ==================== Drawing ====================
+        function drawRoundedRect(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function drawArrow(fromX, fromY, toX, toY, progress, color) {
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 1) return;
+
+            const endX = fromX + dx * progress;
+            const endY = fromY + dy * progress;
+
+            // Bezier control points
+            const midX = (fromX + toX) / 2;
+            const midY = (fromY + toY) / 2;
+            const perpX = -dy / dist * 20;
+            const perpY = dx / dist * 20;
+            const cpX = midX + perpX;
+            const cpY = midY + perpY;
+
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Arrowhead
+            if (progress > 0.3) {
+                const t = 0.98;
+                const tangentX = 2 * (1 - t) * (cpX - fromX) + 2 * t * (endX - cpX);
+                const tangentY = 2 * (1 - t) * (cpY - fromY) + 2 * t * (endY - cpY);
+                const angle = Math.atan2(tangentY, tangentX);
+                const arrowSize = 8;
+
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - arrowSize * Math.cos(angle - 0.4), endY - arrowSize * Math.sin(angle - 0.4));
+                ctx.lineTo(endX - arrowSize * Math.cos(angle + 0.4), endY - arrowSize * Math.sin(angle + 0.4));
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+        }
+
+        function drawNode(node) {
+            const x = node.x - node.w / 2;
+            const y = node.y - node.h / 2;
+            const isActive = node.active;
+            const isCompleted = node.completed;
+
+            // Glow effect for active node
+            if (isActive) {
+                const glowSize = 12 + Math.sin(pulsePhase) * 4;
+                ctx.shadowColor = node.color;
+                ctx.shadowBlur = glowSize;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+
+            // Node background
+            drawRoundedRect(x, y, node.w, node.h, 12);
+            if (isActive) {
+                const grad = ctx.createLinearGradient(x, y, x + node.w, y + node.h);
+                grad.addColorStop(0, node.color);
+                grad.addColorStop(1, shiftColor(node.color, -30));
+                ctx.fillStyle = grad;
+            } else if (isCompleted) {
+                ctx.fillStyle = 'rgba(5, 74, 218, 0.3)';
+            } else {
+                ctx.fillStyle = 'rgba(26, 32, 53, 0.8)';
+            }
+            ctx.fill();
+
+            // Border
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            drawRoundedRect(x, y, node.w, node.h, 12);
+            ctx.strokeStyle = isActive ? node.color : (isCompleted ? 'rgba(5, 74, 218, 0.5)' : 'rgba(30, 42, 69, 0.8)');
+            ctx.lineWidth = isActive ? 2 : 1;
+            ctx.stroke();
+
+            // Step number circle
+            const circleR = 14;
+            const circleX = x + 24;
+            const circleY = y + node.h / 2;
+            ctx.beginPath();
+            ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
+            ctx.fillStyle = isActive ? 'rgba(255,255,255,0.2)' : (isCompleted ? 'rgba(5, 74, 218, 0.5)' : 'rgba(30, 42, 69, 0.8)');
+            ctx.fill();
+
+            ctx.font = '700 12px Inter';
+            ctx.fillStyle = isActive ? '#fff' : (isCompleted ? '#5B9BFF' : '#5A6478');
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.step, circleX, circleY);
+
+            // Text
+            const textX = x + 48;
+            ctx.font = '600 13px Inter, Noto Sans SC';
+            ctx.fillStyle = isActive ? '#fff' : (isCompleted ? '#C8D0E0' : '#5A6478');
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.label, textX, y + node.h / 2 - 10);
+
+            ctx.font = '400 11px Noto Sans SC';
+            ctx.fillStyle = isActive ? 'rgba(255,255,255,0.7)' : '#5A6478';
+            ctx.fillText(node.sublabel, textX, y + node.h / 2 + 10);
+
+            // Pulse ring for active
+            if (isActive) {
+                const pulseR = node.w / 2 + 10 + Math.sin(pulsePhase * 1.5) * 6;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, pulseR, 0, Math.PI * 2);
+                ctx.strokeStyle = node.color.replace(')', ',0.15)').replace('rgb', 'rgba');
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function drawConnections(nodes) {
+            for (let i = 0; i < nodes.length - 1; i++) {
+                const from = nodes[i];
+                const to = nodes[i + 1];
+                const isActive = from.completed && to.active;
+                const isCompleted = from.completed && to.completed;
+
+                // Calculate edge points (from right side of from-node to left side of to-node)
+                const fromAngle = Math.atan2(to.y - from.y, to.x - from.x);
+                const toAngle = Math.atan2(from.y - to.y, from.x - to.x);
+
+                const fx = from.x + Math.cos(fromAngle) * (from.w / 2 + 4);
+                const fy = from.y + Math.sin(fromAngle) * (from.h / 2 + 4);
+                const tx = to.x + Math.cos(toAngle) * (to.w / 2 + 4);
+                const ty = to.y + Math.sin(toAngle) * (to.h / 2 + 4);
+
+                if (isActive) {
+                    // Animated connection
+                    const progress = Math.min(1, (pulsePhase % (Math.PI * 2)) / (Math.PI * 2));
+                    drawArrow(fx, fy, tx, ty, progress, to.color);
+                } else if (isCompleted) {
+                    drawArrow(fx, fy, tx, ty, 1, 'rgba(5, 74, 218, 0.4)');
+                } else {
+                    // Dim dashed line
+                    ctx.beginPath();
+                    ctx.setLineDash([4, 4]);
+                    ctx.moveTo(fx, fy);
+                    ctx.lineTo(tx, ty);
+                    ctx.strokeStyle = 'rgba(30, 42, 69, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+
+        function drawCenterLabel() {
+            if (currentStep === 0) {
+                ctx.font = '700 22px Inter, Noto Sans SC';
+                ctx.fillStyle = '#E8ECF4';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('本体推理引擎', W / 2, H / 2 - 16);
+
+                ctx.font = '400 14px Noto Sans SC';
+                ctx.fillStyle = '#5A6478';
+                ctx.fillText('点击"下一步"开始演示', W / 2, H / 2 + 16);
+
+                // Decorative ring
+                ctx.beginPath();
+                ctx.arc(W / 2, H / 2, 80, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(5, 74, 218, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(W / 2, H / 2, 100, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(0, 212, 170, 0.08)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(30, 42, 69, 0.3)';
+            ctx.lineWidth = 0.5;
+            const gridSize = 40;
+            for (let x = 0; x < W; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, H);
+                ctx.stroke();
+            }
+            for (let y = 0; y < H; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(W, y);
+                ctx.stroke();
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+
+            // Background
+            const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.6);
+            bgGrad.addColorStop(0, '#111827');
+            bgGrad.addColorStop(1, '#0A0E1A');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            drawGrid();
+
+            if (currentStep === 0) {
+                drawCenterLabel();
+            } else {
+                const nodes = getNodes();
+                drawConnections(nodes);
+                nodes.forEach(drawNode);
+            }
+        }
+
+        function shiftColor(hex, amount) {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+            const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+            return '#' + (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
+        }
+
+        // ==================== Animation Loop ====================
+        function animate() {
+            pulsePhase += 0.04;
+            draw();
+            animationFrame = requestAnimationFrame(animate);
+        }
+        animate();
+
+        // ==================== UI Controls ====================
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        const btnAutoPlay = document.getElementById('btnAutoPlay');
+        const btnReset = document.getElementById('btnReset');
+        const stepLabel = document.getElementById('stepLabel');
+        const stepDots = document.getElementById('stepDots');
+        const standardRef = document.getElementById('standardRef');
+        const summaryPanel = document.getElementById('summaryPanel');
+
+        // Create dots
+        for (let i = 1; i <= 6; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'step-dot';
+            dot.dataset.step = i;
+            stepDots.appendChild(dot);
+        }
+
+        function updateUI() {
+            // Buttons
+            btnPrev.disabled = currentStep <= 0;
+            btnNext.disabled = currentStep >= 6;
+            if (currentStep >= 6 && isAutoPlaying) {
+                stopAutoPlay();
+            }
+
+            // Step label
+            stepLabel.textContent = currentStep === 0 ? '准备就绪' : `步骤 ${currentStep} / 6`;
+
+            // Dots
+            document.querySelectorAll('.step-dot').forEach(dot => {
+                const s = parseInt(dot.dataset.step);
+                dot.classList.toggle('active', s === currentStep);
+                dot.classList.toggle('completed', s < currentStep);
+            });
+
+            // Panel details
+            document.querySelectorAll('.step-detail').forEach(el => {
+                el.classList.toggle('active', parseInt(el.dataset.step) === currentStep);
+            });
+
+            // Summary
+            summaryPanel.classList.toggle('active', currentStep === 6);
+
+            // Standard reference
+            if (currentStep > 0 && STEPS[currentStep].standard) {
+                const std = STEPS[currentStep].standard;
+                standardRef.innerHTML = '<i class="fas fa-book"></i> ' +
+                    std.tags.map((t, i) => `<span class="tag ${std.classes[i]}">${t}</span>`).join(' ');
+            } else {
+                standardRef.innerHTML = '<i class="fas fa-book"></i> <span>点击"下一步"开始推理演示</span>';
+            }
+        }
+
+        function goToStep(step) {
+            currentStep = Math.max(0, Math.min(6, step));
+            pulsePhase = 0;
+            updateUI();
+        }
+
+        btnPrev.addEventListener('click', () => goToStep(currentStep - 1));
+        btnNext.addEventListener('click', () => goToStep(currentStep + 1));
+
+        btnReset.addEventListener('click', () => {
+            stopAutoPlay();
+            goToStep(0);
+        });
+
+        function startAutoPlay() {
+            isAutoPlaying = true;
+            btnAutoPlay.innerHTML = '<i class="fas fa-pause"></i> 暂停';
+            btnAutoPlay.classList.add('btn-success');
+
+            if (currentStep >= 6) goToStep(0);
+
+            autoPlayTimer = setInterval(() => {
+                if (currentStep < 6) {
+                    goToStep(currentStep + 1);
+                } else {
+                    stopAutoPlay();
+                }
+            }, 2500);
+        }
+
+        function stopAutoPlay() {
+            isAutoPlaying = false;
+            clearInterval(autoPlayTimer);
+            autoPlayTimer = null;
+            btnAutoPlay.innerHTML = '<i class="fas fa-play"></i> 连续播放';
+            btnAutoPlay.classList.remove('btn-success');
+        }
+
+        btnAutoPlay.addEventListener('click', () => {
+            if (isAutoPlaying) {
+                stopAutoPlay();
+            } else {
+                startAutoPlay();
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                goToStep(currentStep + 1);
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goToStep(currentStep - 1);
+            }
+        });
+
+        // Initial
+        updateUI();
+    })();
+    </script>
+</body>
+</html>

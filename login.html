@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBM Ontology POC Platform - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --ibm-blue: #054ADA;
+            --ibm-blue-dark: #032E73;
+            --ibm-cyan: #00D4AA;
+            --ibm-purple: #7C3AED;
+            --bg-primary: #0A0E1A;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.8);
+            --text-primary: #F9FAFB;
+            --text-secondary: #9CA3AF;
+            --border-color: rgba(255,255,255,0.08);
+            --glow-blue: rgba(5, 74, 218, 0.4);
+            --glow-cyan: rgba(0, 212, 170, 0.3);
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        /* Animated Background */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0;
+            background-image:
+                linear-gradient(rgba(5,74,218,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(5,74,218,0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+        }
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+        .bg-orb {
+            position: fixed; border-radius: 50%; filter: blur(80px); z-index: 0;
+            animation: orbFloat 8s ease-in-out infinite alternate;
+        }
+        .bg-orb-1 { width: 500px; height: 500px; background: var(--glow-blue); top: -15%; left: -10%; }
+        .bg-orb-2 { width: 400px; height: 400px; background: var(--glow-cyan); bottom: -10%; right: -5%; animation-delay: -3s; }
+        .bg-orb-3 { width: 300px; height: 300px; background: rgba(124,58,237,0.2); top: 50%; left: 60%; animation-delay: -5s; }
+        @keyframes orbFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, -30px) scale(1.1); }
+        }
+        /* Particles */
+        .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        .particle {
+            position: absolute; width: 2px; height: 2px; background: var(--ibm-cyan);
+            border-radius: 50%; opacity: 0;
+            animation: particleFloat 6s ease-in-out infinite;
+        }
+        @keyframes particleFloat {
+            0% { opacity: 0; transform: translateY(100vh) scale(0); }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.3; }
+            100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+        }
+        /* Login Container */
+        .login-wrapper {
+            position: relative; z-index: 10; width: 100%; max-width: 460px; padding: 20px;
+        }
+        .login-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 48px 40px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 120px var(--glow-blue);
+            animation: cardEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: translateY(30px);
+        }
+        @keyframes cardEntry {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logo-area {
+            text-align: center; margin-bottom: 36px;
+        }
+        .logo-icon {
+            width: 72px; height: 72px; margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-purple));
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            font-size: 32px; color: white;
+            box-shadow: 0 8px 32px var(--glow-blue);
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { box-shadow: 0 8px 32px var(--glow-blue); }
+            50% { box-shadow: 0 8px 48px var(--glow-cyan); }
+        }
+        .logo-title {
+            font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #9CA3AF 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .logo-subtitle {
+            font-size: 13px; color: var(--text-secondary); margin-top: 6px;
+            letter-spacing: 2px; text-transform: uppercase;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-label {
+            display: block; font-size: 13px; font-weight: 500;
+            color: var(--text-secondary); margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-color); border-radius: 12px;
+            color: var(--text-primary); font-size: 15px; font-family: inherit;
+            transition: all 0.3s ease; outline: none;
+        }
+        .form-input:focus {
+            border-color: var(--ibm-blue);
+            box-shadow: 0 0 0 3px rgba(5,74,218,0.15);
+            background: rgba(255,255,255,0.06);
+        }
+        .form-input::placeholder { color: rgba(255,255,255,0.2); }
+        .login-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-purple));
+            color: white; font-size: 16px; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: all 0.3s ease;
+            position: relative; overflow: hidden; margin-top: 8px;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px var(--glow-blue);
+        }
+        .login-btn:active { transform: translateY(0); }
+        .login-btn .btn-shine {
+            position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            animation: btnShine 3s ease-in-out infinite;
+        }
+        @keyframes btnShine {
+            0% { left: -100%; }
+            50% { left: 100%; }
+            100% { left: 100%; }
+        }
+        .quick-login {
+            text-align: center; margin-top: 24px; padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+        .quick-login-text {
+            font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;
+        }
+        .quick-login-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 24px; background: rgba(0,212,170,0.1);
+            border: 1px solid rgba(0,212,170,0.3); border-radius: 10px;
+            color: var(--ibm-cyan); font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: all 0.3s ease; font-family: inherit;
+        }
+        .quick-login-btn:hover {
+            background: rgba(0,212,170,0.2);
+            border-color: var(--ibm-cyan);
+            transform: translateY(-1px);
+        }
+        .footer-info {
+            text-align: center; margin-top: 32px;
+            font-size: 11px; color: rgba(255,255,255,0.25);
+            letter-spacing: 1px;
+        }
+        .demo-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; background: rgba(0,212,170,0.1);
+            border: 1px solid rgba(0,212,170,0.2); border-radius: 20px;
+            font-size: 11px; color: var(--ibm-cyan); margin-top: 12px;
+        }
+        .demo-badge .dot {
+            width: 6px; height: 6px; background: var(--ibm-cyan);
+            border-radius: 50%; animation: blink 2s ease-in-out infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+        }
+        /* Transition overlay */
+        .transition-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background: var(--bg-primary);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .transition-overlay.active { opacity: 1; pointer-events: all; }
+        .transition-text {
+            font-size: 18px; font-weight: 500; color: var(--ibm-cyan);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Login Card -->
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fas fa-project-diagram"></i></div>
+                <div class="logo-title">IBM Ontology POC Platform</div>
+                <div class="logo-subtitle">Proof of Concept · 农夫山泉</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">用户名</label>
+                <input type="text" class="form-input" id="username" placeholder="请输入用户名" value="Richard Chen">
+            </div>
+            <div class="form-group">
+                <label class="form-label">密码</label>
+                <input type="password" class="form-input" id="password" placeholder="请输入密码" value="IBM@2025">
+            </div>
+
+            <button class="login-btn" onclick="handleLogin()">
+                <span class="btn-shine"></span>
+                <i class="fas fa-arrow-right-to-bracket"></i>&nbsp; 登录平台
+            </button>
+
+            <div class="quick-login">
+                <div class="quick-login-text">快速体验</div>
+                <button class="quick-login-btn" onclick="quickLogin()">
+                    <i class="fas fa-bolt"></i> 一键登录（演示账号）
+                </button>
+                <div style="margin-top: 12px;">
+                    <span class="demo-badge"><span class="dot"></span> POC Demo Mode</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-info">IBM Consulting · Richard Chen · Nongfu Spring Innovation</div>
+    </div>
+
+    <!-- Transition Overlay -->
+    <div class="transition-overlay" id="transitionOverlay">
+        <div class="transition-text"><i class="fas fa-spinner fa-spin"></i>&nbsp; 正在进入 POC 演示平台...</div>
+    </div>
+
+    <script>
+        // Generate particles
+        const particlesEl = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDelay = Math.random() * 6 + 's';
+            p.style.animationDuration = (4 + Math.random() * 4) + 's';
+            p.style.width = p.style.height = (1 + Math.random() * 3) + 'px';
+            particlesEl.appendChild(p);
+        }
+
+        function handleLogin() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            if (u && p) doLogin();
+        }
+
+        function quickLogin() {
+            document.getElementById('username').value = 'Richard Chen';
+            document.getElementById('password').value = 'IBM@2025';
+            doLogin();
+        }
+
+        function doLogin() {
+            const overlay = document.getElementById('transitionOverlay');
+            overlay.classList.add('active');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1200);
+        }
+
+        // Enter key support
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter') handleLogin();
+        });
+    </script>
+</body>
+</html>

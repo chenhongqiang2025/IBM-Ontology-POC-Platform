@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>供应链本体动态决策系统 | IBM Consulting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: #060D18;
+            color: #E2E8F0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 56px;
+            background: rgba(6, 13, 24, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(5, 74, 218, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .top-bar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: #054ADA;
+            letter-spacing: -0.5px;
+        }
+
+        .top-bar-logo span {
+            color: #E2E8F0;
+            font-weight: 400;
+        }
+
+        .top-bar-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .top-bar-title {
+            font-size: 14px;
+            color: #94A3B8;
+            font-weight: 400;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(5, 74, 218, 0.15);
+            border: 1px solid rgba(5, 74, 218, 0.3);
+            border-radius: 8px;
+            color: #054ADA;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-back:hover {
+            background: rgba(5, 74, 218, 0.3);
+            border-color: rgba(5, 74, 218, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: 100vh;
+            padding-top: 56px;
+        }
+
+        /* Left Panel - Reasoning Engine */
+        .panel-left {
+            width: 320px;
+            min-width: 320px;
+            background: rgba(10, 20, 40, 0.6);
+            backdrop-filter: blur(24px);
+            border-right: 1px solid rgba(5, 74, 218, 0.15);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(5, 74, 218, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .panel-header-icon.purple {
+            background: rgba(124, 58, 237, 0.2);
+            color: #7C3AED;
+        }
+
+        .panel-header-icon.blue {
+            background: rgba(5, 74, 218, 0.2);
+            color: #054ADA;
+        }
+
+        .panel-header-icon.red {
+            background: rgba(255, 107, 107, 0.2);
+            color: #FF6B6B;
+        }
+
+        .panel-header-text h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #E2E8F0;
+        }
+
+        .panel-header-text p {
+            font-size: 11px;
+            color: #64748B;
+            margin-top: 2px;
+        }
+
+        .log-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+
+        .log-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: rgba(5, 74, 218, 0.3);
+            border-radius: 2px;
+        }
+
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.6;
+            animation: logFadeIn 0.4s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .log-entry.axiom {
+            background: rgba(124, 58, 237, 0.08);
+            border-left-color: #7C3AED;
+        }
+
+        .log-entry.risk {
+            background: rgba(255, 107, 107, 0.08);
+            border-left-color: #FF6B6B;
+        }
+
+        .log-entry.success {
+            background: rgba(0, 212, 170, 0.08);
+            border-left-color: #00D4AA;
+        }
+
+        .log-entry.info {
+            background: rgba(5, 74, 218, 0.08);
+            border-left-color: #054ADA;
+        }
+
+        .log-entry .log-time {
+            font-size: 10px;
+            color: #475569;
+            margin-bottom: 4px;
+            font-family: 'Inter', monospace;
+        }
+
+        .log-entry .log-label {
+            font-weight: 600;
+            font-size: 11px;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .log-entry.axiom .log-label { color: #7C3AED; }
+        .log-entry.risk .log-label { color: #FF6B6B; }
+        .log-entry.success .log-label { color: #00D4AA; }
+        .log-entry.info .log-label { color: #054ADA; }
+
+        .log-entry .log-text {
+            color: #94A3B8;
+        }
+
+        .log-entry .log-text strong {
+            color: #E2E8F0;
+        }
+
+        @keyframes logFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Center - Canvas */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #supplyCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .canvas-overlay-title {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .canvas-overlay-title h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: rgba(226, 232, 240, 0.6);
+            letter-spacing: 2px;
+        }
+
+        .canvas-overlay-title p {
+            font-size: 12px;
+            color: rgba(148, 163, 184, 0.4);
+            margin-top: 4px;
+        }
+
+        /* Right Panel - Decision Sandbox */
+        .panel-right {
+            width: 320px;
+            min-width: 320px;
+            background: rgba(10, 20, 40, 0.6);
+            backdrop-filter: blur(24px);
+            border-left: 1px solid rgba(5, 74, 218, 0.15);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .scenario-list {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .scenario-btn {
+            position: relative;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            overflow: hidden;
+        }
+
+        .scenario-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .scenario-btn:hover {
+            border-color: rgba(255, 107, 107, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.1);
+        }
+
+        .scenario-btn:hover::before {
+            opacity: 1;
+        }
+
+        .scenario-btn.active {
+            border-color: rgba(255, 107, 107, 0.5);
+            background: rgba(255, 107, 107, 0.08);
+        }
+
+        .scenario-btn-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .scenario-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .scenario-icon.pet {
+            background: rgba(255, 107, 107, 0.15);
+            color: #FF6B6B;
+        }
+
+        .scenario-icon.pp {
+            background: rgba(251, 191, 36, 0.15);
+            color: #FBBF24;
+        }
+
+        .scenario-icon.water {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38BDF8;
+        }
+
+        .scenario-btn-top h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #E2E8F0;
+        }
+
+        .scenario-btn-top .severity {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .severity.high {
+            background: rgba(255, 107, 107, 0.15);
+            color: #FF6B6B;
+        }
+
+        .severity.medium {
+            background: rgba(251, 191, 36, 0.15);
+            color: #FBBF24;
+        }
+
+        .severity.critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+
+        .scenario-desc {
+            font-size: 11px;
+            color: #64748B;
+            line-height: 1.5;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Solution Panel */
+        .solution-panel {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            border-top: 1px solid rgba(5, 74, 218, 0.15);
+        }
+
+        .solution-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .solution-panel::-webkit-scrollbar-thumb {
+            background: rgba(5, 74, 218, 0.3);
+            border-radius: 2px;
+        }
+
+        .solution-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .solution-title i {
+            color: #00D4AA;
+        }
+
+        .solution-card {
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(0, 212, 170, 0.06);
+            border: 1px solid rgba(0, 212, 170, 0.15);
+            margin-bottom: 8px;
+            animation: solutionFadeIn 0.5s ease;
+        }
+
+        .solution-card h5 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #00D4AA;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .solution-card p {
+            font-size: 11px;
+            color: #94A3B8;
+            line-height: 1.5;
+        }
+
+        @keyframes solutionFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(5, 74, 218, 0.15);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-item {
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            text-align: center;
+        }
+
+        .stat-item .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #E2E8F0;
+        }
+
+        .stat-item .stat-value.blue { color: #054ADA; }
+        .stat-item .stat-value.red { color: #FF6B6B; }
+        .stat-item .stat-value.green { color: #00D4AA; }
+        .stat-item .stat-value.purple { color: #7C3AED; }
+
+        .stat-item .stat-label {
+            font-size: 10px;
+            color: #475569;
+            margin-top: 2px;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 32px;
+            background: rgba(6, 13, 24, 0.9);
+            border-top: 1px solid rgba(5, 74, 218, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #475569;
+            z-index: 100;
+        }
+
+        /* Reset button */
+        .btn-reset {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(5, 74, 218, 0.2);
+            background: rgba(5, 74, 218, 0.08);
+            color: #054ADA;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 4px;
+        }
+
+        .btn-reset:hover {
+            background: rgba(5, 74, 218, 0.15);
+            border-color: rgba(5, 74, 218, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 24px 16px;
+            color: #475569;
+        }
+
+        .empty-state i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 12px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+    <div class="top-bar-left">
+        <div class="top-bar-logo">IBM <span>Ontology POC</span></div>
+        <div class="top-bar-divider"></div>
+        <div class="top-bar-title">供应链本体动态决策系统</div>
+    </div>
+    <a href="../index.html" class="btn-back">
+        <i class="fas fa-arrow-left"></i>
+        返回平台
+    </a>
+</div>
+
+<!-- Main Container -->
+<div class="main-container">
+
+    <!-- Left Panel: Reasoning Engine -->
+    <div class="panel-left">
+        <div class="panel-header">
+            <div class="panel-header-icon purple">
+                <i class="fas fa-brain"></i>
+            </div>
+            <div class="panel-header-text">
+                <h3>OWL 推理引擎</h3>
+                <p>本体公理实时推理</p>
+            </div>
+        </div>
+        <div class="log-container" id="logContainer">
+            <div class="log-entry info">
+                <div class="log-time">系统初始化</div>
+                <div class="log-label"><i class="fas fa-circle-info"></i> 就绪</div>
+                <div class="log-text">供应链知识图谱已加载，包含 <strong>8</strong> 个实体节点和 <strong>7</strong> 条供应链关系。请选择右侧风险场景开始决策模拟。</div>
+            </div>
+        </div>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value blue" id="statAxioms">0</div>
+                <div class="stat-label">已执行公理</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value red" id="statRisks">0</div>
+                <div class="stat-label">风险节点</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value purple" id="statInferences">0</div>
+                <div class="stat-label">推理次数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value green" id="statSolutions">0</div>
+                <div class="stat-label">应对方案</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Center: Canvas -->
+    <div class="canvas-container">
+        <canvas id="supplyCanvas"></canvas>
+        <div class="canvas-overlay-title">
+            <h2>农夫山泉供应链知识图谱</h2>
+            <p>NONGFU SPRING SUPPLY CHAIN ONTOLOGY</p>
+        </div>
+    </div>
+
+    <!-- Right Panel: Decision Sandbox -->
+    <div class="panel-right">
+        <div class="panel-header">
+            <div class="panel-header-icon red">
+                <i class="fas fa-flask-vial"></i>
+            </div>
+            <div class="panel-header-text">
+                <h3>决策沙盘</h3>
+                <p>风险场景模拟</p>
+            </div>
+        </div>
+        <div class="scenario-list">
+            <div class="scenario-btn" onclick="triggerScenario('pet')" id="scenarioPet">
+                <div class="scenario-btn-top">
+                    <div class="scenario-icon pet"><i class="fas fa-oil-can"></i></div>
+                    <div>
+                        <h4>PET树脂断供</h4>
+                        <span class="severity high">高风险</span>
+                    </div>
+                </div>
+                <div class="scenario-desc">万凯新材产能中断，PET树脂供应链断裂，影响瓶坯生产及全线灌装产能</div>
+            </div>
+            <div class="scenario-btn" onclick="triggerScenario('pp')" id="scenarioPP">
+                <div class="scenario-btn-top">
+                    <div class="scenario-icon pp"><i class="fas fa-capsules"></i></div>
+                    <div>
+                        <h4>PP树脂断供</h4>
+                        <span class="severity medium">中风险</span>
+                    </div>
+                </div>
+                <div class="scenario-desc">金富科技瓶盖原料短缺，PP树脂供应不足，影响瓶盖制造及产品封装</div>
+            </div>
+            <div class="scenario-btn" onclick="triggerScenario('water')" id="scenarioWater">
+                <div class="scenario-btn-top">
+                    <div class="scenario-icon water"><i class="fas fa-droplet"></i></div>
+                    <div>
+                        <h4>水源地污染</h4>
+                        <span class="severity critical">严重风险</span>
+                    </div>
+                </div>
+                <div class="scenario-desc">千岛湖水质异常，水源地受到污染威胁，影响全线产品生产与品牌安全</div>
+            </div>
+            <button class="btn-reset" onclick="resetSimulation()">
+                <i class="fas fa-rotate-left"></i>
+                重置模拟
+            </button>
+        </div>
+        <div class="solution-panel" id="solutionPanel">
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-shield-halved"></i>
+                <p>选择风险场景后<br>推理引擎将自动生成应对方案</p>
+            </div>
+            <div id="solutionContent" style="display:none;">
+                <div class="solution-title">
+                    <i class="fas fa-lightbulb"></i>
+                    应对方案建议
+                </div>
+                <div id="solutionList"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    IBM Consulting &middot; Richard Chen
+</div>
+
+<script>
+// ==================== Canvas Setup ====================
+const canvas = document.getElementById('supplyCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+let animFrame;
+let time = 0;
+
+function resize() {
+    const container = canvas.parentElement;
+    W = canvas.width = container.clientWidth * window.devicePixelRatio;
+    H = canvas.height = container.clientHeight * window.devicePixelRatio;
+    canvas.style.width = container.clientWidth + 'px';
+    canvas.style.height = container.clientHeight + 'px';
+    ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ==================== Supply Chain Nodes ====================
+const nodeIcons = [
+    '\uf043', // water-source: fa-droplet
+    '\uf2dc', // water-treatment: fa-snowflake
+    '\uf3ed', // pet-production: fa-industry
+    '\uf542', // cap-manufacturing: fa-cog
+    '\uf02f', // label-printing: fa-tag
+    '\uf0e7', // filling: fa-bolt
+    '\uf058', // quality-check: fa-check-circle
+    '\uf4d7'  // warehouse: fa-warehouse
+];
+
+const nodeLabels = [
+    '水源地', '水处理', 'PET生产', '瓶盖制造',
+    '标签印刷', '灌装', '质检', '仓储物流'
+];
+
+const nodeDescriptions = [
+    '千岛湖取水点',
+    '反渗透/UV杀菌',
+    '万凯新材·瓶坯',
+    '金富科技·瓶盖',
+    '标签与包装印刷',
+    '全自动灌装线',
+    '理化/微生物检测',
+    '成品仓储与配送'
+];
+
+const nodeSubLabels = [
+    'Water Source', 'Water Treatment', 'PET Production', 'Cap Manufacturing',
+    'Label Printing', 'Filling Line', 'Quality Control', 'Warehouse & Logistics'
+];
+
+// State: 0=normal, 1=risk, 2=reasoning
+let nodeStates = [0, 0, 0, 0, 0, 0, 0, 0];
+let nodePulse = [0, 0, 0, 0, 0, 0, 0, 0];
+
+// Edges: [from, to]
+const edges = [
+    [0, 1], [1, 2], [2, 5], [3, 5], [4, 5], [5, 6], [6, 7]
+];
+
+// Risk propagation particles
+let particles = [];
+// Reasoning lines
+let reasoningLines = [];
+
+function getNodePositions() {
+    const cw = canvas.width / window.devicePixelRatio;
+    const ch = canvas.height / window.devicePixelRatio;
+    const cx = cw / 2;
+    const cy = ch / 2;
+    const rx = Math.min(cw * 0.32, 320);
+    const ry = Math.min(ch * 0.32, 220);
+
+    // Layout: semi-elliptical with 8 nodes
+    const positions = [];
+    const startAngle = -Math.PI * 0.85;
+    const endAngle = -Math.PI * 0.15;
+
+    for (let i = 0; i < 8; i++) {
+        const t = i / 7;
+        const angle = startAngle + t * (endAngle - startAngle);
+        positions.push({
+            x: cx + rx * Math.cos(angle),
+            y: cy + ry * Math.sin(angle) + 20
+        });
+    }
+    return positions;
+}
+
+// ==================== Drawing ====================
+function drawGrid() {
+    const cw = canvas.width / window.devicePixelRatio;
+    const ch = canvas.height / window.devicePixelRatio;
+    ctx.strokeStyle = 'rgba(5, 74, 218, 0.04)';
+    ctx.lineWidth = 1;
+    const spacing = 40;
+    for (let x = 0; x < cw; x += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, ch);
+        ctx.stroke();
+    }
+    for (let y = 0; y < ch; y += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(cw, y);
+        ctx.stroke();
+    }
+}
+
+function drawEdge(from, to, highlight) {
+    const positions = getNodePositions();
+    const p1 = positions[from];
+    const p2 = positions[to];
+
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const mx = (p1.x + p2.x) / 2;
+    const my = (p1.y + p2.y) / 2 - 30;
+
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.quadraticCurveTo(mx, my, p2.x, p2.y);
+
+    if (highlight === 'risk') {
+        ctx.strokeStyle = 'rgba(255, 107, 107, 0.6)';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#FF6B6B';
+        ctx.shadowBlur = 12;
+    } else if (highlight === 'reasoning') {
+        ctx.strokeStyle = 'rgba(124, 58, 237, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#7C3AED';
+        ctx.shadowBlur = 10;
+    } else {
+        ctx.strokeStyle = 'rgba(5, 74, 218, 0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 0;
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Arrow
+    const t = 0.92;
+    const ax = (1-t)*(1-t)*p1.x + 2*(1-t)*t*mx + t*t*p2.x;
+    const ay = (1-t)*(1-t)*p1.y + 2*(1-t)*t*my + t*t*p2.y;
+    const t2 = 0.88;
+    const bx = (1-t2)*(1-t2)*p1.x + 2*(1-t2)*t2*mx + t2*t2*p2.x;
+    const by = (1-t2)*(1-t2)*p1.y + 2*(1-t2)*t2*my + t2*t2*p2.y;
+    const angle = Math.atan2(ay - by, ax - bx);
+    const arrowLen = 8;
+
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax - arrowLen * Math.cos(angle - 0.4), ay - arrowLen * Math.sin(angle - 0.4));
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax - arrowLen * Math.cos(angle + 0.4), ay - arrowLen * Math.sin(angle + 0.4));
+    ctx.strokeStyle = highlight === 'risk' ? 'rgba(255, 107, 107, 0.6)' :
+                      highlight === 'reasoning' ? 'rgba(124, 58, 237, 0.5)' :
+                      'rgba(5, 74, 218, 0.25)';
+    ctx.lineWidth = highlight ? 2 : 1.5;
+    ctx.stroke();
+}
+
+function drawNode(index) {
+    const positions = getNodePositions();
+    const pos = positions[index];
+    const state = nodeStates[index];
+    const pulse = nodePulse[index];
+    const radius = 32;
+
+    // Glow
+    if (state === 1) {
+        const glowSize = radius + 15 + Math.sin(time * 3 + index) * 5;
+        const grad = ctx.createRadialGradient(pos.x, pos.y, radius, pos.x, pos.y, glowSize);
+        grad.addColorStop(0, 'rgba(255, 107, 107, 0.3)');
+        grad.addColorStop(1, 'rgba(255, 107, 107, 0)');
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+    } else if (state === 2) {
+        const glowSize = radius + 12 + Math.sin(time * 4 + index) * 4;
+        const grad = ctx.createRadialGradient(pos.x, pos.y, radius, pos.x, pos.y, glowSize);
+        grad.addColorStop(0, 'rgba(124, 58, 237, 0.25)');
+        grad.addColorStop(1, 'rgba(124, 58, 237, 0)');
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, glowSize, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+    }
+
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, radius + 2, 0, Math.PI * 2);
+    ctx.strokeStyle = state === 1 ? 'rgba(255, 107, 107, 0.5)' :
+                      state === 2 ? 'rgba(124, 58, 237, 0.4)' :
+                      'rgba(5, 74, 218, 0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Main circle
+    const mainGrad = ctx.createRadialGradient(pos.x - 8, pos.y - 8, 0, pos.x, pos.y, radius);
+    if (state === 1) {
+        mainGrad.addColorStop(0, 'rgba(255, 107, 107, 0.25)');
+        mainGrad.addColorStop(1, 'rgba(255, 107, 107, 0.08)');
+    } else if (state === 2) {
+        mainGrad.addColorStop(0, 'rgba(124, 58, 237, 0.2)');
+        mainGrad.addColorStop(1, 'rgba(124, 58, 237, 0.06)');
+    } else {
+        mainGrad.addColorStop(0, 'rgba(5, 74, 218, 0.2)');
+        mainGrad.addColorStop(1, 'rgba(5, 74, 218, 0.06)');
+    }
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = mainGrad;
+    ctx.fill();
+
+    // Inner border
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = state === 1 ? 'rgba(255, 107, 107, 0.6)' :
+                      state === 2 ? 'rgba(124, 58, 237, 0.5)' :
+                      'rgba(5, 74, 218, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Icon (Font Awesome unicode)
+    ctx.font = '900 16px "Font Awesome 6 Free"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = state === 1 ? '#FF6B6B' :
+                    state === 2 ? '#7C3AED' :
+                    '#054ADA';
+    ctx.fillText(nodeIcons[index], pos.x, pos.y);
+
+    // Label below
+    ctx.font = '600 12px "Noto Sans SC", "Inter", sans-serif';
+    ctx.fillStyle = state === 1 ? '#FF6B6B' :
+                    state === 2 ? '#A78BFA' :
+                    '#CBD5E1';
+    ctx.fillText(nodeLabels[index], pos.x, pos.y + radius + 18);
+
+    // Sub label
+    ctx.font = '400 9px "Inter", sans-serif';
+    ctx.fillStyle = 'rgba(100, 116, 139, 0.7)';
+    ctx.fillText(nodeSubLabels[index], pos.x, pos.y + radius + 32);
+
+    // Status indicator
+    const indicatorX = pos.x + radius * 0.7;
+    const indicatorY = pos.y - radius * 0.7;
+    ctx.beginPath();
+    ctx.arc(indicatorX, indicatorY, 4, 0, Math.PI * 2);
+    if (state === 1) {
+        ctx.fillStyle = '#FF6B6B';
+        ctx.shadowColor = '#FF6B6B';
+        ctx.shadowBlur = 8;
+    } else if (state === 2) {
+        ctx.fillStyle = '#7C3AED';
+        ctx.shadowColor = '#7C3AED';
+        ctx.shadowBlur = 6;
+    } else {
+        ctx.fillStyle = '#00D4AA';
+        ctx.shadowColor = '#00D4AA';
+        ctx.shadowBlur = 4;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function drawParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.t += p.speed;
+        if (p.t >= 1) {
+            particles.splice(i, 1);
+            continue;
+        }
+
+        const positions = getNodePositions();
+        const p1 = positions[p.from];
+        const p2 = positions[p.to];
+        const mx = (p1.x + p2.x) / 2;
+        const my = (p1.y + p2.y) / 2 - 30;
+
+        const t = p.t;
+        const x = (1-t)*(1-t)*p1.x + 2*(1-t)*t*mx + t*t*p2.x;
+        const y = (1-t)*(1-t)*p1.y + 2*(1-t)*t*my + t*t*p2.y;
+
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, 8);
+        grad.addColorStop(0, 'rgba(255, 107, 107, 0.9)');
+        grad.addColorStop(0.5, 'rgba(255, 107, 107, 0.3)');
+        grad.addColorStop(1, 'rgba(255, 107, 107, 0)');
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Core
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#FF6B6B';
+        ctx.fill();
+    }
+}
+
+function drawReasoningLines() {
+    for (let i = reasoningLines.length - 1; i >= 0; i--) {
+        const rl = reasoningLines[i];
+        rl.life -= 0.005;
+        if (rl.life <= 0) {
+            reasoningLines.splice(i, 1);
+            continue;
+        }
+
+        const positions = getNodePositions();
+        const p1 = positions[rl.from];
+        const p2 = positions[rl.to];
+        const mx = (p1.x + p2.x) / 2;
+        const my = (p1.y + p2.y) / 2 - 30;
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.quadraticCurveTo(mx, my, p2.x, p2.y);
+        ctx.strokeStyle = `rgba(124, 58, 237, ${rl.life * 0.6})`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+}
+
+function getEdgeHighlight(from, to) {
+    for (const p of particles) {
+        if ((p.from === from && p.to === to) || (p.from === to && p.to === from)) {
+            return 'risk';
+        }
+    }
+    for (const rl of reasoningLines) {
+        if ((rl.from === from && rl.to === to) || (rl.from === to && rl.to === from)) {
+            return 'reasoning';
+        }
+    }
+    return null;
+}
+
+function draw() {
+    const cw = canvas.width / window.devicePixelRatio;
+    const ch = canvas.height / window.devicePixelRatio;
+    ctx.clearRect(0, 0, cw, ch);
+
+    // Background gradient
+    const bgGrad = ctx.createRadialGradient(cw/2, ch/2, 0, cw/2, ch/2, Math.max(cw, ch) * 0.7);
+    bgGrad.addColorStop(0, 'rgba(5, 74, 218, 0.04)');
+    bgGrad.addColorStop(1, 'rgba(6, 13, 24, 0)');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, cw, ch);
+
+    drawGrid();
+
+    // Draw edges
+    for (const [from, to] of edges) {
+        const hl = getEdgeHighlight(from, to);
+        drawEdge(from, to, hl);
+    }
+
+    drawReasoningLines();
+    drawParticles();
+
+    // Draw nodes
+    for (let i = 0; i < 8; i++) {
+        drawNode(i);
+    }
+
+    time += 0.016;
+    animFrame = requestAnimationFrame(draw);
+}
+
+draw();
+
+// ==================== Logging ====================
+let axiomCount = 0;
+let inferenceCount = 0;
+let solutionCount = 0;
+
+function getTimestamp() {
+    const now = new Date();
+    return now.toLocaleTimeString('zh-CN', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+}
+
+function addLog(type, label, text) {
+    const container = document.getElementById('logContainer');
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.innerHTML = `
+        <div class="log-time">${getTimestamp()}</div>
+        <div class="log-label">${label}</div>
+        <div class="log-text">${text}</div>
+    `;
+    container.appendChild(entry);
+    container.scrollTop = container.scrollHeight;
+
+    if (type === 'axiom') axiomCount++;
+    if (type === 'risk') inferenceCount++;
+    if (type === 'success') solutionCount++;
+
+    document.getElementById('statAxioms').textContent = axiomCount;
+    document.getElementById('statInferences').textContent = inferenceCount;
+    document.getElementById('statSolutions').textContent = solutionCount;
+    document.getElementById('statRisks').textContent = nodeStates.filter(s => s === 1).length;
+}
+
+function clearLogs() {
+    const container = document.getElementById('logContainer');
+    container.innerHTML = '';
+}
+
+// ==================== Particles & Reasoning ====================
+function spawnParticle(from, to) {
+    particles.push({ from, to, t: 0, speed: 0.008 + Math.random() * 0.004 });
+}
+
+function addReasoningLine(from, to) {
+    reasoningLines.push({ from, to, life: 1.0 });
+}
+
+// ==================== Scenarios ====================
+let activeScenario = null;
+let scenarioTimeouts = [];
+
+function clearScenarioTimeouts() {
+    scenarioTimeouts.forEach(t => clearTimeout(t));
+    scenarioTimeouts = [];
+}
+
+function resetSimulation() {
+    clearScenarioTimeouts();
+    nodeStates = [0, 0, 0, 0, 0, 0, 0, 0];
+    nodePulse = [0, 0, 0, 0, 0, 0, 0, 0];
+    particles = [];
+    reasoningLines = [];
+    activeScenario = null;
+    axiomCount = 0;
+    inferenceCount = 0;
+    solutionCount = 0;
+
+    document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('statAxioms').textContent = '0';
+    document.getElementById('statRisks').textContent = '0';
+    document.getElementById('statInferences').textContent = '0';
+    document.getElementById('statSolutions').textContent = '0';
+
+    clearLogs();
+    addLog('info', '<i class="fas fa-circle-info"></i> 已重置', '供应链知识图谱已恢复初始状态，所有风险节点已清除。');
+
+    document.getElementById('emptyState').style.display = '';
+    document.getElementById('solutionContent').style.display = 'none';
+    document.getElementById('solutionList').innerHTML = '';
+}
+
+function triggerScenario(type) {
+    if (activeScenario) {
+        resetSimulation();
+    }
+
+    activeScenario = type;
+    document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+
+    if (type === 'pet') {
+        document.getElementById('scenarioPet').classList.add('active');
+        runPETScenario();
+    } else if (type === 'pp') {
+        document.getElementById('scenarioPP').classList.add('active');
+        runPPScenario();
+    } else if (type === 'water') {
+        document.getElementById('scenarioWater').classList.add('active');
+        runWaterScenario();
+    }
+}
+
+function delay(ms) {
+    return new Promise(resolve => {
+        const t = setTimeout(resolve, ms);
+        scenarioTimeouts.push(t);
+    });
+}
+
+async function runPETScenario() {
+    // Step 1: Initial risk
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险触发', '检测到异常：<strong>万凯新材</strong>产能中断，PET树脂供应链断裂。');
+    nodeStates[2] = 1; // PET生产
+
+    await delay(600);
+
+    // Step 2: Axiom reasoning
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行 SWRL 规则：<strong>hasSupplier(瓶坯生产, 万凯新材) ∧ disrupted(万凯新材)</strong> → impacted(瓶坯生产)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    await delay(500);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行传递性公理：<strong>dependsOn(灌装, PET生产) ∧ impacted(PET生产)</strong> → atRisk(灌装)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    // Propagate to filling
+    spawnParticle(2, 5);
+    await delay(800);
+    nodeStates[5] = 1;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>灌装</strong> 节点：瓶坯短缺导致灌装线停工风险。');
+
+    await delay(500);
+
+    // Propagate to QC
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行依赖链推理：<strong>dependsOn(质检, 灌装) ∧ atRisk(灌装)</strong> → atRisk(质检)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    spawnParticle(5, 6);
+    addReasoningLine(2, 6);
+    await delay(800);
+    nodeStates[6] = 2;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>质检</strong> 节点：灌装中断导致质检无样品可检。');
+
+    await delay(500);
+
+    // Propagate to warehouse
+    spawnParticle(6, 7);
+    addReasoningLine(5, 7);
+    await delay(800);
+    nodeStates[7] = 2;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>仓储物流</strong> 节点：成品产出下降，库存周转率降低。');
+
+    await delay(400);
+
+    // Impact assessment
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行影响评估：<strong>aggregateRisk([PET生产, 灌装, 质检, 仓储物流])</strong> → 整体供应链风险等级：<strong>HIGH</strong>');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    await delay(600);
+
+    // Solutions
+    addLog('success', '<i class="fas fa-check-circle"></i> 方案生成', '推理引擎已完成分析，生成 <strong>4</strong> 条应对方案建议。');
+
+    showSolutions([
+        {
+            title: '启动备用供应商',
+            icon: 'fa-handshake',
+            desc: '紧急联系华润化学、逸盛石化等备用PET供应商，签署短期供应协议，预计72小时内恢复30%瓶坯产能。'
+        },
+        {
+            title: '库存缓冲调配',
+            icon: 'fa-boxes-stacked',
+            desc: '调拨华东区域仓库现有瓶坯库存，优先保障核心SKU（550ml天然水）生产，预计可维持7天产能。'
+        },
+        {
+            title: '柔性生产调整',
+            icon: 'fa-sliders',
+            desc: '将灌装线切换至小规格产品（330ml），降低单瓶PET消耗量，延长现有库存支撑周期至14天。'
+        },
+        {
+            title: '供应链韧性升级',
+            icon: 'fa-shield-halved',
+            desc: '建议将PET供应商从单一来源升级为"1+2"模式（1家主力+2家备选），建立安全库存预警机制。'
+        }
+    ]);
+}
+
+async function runPPScenario() {
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险触发', '检测到异常：<strong>金富科技</strong>PP树脂供应短缺，瓶盖原料不足。');
+    nodeStates[3] = 1;
+
+    await delay(600);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行 SWRL 规则：<strong>hasMaterial(瓶盖制造, PP树脂) ∧ shortage(PP树脂)</strong> → impacted(瓶盖制造)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    await delay(500);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行传递性公理：<strong>dependsOn(灌装, 瓶盖制造) ∧ impacted(瓶盖制造)</strong> → atRisk(灌装)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    spawnParticle(3, 5);
+    await delay(800);
+    nodeStates[5] = 1;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>灌装</strong> 节点：瓶盖短缺导致产品无法封装。');
+
+    await delay(500);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行依赖链推理：<strong>dependsOn(质检, 灌装) ∧ atRisk(灌装)</strong> → atRisk(质检)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    spawnParticle(5, 6);
+    addReasoningLine(3, 6);
+    await delay(800);
+    nodeStates[6] = 2;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>质检</strong> 节点：封装工序中断影响成品检测。');
+
+    await delay(500);
+
+    spawnParticle(6, 7);
+    addReasoningLine(5, 7);
+    await delay(800);
+    nodeStates[7] = 2;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>仓储物流</strong> 节点：成品出库量下降。');
+
+    await delay(400);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行影响评估：<strong>aggregateRisk([瓶盖制造, 灌装, 质检, 仓储物流])</strong> → 整体供应链风险等级：<strong>MEDIUM</strong>');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    await delay(600);
+
+    addLog('success', '<i class="fas fa-check-circle"></i> 方案生成', '推理引擎已完成分析，生成 <strong>4</strong> 条应对方案建议。');
+
+    showSolutions([
+        {
+            title: '替代瓶盖供应商',
+            icon: 'fa-handshake',
+            desc: '紧急联系紫江企业、中粮包装等替代瓶盖供应商，利用现有模具快速切换，预计48小时内恢复瓶盖供应。'
+        },
+        {
+            title: 'PP树脂现货采购',
+            icon: 'fa-cart-shopping',
+            desc: '通过化工现货市场紧急采购PP树脂，直供金富科技恢复生产，预计增加成本12%但可保障供应连续性。'
+        },
+        {
+            title: '瓶盖库存盘点',
+            icon: 'fa-clipboard-check',
+            desc: '盘点全国各工厂瓶盖库存，跨区域调拨至受影响工厂，预计可维持5天生产需求。'
+        },
+        {
+            title: '供应商多元化',
+            icon: 'fa-shield-halved',
+            desc: '建议将瓶盖供应商从金富科技单一来源扩展为3家合格供应商轮换机制，降低单点故障风险。'
+        }
+    ]);
+}
+
+async function runWaterScenario() {
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险触发', '检测到严重异常：<strong>千岛湖</strong>水质监测数据异常，浊度/总氮指标超标。');
+    nodeStates[0] = 1;
+
+    await delay(600);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行 SWRL 规则：<strong>hasWaterSource(水处理, 千岛湖) ∧ qualityAnomaly(千岛湖)</strong> → atRisk(水处理)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    spawnParticle(0, 1);
+    await delay(800);
+    nodeStates[1] = 1;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>水处理</strong> 节点：原水水质异常导致处理工艺需要紧急调整。');
+
+    await delay(500);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行级联推理：<strong>dependsOn(灌装, 水处理) ∧ atRisk(水处理)</strong> → atRisk(灌装)');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    spawnParticle(1, 2);
+    addReasoningLine(1, 5);
+    await delay(600);
+    nodeStates[2] = 2;
+
+    spawnParticle(2, 5);
+    await delay(800);
+    nodeStates[5] = 1;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>PET生产</strong> 和 <strong>灌装</strong> 节点：全线生产面临中断风险。');
+
+    await delay(500);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行全链路推理：<strong>atRisk(灌装) → atRisk(质检) → atRisk(仓储物流)</strong>');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    spawnParticle(5, 6);
+    await delay(600);
+    nodeStates[6] = 1;
+
+    spawnParticle(6, 7);
+    await delay(600);
+    nodeStates[7] = 1;
+
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '风险已传播至 <strong>质检</strong> 和 <strong>仓储物流</strong> 节点：全供应链受影响。');
+
+    await delay(400);
+
+    // Also affect label printing
+    addReasoningLine(1, 4);
+    nodeStates[4] = 2;
+    addLog('risk', '<i class="fas fa-triangle-exclamation"></i> 风险传播', '关联影响：<strong>标签印刷</strong> 节点受到间接影响（产品停产导致标签需求下降）。');
+
+    await delay(400);
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行影响评估：<strong>aggregateRisk(全链路6/8节点)</strong> → 整体供应链风险等级：<strong>CRITICAL</strong>');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    addLog('axiom', '<i class="fas fa-gears"></i> 公理推理', '执行品牌风险评估：<strong>hasBrandImpact(水源地污染) → brandRiskLevel(EXTREME)</strong>');
+    axiomCount++;
+    document.getElementById('statAxioms').textContent = axiomCount;
+
+    await delay(600);
+
+    addLog('success', '<i class="fas fa-check-circle"></i> 方案生成', '推理引擎已完成分析，生成 <strong>5</strong> 条应对方案建议。');
+
+    showSolutions([
+        {
+            title: '紧急切换备用水源',
+            icon: 'fa-faucet-drip',
+            desc: '启动备用水源地（丹江口/长白山），通过跨区域调配保障核心市场供应，预计48小时内完成切换。'
+        },
+        {
+            title: '水质应急处理',
+            icon: 'fa-flask',
+            desc: '水处理厂紧急启用强化处理工艺（活性炭吸附+超滤），提升出水水质达标率，同步增加检测频次至每小时1次。'
+        },
+        {
+            title: '品牌危机公关',
+            icon: 'fa-bullhorn',
+            desc: '立即启动品牌危机预案：发布水质检测报告、邀请第三方检测机构认证、通过官方渠道主动透明沟通。'
+        },
+        {
+            title: '产能转移',
+            icon: 'fa-truck-fast',
+            desc: '将千岛湖工厂订单转移至吉林长白山、湖北丹江口等异地工厂，利用多水源地布局分散风险。'
+        },
+        {
+            title: '水源地生态修复',
+            icon: 'fa-leaf',
+            desc: '联合地方政府启动千岛湖流域生态修复方案，加强水源保护区巡查，建立水质实时监测预警平台。'
+        }
+    ]);
+}
+
+function showSolutions(solutions) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('solutionContent').style.display = '';
+    const list = document.getElementById('solutionList');
+    list.innerHTML = '';
+
+    solutions.forEach((s, i) => {
+        setTimeout(() => {
+            const card = document.createElement('div');
+            card.className = 'solution-card';
+            card.innerHTML = `
+                <h5><i class="fas ${s.icon}"></i> ${s.title}</h5>
+                <p>${s.desc}</p>
+            `;
+            list.appendChild(card);
+        }, i * 300);
+    });
+}
+</script>
+
+</body>
+</html>

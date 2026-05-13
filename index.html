@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBM Ontology POC Platform - Demo Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --ibm-blue: #054ADA;
+            --ibm-blue-dark: #032E73;
+            --ibm-cyan: #00D4AA;
+            --ibm-purple: #7C3AED;
+            --ibm-red: #FF6B6B;
+            --ibm-orange: #F59E0B;
+            --ibm-green: #10B981;
+            --bg-primary: #0A0E1A;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --text-primary: #F9FAFB;
+            --text-secondary: #9CA3AF;
+            --text-muted: #6B7280;
+            --border-color: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.15);
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        /* Background */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0;
+            background-image:
+                linear-gradient(rgba(5,74,218,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(5,74,218,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .bg-glow {
+            position: fixed; border-radius: 50%; filter: blur(100px); z-index: 0; pointer-events: none;
+        }
+        .bg-glow-1 { width: 600px; height: 600px; background: rgba(5,74,218,0.08); top: -200px; right: -100px; }
+        .bg-glow-2 { width: 500px; height: 500px; background: rgba(0,212,170,0.06); bottom: -150px; left: -100px; }
+
+        /* Header */
+        .header {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 32px; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-logo {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-purple));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: white;
+        }
+        .header-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+        .header-title span { color: var(--ibm-cyan); }
+        .header-badge {
+            padding: 4px 12px; background: rgba(0,212,170,0.1);
+            border: 1px solid rgba(0,212,170,0.2); border-radius: 20px;
+            font-size: 11px; color: var(--ibm-cyan); font-weight: 500;
+        }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-btn {
+            padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border-color);
+            background: transparent; color: var(--text-secondary); font-size: 13px;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); border-color: var(--border-hover); }
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-cyan));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+
+        /* Main Content */
+        .main { position: relative; z-index: 1; padding: 32px; max-width: 1400px; margin: 0 auto; }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--bg-card); backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color); border-radius: 16px;
+            padding: 20px 24px; display: flex; align-items: center; gap: 16px;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .stat-icon.blue { background: rgba(5,74,218,0.15); color: var(--ibm-blue); }
+        .stat-icon.cyan { background: rgba(0,212,170,0.15); color: var(--ibm-cyan); }
+        .stat-icon.purple { background: rgba(124,58,237,0.15); color: var(--ibm-purple); }
+        .stat-icon.orange { background: rgba(245,158,11,0.15); color: var(--ibm-orange); }
+        .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
+        .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Category Filter */
+        .filter-bar {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 8px 18px; border-radius: 10px; border: 1px solid var(--border-color);
+            background: transparent; color: var(--text-secondary); font-size: 13px;
+            cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 500;
+        }
+        .filter-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+        .filter-btn.active {
+            background: rgba(5,74,218,0.15); color: var(--ibm-blue);
+            border-color: rgba(5,74,218,0.3);
+        }
+        .search-box {
+            margin-left: auto; position: relative;
+        }
+        .search-box input {
+            padding: 8px 16px 8px 36px; border-radius: 10px;
+            border: 1px solid var(--border-color); background: rgba(255,255,255,0.03);
+            color: var(--text-primary); font-size: 13px; font-family: inherit;
+            width: 220px; outline: none; transition: all 0.2s;
+        }
+        .search-box input:focus { border-color: var(--ibm-blue); background: rgba(255,255,255,0.05); }
+        .search-box input::placeholder { color: var(--text-muted); }
+        .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; }
+
+        /* Demo Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .demo-card {
+            background: var(--bg-card); backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color); border-radius: 20px;
+            padding: 0; overflow: hidden; cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        .demo-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .demo-card::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, transparent 60%, rgba(5,74,218,0.05));
+            opacity: 0; transition: opacity 0.4s;
+        }
+        .demo-card:hover::before { opacity: 1; }
+
+        .card-header {
+            padding: 24px 24px 16px; display: flex; align-items: flex-start; justify-content: space-between;
+        }
+        .card-icon-wrap {
+            width: 52px; height: 52px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px;
+            position: relative;
+        }
+        .card-icon-wrap::after {
+            content: ''; position: absolute; inset: -2px; border-radius: 18px;
+            background: inherit; opacity: 0.2; filter: blur(8px); z-index: -1;
+        }
+        .card-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .card-tag {
+            padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .tag-3d { background: rgba(124,58,237,0.15); color: #A78BFA; }
+        .tag-interactive { background: rgba(0,212,170,0.15); color: var(--ibm-cyan); }
+        .tag-dashboard { background: rgba(245,158,11,0.15); color: var(--ibm-orange); }
+        .tag-ppt { background: rgba(5,74,218,0.15); color: #60A5FA; }
+        .tag-ai { background: rgba(255,107,107,0.15); color: var(--ibm-red); }
+        .tag-new { background: rgba(16,185,129,0.15); color: var(--ibm-green); }
+
+        .card-body { padding: 0 24px 20px; }
+        .card-title {
+            font-size: 17px; font-weight: 700; margin-bottom: 8px;
+            line-height: 1.3; letter-spacing: -0.2px;
+        }
+        .card-desc {
+            font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        .card-footer {
+            padding: 16px 24px; border-top: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .card-tech {
+            display: flex; gap: 6px;
+        }
+        .tech-badge {
+            padding: 3px 8px; border-radius: 6px; font-size: 10px;
+            background: rgba(255,255,255,0.04); color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .card-enter {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; font-weight: 600; color: var(--ibm-blue);
+            transition: all 0.2s;
+        }
+        .demo-card:hover .card-enter { gap: 10px; color: var(--ibm-cyan); }
+        .card-enter i { font-size: 10px; transition: transform 0.2s; }
+        .demo-card:hover .card-enter i { transform: translateX(3px); }
+
+        /* Color themes for card icons */
+        .icon-blue { background: rgba(5,74,218,0.15); color: var(--ibm-blue); }
+        .icon-cyan { background: rgba(0,212,170,0.15); color: var(--ibm-cyan); }
+        .icon-purple { background: rgba(124,58,237,0.15); color: var(--ibm-purple); }
+        .icon-red { background: rgba(255,107,107,0.15); color: var(--ibm-red); }
+        .icon-orange { background: rgba(245,158,11,0.15); color: var(--ibm-orange); }
+        .icon-green { background: rgba(16,185,129,0.15); color: var(--ibm-green); }
+        .icon-pink { background: rgba(236,72,153,0.15); color: #EC4899; }
+
+        /* Section Title */
+        .section-title {
+            font-size: 14px; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .section-title::after {
+            content: ''; flex: 1; height: 1px; background: var(--border-color);
+        }
+
+        /* Featured card */
+        .demo-card.featured {
+            grid-column: span 2;
+            border-color: rgba(5,74,218,0.2);
+        }
+        .demo-card.featured .card-header { padding: 28px 28px 20px; }
+        .demo-card.featured .card-body { padding: 0 28px 24px; }
+        .demo-card.featured .card-footer { padding: 18px 28px; }
+        .demo-card.featured .card-title { font-size: 20px; }
+        .featured-badge {
+            position: absolute; top: 16px; right: 16px;
+            padding: 4px 12px; background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-purple));
+            border-radius: 8px; font-size: 10px; font-weight: 700; color: white;
+            text-transform: uppercase; letter-spacing: 1px; z-index: 2;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main { padding: 16px; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .cards-grid { grid-template-columns: 1fr; }
+            .demo-card.featured { grid-column: span 1; }
+            .header { padding: 0 16px; }
+            .search-box { margin-left: 0; width: 100%; }
+            .search-box input { width: 100%; }
+        }
+
+        /* Animations */
+        .demo-card {
+            opacity: 0; transform: translateY(20px);
+            animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes cardIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Logout modal */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-box {
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 32px; width: 360px; text-align: center;
+            transform: scale(0.9); transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-box { transform: scale(1); }
+        .modal-box h3 { font-size: 18px; margin-bottom: 8px; }
+        .modal-box p { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+        .modal-actions { display: flex; gap: 12px; }
+        .modal-actions button {
+            flex: 1; padding: 12px; border-radius: 12px; font-size: 14px;
+            font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .btn-cancel { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .btn-cancel:hover { background: rgba(255,255,255,0.05); }
+        .btn-confirm { background: var(--ibm-red); border: none; color: white; }
+        .btn-confirm:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-logo"><i class="fas fa-project-diagram"></i></div>
+            <div class="header-title">IBM Ontology <span>POC Platform</span></div>
+            <div class="header-badge"><i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i> v2.0</div>
+        </div>
+        <div class="header-right">
+            <button class="header-btn" onclick="window.open('login.html','_self')"><i class="fas fa-home"></i> 首页</button>
+            <button class="header-btn" onclick="showLogoutModal()"><i class="fas fa-sign-out-alt"></i> 退出</button>
+            <div class="user-avatar" title="Admin">A</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-cube"></i></div>
+                <div><div class="stat-value">15</div><div class="stat-label">Demo 演示模块</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon cyan"><i class="fas fa-layer-group"></i></div>
+                <div><div class="stat-value">6</div><div class="stat-label">功能分类</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-code"></i></div>
+                <div><div class="stat-value">100+</div><div class="stat-label">交互组件</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-rocket"></i></div>
+                <div><div class="stat-value">3D</div><div class="stat-label">沉浸式体验</div></div>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">全部 Demo</button>
+            <button class="filter-btn" data-filter="core">🎯 核心演示</button>
+            <button class="filter-btn" data-filter="visual">🌊 可视化</button>
+            <button class="filter-btn" data-filter="dashboard">📊 仪表盘</button>
+            <button class="filter-btn" data-filter="ai">🤖 AI 智能</button>
+            <button class="filter-btn" data-filter="knowledge">🧠 知识图谱</button>
+            <button class="filter-btn" data-filter="business">💼 商业方案</button>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="搜索 demo..." id="searchInput">
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="cards-grid" id="cardsGrid">
+            <!-- Cards will be injected by JS -->
+        </div>
+    </main>
+
+    <!-- Logout Modal -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-box">
+            <h3><i class="fas fa-sign-out-alt" style="color:var(--ibm-red)"></i> 确认退出</h3>
+            <p>确定要退出 POC 演示平台吗？</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideLogoutModal()">取消</button>
+                <button class="btn-confirm" onclick="doLogout()">确认退出</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const demos = [
+            {
+                id: '01-presentation',
+                title: '数智融合 · 链动未来',
+                desc: '17页完整核心演示文稿，涵盖本体论本质、业务痛点、Palantir对标、IBM架构、实体映射可视化、时间线动画等全链路展示。',
+                icon: 'fas fa-presentation-screen', iconClass: 'icon-blue',
+                tags: [{ text: 'PPT', cls: 'tag-ppt' }, { text: '核心', cls: 'tag-new' }],
+                techs: ['D3.js', 'CSS动画', '17页'],
+                category: 'core', featured: true,
+                file: 'demos/01-presentation.html'
+            },
+            {
+                id: '02-3d-bottle',
+                title: '一瓶水的商业宇宙 (3D)',
+                desc: 'Three.js 3D交互式水瓶模型，可点击瓶身各部位探索本体定义。5页幻灯片展示从产品到企业大脑的完整决策链路。',
+                icon: 'fas fa-cube', iconClass: 'icon-purple',
+                tags: [{ text: '3D', cls: 'tag-3d' }, { text: 'Three.js', cls: 'tag-interactive' }],
+                techs: ['Three.js', 'WebGL', '交互'],
+                category: 'core', featured: false,
+                file: 'demos/02-3d-bottle.html'
+            },
+            {
+                id: '03-birth-of-water',
+                title: '一瓶水的诞生',
+                desc: 'Canvas全屏动画，以叙事主线逐步展示农夫山泉500ml饮用水的完整供应链本体模型。步骤式交互探索各环节。',
+                icon: 'fas fa-water', iconClass: 'icon-cyan',
+                tags: [{ text: 'Canvas', cls: 'tag-interactive' }, { text: '动画', cls: 'tag-new' }],
+                techs: ['Canvas', 'Tailwind', '步骤导航'],
+                category: 'visual', featured: false,
+                file: 'demos/03-birth-of-water.html'
+            },
+            {
+                id: '04-supply-chain-decision',
+                title: '供应链本体动态决策',
+                desc: '在供应链知识图谱基础上增加决策模拟。可模拟PET树脂断供、水源污染等风险场景，实时展示风险传导与推理过程。',
+                icon: 'fas fa-diagram-project', iconClass: 'icon-red',
+                tags: [{ text: '决策模拟', cls: 'tag-ai' }, { text: '风险推理', cls: 'tag-interactive' }],
+                techs: ['Canvas', '推理引擎', '沙盘'],
+                category: 'ai', featured: false,
+                file: 'demos/04-supply-chain-decision.html'
+            },
+            {
+                id: '05-ontology-agent',
+                title: '本体智能问数 Agent',
+                desc: '演示基于本体论的AI Agent智能问答系统。展示Agent如何通过本体知识图谱进行多跳推理和智能决策的完整流程。',
+                icon: 'fas fa-robot', iconClass: 'icon-green',
+                tags: [{ text: 'AI Agent', cls: 'tag-ai' }, { text: '问答', cls: 'tag-interactive' }],
+                techs: ['Agent', '多跳推理', '模拟'],
+                category: 'ai', featured: false,
+                file: 'demos/05-ontology-agent.html'
+            },
+            {
+                id: '06-production-dashboard',
+                title: '生产监控仪表盘',
+                desc: '模拟农夫山泉生产线实时监控。深色科技风UI，展示生产数据、设备状态、产量指标等关键KPI，12列网格布局。',
+                icon: 'fas fa-gauge-high', iconClass: 'icon-orange',
+                tags: [{ text: '仪表盘', cls: 'tag-dashboard' }, { text: '实时', cls: 'tag-interactive' }],
+                techs: ['Grid', 'KPI', 'Orbitron'],
+                category: 'dashboard', featured: false,
+                file: 'demos/06-production-dashboard.html'
+            },
+            {
+                id: '07-cap-dashboard',
+                title: '瓶盖供应链仪表盘',
+                desc: '以金富科技瓶盖为核心视角的供应链网络拓扑仪表盘。Canvas星空粒子背景，展示产能、质量等关键指标。',
+                icon: 'fas fa-circle-nodes', iconClass: 'icon-pink',
+                tags: [{ text: '仪表盘', cls: 'tag-dashboard' }, { text: '拓扑', cls: 'tag-interactive' }],
+                techs: ['Canvas星空', '拓扑图', 'KPI'],
+                category: 'dashboard', featured: false,
+                file: 'demos/07-cap-dashboard.html'
+            },
+            {
+                id: '08-knowledge-graph',
+                title: '供应链本体知识图谱',
+                desc: 'D3.js力导向图可视化系统。展示产品、水源、工厂、包装、供应商、成本、标准、渠道等实体及其复杂关系网络。',
+                icon: 'fas fa-share-nodes', iconClass: 'icon-blue',
+                tags: [{ text: 'D3.js', cls: 'tag-interactive' }, { text: '力导向', cls: 'tag-new' }],
+                techs: ['D3.js', 'SVG', '力导向图'],
+                category: 'knowledge', featured: false,
+                file: 'demos/08-knowledge-graph.html'
+            },
+            {
+                id: '09-atp-copilot',
+                title: 'AI ATP 智能副驾驶',
+                desc: '供应链智能计划系统Demo。支持多跳查询、AI Copilot对话、4大业务场景一键演示（紧急插单/需求激增/包材短缺/产能瓶颈）。',
+                icon: 'fas fa-plane-departure', iconClass: 'icon-cyan',
+                tags: [{ text: 'AI', cls: 'tag-ai' }, { text: 'ATP', cls: 'tag-dashboard' }],
+                techs: ['AI对话', '多跳查询', '场景'],
+                category: 'ai', featured: false,
+                file: 'demos/09-atp-copilot.html'
+            },
+            {
+                id: '10-universe-ontology',
+                title: '宇宙级本体论推演',
+                desc: '双Canvas层沉浸式动画，将本体论从瓶盖逐步推演到宇宙级别。粒子系统、星云效果，7阶段进度条展示宏大叙事。',
+                icon: 'fas fa-meteor', iconClass: 'icon-purple',
+                tags: [{ text: 'Canvas', cls: 'tag-interactive' }, { text: '粒子', cls: 'tag-3d' }],
+                techs: ['双Canvas', '粒子系统', '星云'],
+                category: 'visual', featured: false,
+                file: 'demos/10-universe-ontology.html'
+            },
+            {
+                id: '11-cap-reasoning',
+                title: '从瓶盖开始 · 本体推理',
+                desc: '以瓶盖为切入点，动态演示本体推理完整闭环：类→实例→属性→关系→公理→动作。场景为产能预警自动触发调拨。',
+                icon: 'fas fa-link', iconClass: 'icon-green',
+                tags: [{ text: '推理', cls: 'tag-ai' }, { text: '教学', cls: 'tag-new' }],
+                techs: ['Canvas', '推理动画', 'OWL'],
+                category: 'knowledge', featured: false,
+                file: 'demos/11-cap-reasoning.html'
+            },
+            {
+                id: '12-essence-cap',
+                title: '瓶盖 · 元点本质推演',
+                desc: '以瓶盖作为最小独立决策单元和利润传导起点，5张本质属性卡片+动态推演流程，从元点推演到供应链全链路。',
+                icon: 'fas fa-atom', iconClass: 'icon-orange',
+                tags: [{ text: '推演', cls: 'tag-interactive' }, { text: '概念', cls: 'tag-new' }],
+                techs: ['卡片网格', '步骤流', '推演'],
+                category: 'knowledge', featured: false,
+                file: 'demos/12-essence-cap.html'
+            },
+            {
+                id: '13-pain-points',
+                title: '九大痛点 · 决策映射表',
+                desc: '以550ml红瓶天然水为案例，系统梳理九大业务痛点(P1-P9)的本体智能决策映射。支持新增、编辑、删除和搜索过滤。',
+                icon: 'fas fa-table-cells', iconClass: 'icon-red',
+                tags: [{ text: '工具', cls: 'tag-dashboard' }, { text: '可编辑', cls: 'tag-interactive' }],
+                techs: ['CRUD', '搜索', '表格'],
+                category: 'business', featured: false,
+                file: 'demos/13-pain-points.html'
+            },
+            {
+                id: '14-ibm-solution',
+                title: 'IBM 企业级 AI 解决方案',
+                desc: 'Palantir国产替代方案PPT。详细对比Palantir困境与IBM优势，展示本体论四要素框架，强调完全自主可控和快速见效。',
+                icon: 'fas fa-building', iconClass: 'icon-blue',
+                tags: [{ text: 'PPT', cls: 'tag-ppt' }, { text: '方案', cls: 'tag-new' }],
+                techs: ['Tailwind', 'IBM Design', '方案'],
+                category: 'business', featured: false,
+                file: 'demos/14-ibm-solution.html'
+            },
+            {
+                id: '15-palantir-deep-dive',
+                title: '如何实现 Palantir 本体论',
+                desc: '十大章节深度解析Palantir本体论实现。涵盖统一语义层、核心组成、工程实现、AI接入、存储策略等完整技术栈。',
+                icon: 'fas fa-book-open', iconClass: 'icon-purple',
+                tags: [{ text: '白皮书', cls: 'tag-ppt' }, { text: '深度', cls: 'tag-new' }],
+                techs: ['文档', '代码', '对比'],
+                category: 'knowledge', featured: false,
+                file: 'demos/15-palantir-deep-dive.html'
+            }
+        ];
+
+        const grid = document.getElementById('cardsGrid');
+        let currentFilter = 'all';
+
+        function renderCards(filter = 'all', search = '') {
+            grid.innerHTML = '';
+            const filtered = demos.filter(d => {
+                const matchFilter = filter === 'all' || d.category === filter;
+                const matchSearch = !search || d.title.toLowerCase().includes(search.toLowerCase()) || d.desc.toLowerCase().includes(search.toLowerCase());
+                return matchFilter && matchSearch;
+            });
+
+            filtered.forEach((d, i) => {
+                const card = document.createElement('div');
+                card.className = `demo-card${d.featured ? ' featured' : ''}`;
+                card.style.animationDelay = `${i * 0.06}s`;
+                card.setAttribute('data-category', d.category);
+                card.onclick = () => window.open(d.file, '_blank');
+
+                card.innerHTML = `
+                    ${d.featured ? '<div class="featured-badge"><i class="fas fa-star"></i> 推荐</div>' : ''}
+                    <div class="card-header">
+                        <div class="card-icon-wrap ${d.iconClass}"><i class="${d.icon}"></i></div>
+                        <div class="card-tags">${d.tags.map(t => `<span class="card-tag ${t.cls}">${t.text}</span>`).join('')}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">${d.title}</div>
+                        <div class="card-desc">${d.desc}</div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="card-tech">${d.techs.map(t => `<span class="tech-badge">${t}</span>`).join('')}</div>
+                        <div class="card-enter">进入演示 <i class="fas fa-arrow-right"></i></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted)"><i class="fas fa-search" style="font-size:40px;margin-bottom:16px;display:block"></i>没有找到匹配的 Demo</div>';
+            }
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderCards(currentFilter, document.getElementById('searchInput').value);
+            });
+        });
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', e => {
+            renderCards(currentFilter, e.target.value);
+        });
+
+        // Initial render
+        renderCards();
+
+        // Modal
+        function showLogoutModal() { document.getElementById('logoutModal').classList.add('active'); }
+        function hideLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
+        function doLogout() { window.location.href = 'login.html'; }
+    </script>
+</body>
+</html>

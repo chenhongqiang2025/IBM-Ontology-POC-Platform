@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数智融合·链动未来 | 农夫山泉本体智能决策中枢</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', 'Noto Sans SC', sans-serif; background: #0A0E1A; color: #E0E6F0; }
+a { color: #00D4AA; text-decoration: none; }
+
+/* ========== CSS VARIABLES ========== */
+:root {
+  --bg-primary: #0A0E1A;
+  --bg-card: rgba(15, 23, 42, 0.8);
+  --bg-card-hover: rgba(20, 30, 55, 0.9);
+  --ibm-blue: #054ADA;
+  --ibm-blue-light: #3B82F6;
+  --accent-green: #00D4AA;
+  --accent-purple: #7C3AED;
+  --accent-orange: #F59E0B;
+  --accent-red: #EF4444;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border-color: rgba(59, 130, 246, 0.2);
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* ========== TOP NAV ========== */
+.top-nav {
+  position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 100;
+  background: rgba(10, 14, 26, 0.92); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+}
+.top-nav .nav-title {
+  font-size: 14px; font-weight: 500; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 8px;
+}
+.top-nav .nav-title .page-indicator {
+  color: var(--accent-green); font-weight: 700; font-size: 13px;
+  background: rgba(0, 212, 170, 0.1); padding: 2px 10px; border-radius: 12px;
+}
+.top-nav .nav-right { display: flex; align-items: center; gap: 16px; }
+.btn-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  background: rgba(5, 74, 218, 0.15); color: var(--ibm-blue-light);
+  border: 1px solid rgba(59, 130, 246, 0.3); cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-back:hover { background: rgba(5, 74, 218, 0.3); }
+
+/* ========== SLIDES CONTAINER ========== */
+.slides-container {
+  position: absolute; top: 56px; left: 0; right: 0; bottom: 64px;
+  overflow: hidden;
+}
+.slide {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 40px 60px;
+  opacity: 0; transform: translateX(60px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  pointer-events: none;
+  overflow-y: auto;
+}
+.slide.active {
+  opacity: 1; transform: translateX(0); pointer-events: auto;
+}
+.slide.exit-left {
+  opacity: 0; transform: translateX(-60px);
+}
+.slide.exit-right {
+  opacity: 0; transform: translateX(60px);
+}
+.slide.enter-from-right {
+  opacity: 0; transform: translateX(60px);
+}
+.slide.enter-from-left {
+  opacity: 0; transform: translateX(-60px);
+}
+
+/* ========== BOTTOM BAR ========== */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 64px; z-index: 100;
+  background: rgba(10, 14, 26, 0.92); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.page-dots { display: flex; gap: 6px; align-items: center; }
+.page-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-muted); cursor: pointer;
+  transition: all 0.3s;
+}
+.page-dot.active {
+  background: var(--accent-green); width: 24px; border-radius: 4px;
+}
+.page-dot:hover { background: var(--ibm-blue-light); }
+.nav-btn {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s; font-size: 14px;
+}
+.nav-btn:hover { background: var(--ibm-blue); color: white; border-color: var(--ibm-blue); }
+.page-info { font-size: 12px; color: var(--text-muted); min-width: 60px; text-align: center; }
+
+/* ========== COMMON STYLES ========== */
+.slide-inner { width: 100%; max-width: 1200px; position: relative; z-index: 1; }
+.section-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  background: rgba(0, 212, 170, 0.1); color: var(--accent-green);
+  border: 1px solid rgba(0, 212, 170, 0.2); margin-bottom: 16px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.slide-title {
+  font-size: 36px; font-weight: 800; line-height: 1.3;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.slide-subtitle {
+  font-size: 16px; color: var(--text-secondary); line-height: 1.6;
+  margin-bottom: 32px; max-width: 700px;
+}
+.card {
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 24px;
+  backdrop-filter: blur(10px);
+  transition: all 0.4s;
+}
+.card:hover { border-color: rgba(59, 130, 246, 0.3); transform: translateY(-2px); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.icon-box {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 12px;
+}
+.icon-blue { background: rgba(5, 74, 218, 0.15); color: var(--ibm-blue-light); }
+.icon-green { background: rgba(0, 212, 170, 0.15); color: var(--accent-green); }
+.icon-purple { background: rgba(124, 58, 237, 0.15); color: var(--accent-purple); }
+.icon-orange { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
+.icon-red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+.stat-number {
+  font-size: 42px; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent-green), var(--ibm-blue-light));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.tag {
+  display: inline-block; padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+.tag-blue { background: rgba(5, 74, 218, 0.15); color: var(--ibm-blue-light); }
+.tag-green { background: rgba(0, 212, 170, 0.15); color: var(--accent-green); }
+.tag-purple { background: rgba(124, 58, 237, 0.15); color: var(--accent-purple); }
+.tag-orange { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(0, 212, 170, 0.4); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes countUp { from { opacity: 0; } to { opacity: 1; } }
+@keyframes typing { from { width: 0; } to { width: 100%; } }
+@keyframes blink { 0%, 100% { border-color: transparent; } 50% { border-color: var(--accent-green); } }
+
+.slide.active .anim-up { animation: fadeInUp 0.6s ease forwards; }
+.slide.active .anim-left { animation: fadeInLeft 0.6s ease forwards; }
+.slide.active .anim-right { animation: fadeInRight 0.6s ease forwards; }
+.slide.active .delay-1 { animation-delay: 0.1s; }
+.slide.active .delay-2 { animation-delay: 0.2s; }
+.slide.active .delay-3 { animation-delay: 0.3s; }
+.slide.active .delay-4 { animation-delay: 0.4s; }
+.slide.active .delay-5 { animation-delay: 0.5s; }
+.slide.active .delay-6 { animation-delay: 0.6s; }
+.slide.active .delay-7 { animation-delay: 0.7s; }
+.slide.active .delay-8 { animation-delay: 0.8s; }
+
+/* ========== SLIDE 1: COVER ========== */
+.cover-bg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(ellipse at 30% 50%, rgba(5, 74, 218, 0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 30%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, rgba(124, 58, 237, 0.08) 0%, transparent 50%);
+}
+.cover-content { position: relative; z-index: 1; text-align: center; }
+.cover-logo {
+  width: 80px; height: 80px; margin: 0 auto 24px;
+  background: linear-gradient(135deg, var(--ibm-blue), var(--accent-green));
+  border-radius: 20px; display: flex; align-items: center; justify-content: center;
+  font-size: 36px; color: white; animation: float 3s ease-in-out infinite;
+}
+.cover-title {
+  font-size: 52px; font-weight: 900; line-height: 1.2; margin-bottom: 8px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #00D4AA 50%, #054ADA 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: gradient-shift 4s ease infinite;
+}
+.cover-divider {
+  width: 80px; height: 3px; margin: 20px auto;
+  background: linear-gradient(90deg, var(--ibm-blue), var(--accent-green));
+  border-radius: 2px;
+}
+.cover-subtitle {
+  font-size: 20px; color: var(--text-secondary); margin-bottom: 32px;
+  font-weight: 300; letter-spacing: 2px;
+}
+.cover-tags { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.cover-tag {
+  padding: 8px 20px; border-radius: 24px; font-size: 13px; font-weight: 500;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+}
+
+/* ========== SLIDE 2: TOC ========== */
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.toc-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  cursor: pointer; transition: all 0.3s;
+}
+.toc-item:hover { border-color: var(--ibm-blue); background: var(--bg-card-hover); transform: translateX(4px); }
+.toc-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--ibm-blue), var(--accent-purple));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.toc-text { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.toc-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ========== SLIDE 3: ONTOLOGY ========== */
+.quote-box {
+  border-left: 3px solid var(--accent-green); padding: 16px 24px;
+  background: rgba(0, 212, 170, 0.05); border-radius: 0 12px 12px 0;
+  font-size: 15px; color: var(--text-secondary); font-style: italic;
+  margin-bottom: 24px;
+}
+.pillar-card {
+  text-align: center; padding: 28px 20px;
+}
+.pillar-card .icon-box { margin: 0 auto 12px; width: 56px; height: 56px; font-size: 24px; }
+.pillar-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+.pillar-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+
+/* ========== SLIDE 4: PAIN POINTS ========== */
+.pain-card {
+  padding: 20px; position: relative; overflow: hidden;
+}
+.pain-card::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--accent-red); border-radius: 0 2px 2px 0;
+}
+.pain-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.pain-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.pain-metric {
+  margin-top: 10px; padding: 8px 12px; border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08); font-size: 12px;
+  color: var(--accent-red); font-weight: 600;
+}
+
+/* ========== SLIDE 5: PALANTIR ========== */
+.compare-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.compare-logo {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 18px;
+}
+.stat-row { display: flex; gap: 16px; margin-bottom: 20px; }
+.stat-box {
+  flex: 1; padding: 20px; text-align: center; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+}
+.stat-box .stat-number { font-size: 32px; }
+.stat-box .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* ========== SLIDE 6: IBM DIFF ========== */
+.diff-card {
+  padding: 24px; position: relative;
+}
+.diff-card .diff-icon {
+  position: absolute; top: -12px; right: 16px;
+  padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700;
+}
+.diff-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.diff-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.diff-list { list-style: none; margin-top: 10px; }
+.diff-list li {
+  font-size: 12px; color: var(--text-secondary); padding: 4px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.diff-list li i { color: var(--accent-green); font-size: 10px; }
+
+/* ========== SLIDE 7: CASES ========== */
+.case-card { padding: 24px; }
+.case-card .case-logo {
+  width: 48px; height: 48px; border-radius: 12px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 900;
+}
+.case-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.case-card .case-role { font-size: 11px; color: var(--accent-green); margin-bottom: 10px; font-weight: 600; }
+.case-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.case-metric {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  background: rgba(0, 212, 170, 0.1); color: var(--accent-green);
+  margin-top: 10px; margin-right: 6px;
+}
+
+/* ========== SLIDE 8: KNOWLEDGE GRAPH ========== */
+#knowledgeGraph {
+  width: 100%; height: 420px; border-radius: 16px;
+  background: rgba(5, 10, 25, 0.8); border: 1px solid var(--glass-border);
+}
+
+/* ========== SLIDE 9: WATER COST ========== */
+.water-visual {
+  display: flex; align-items: center; gap: 40px;
+}
+.water-bottle {
+  width: 180px; height: 400px; position: relative; flex-shrink: 0;
+}
+.water-bottle-shape {
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, rgba(5, 74, 218, 0.1) 0%, rgba(0, 212, 170, 0.2) 100%);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 20px 20px 30px 30px;
+  position: relative; overflow: hidden;
+}
+.water-fill {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, rgba(0, 212, 170, 0.3), rgba(5, 74, 218, 0.4));
+  border-radius: 0 0 28px 28px;
+  transition: height 1s ease;
+}
+.cost-bars { flex: 1; }
+.cost-bar-item {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.cost-bar-label {
+  width: 80px; font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  text-align: right; flex-shrink: 0;
+}
+.cost-bar-track {
+  flex: 1; height: 28px; background: rgba(255,255,255,0.04);
+  border-radius: 8px; overflow: hidden; position: relative;
+}
+.cost-bar-fill {
+  height: 100%; border-radius: 8px;
+  transition: width 1.5s ease;
+  display: flex; align-items: center; padding-left: 10px;
+  font-size: 11px; font-weight: 700; color: white;
+}
+
+/* ========== SLIDE 10: SUPPLY CHAIN ========== */
+.flow-container {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; flex-wrap: wrap; padding: 20px 0;
+}
+.flow-node {
+  text-align: center; padding: 16px 12px; min-width: 100px;
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 12px; transition: all 0.3s;
+}
+.flow-node:hover { border-color: var(--ibm-blue); transform: scale(1.05); }
+.flow-node i { font-size: 24px; margin-bottom: 8px; display: block; }
+.flow-node .flow-label { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.flow-node .flow-desc { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.flow-arrow {
+  font-size: 20px; color: var(--accent-green); padding: 0 6px;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ========== SLIDE 11: ONTOLOGY MODELING ========== */
+.model-box {
+  padding: 24px; text-align: center;
+}
+.model-box .model-icon {
+  width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.model-box h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.model-box p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.model-example {
+  margin-top: 12px; padding: 10px; border-radius: 8px;
+  background: rgba(0,0,0,0.3); font-size: 11px;
+  font-family: 'Courier New', monospace; color: var(--accent-green);
+  text-align: left;
+}
+
+/* ========== SLIDE 12: CHAT DEMO ========== */
+.chat-container {
+  display: flex; gap: 24px; height: 400px;
+}
+.chat-panel {
+  flex: 1; background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 16px; display: flex; flex-direction: column; overflow: hidden;
+}
+.chat-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--glass-border);
+  font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+}
+.chat-messages {
+  flex: 1; padding: 16px; overflow-y: auto; display: flex;
+  flex-direction: column; gap: 12px;
+}
+.chat-msg {
+  max-width: 85%; padding: 10px 14px; border-radius: 12px;
+  font-size: 13px; line-height: 1.5;
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: var(--ibm-blue); color: white;
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.bot {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.06); color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+}
+.chat-msg .msg-meta {
+  font-size: 10px; color: var(--text-muted); margin-top: 4px;
+}
+.chat-input-area {
+  padding: 12px 16px; border-top: 1px solid var(--glass-border);
+  display: flex; gap: 8px;
+}
+.chat-input-area input {
+  flex: 1; padding: 8px 14px; border-radius: 8px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);
+  color: var(--text-primary); font-size: 13px; outline: none;
+}
+.chat-input-area input:focus { border-color: var(--ibm-blue); }
+.chat-input-area button {
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--ibm-blue); color: white; border: none;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+}
+.chat-ontology-panel {
+  width: 320px; background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 16px; overflow: hidden;
+}
+.ontology-tree { padding: 16px; font-size: 12px; }
+.tree-node {
+  padding: 6px 10px; margin: 2px 0; border-radius: 6px;
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  color: var(--text-secondary); transition: all 0.2s;
+}
+.tree-node:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+.tree-node.active { background: rgba(5, 74, 218, 0.15); color: var(--ibm-blue-light); }
+.tree-node i { font-size: 10px; }
+.tree-children { padding-left: 20px; }
+
+/* ========== SLIDE 13: MULTI-AGENT ========== */
+.agent-flow {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; flex-wrap: wrap; padding: 20px 0;
+}
+.agent-node {
+  text-align: center; padding: 20px 16px; width: 140px;
+  border-radius: 16px; position: relative;
+  transition: all 0.3s;
+}
+.agent-node:hover { transform: translateY(-4px); }
+.agent-node .agent-icon {
+  width: 56px; height: 56px; border-radius: 14px; margin: 0 auto 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.agent-node .agent-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.agent-node .agent-desc { font-size: 10px; color: var(--text-muted); }
+.agent-arrow { font-size: 18px; color: var(--accent-green); }
+
+/* ========== SLIDE 14: PAIN MAPPING ========== */
+.mapping-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 12px;
+}
+.mapping-table thead th {
+  padding: 12px 16px; text-align: left;
+  background: rgba(5, 74, 218, 0.1);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 700; color: var(--text-primary);
+}
+.mapping-table thead th:first-child { border-radius: 12px 0 0 0; }
+.mapping-table thead th:last-child { border-radius: 0 12px 0 0; }
+.mapping-table tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+}
+.mapping-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+.mapping-table .pain-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 600;
+}
+
+/* ========== SLIDE 15: ROI ========== */
+.roi-card {
+  padding: 24px; text-align: center;
+}
+.roi-card .roi-number {
+  font-size: 48px; font-weight: 900; margin-bottom: 4px;
+}
+.roi-card .roi-label { font-size: 13px; color: var(--text-secondary); }
+.roi-card .roi-desc { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+.roi-bar-chart { margin-top: 20px; }
+.roi-bar-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+}
+.roi-bar-label { width: 120px; font-size: 12px; color: var(--text-secondary); text-align: right; }
+.roi-bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; }
+.roi-bar-fill {
+  height: 100%; border-radius: 6px; display: flex; align-items: center;
+  padding-left: 10px; font-size: 11px; font-weight: 700; color: white;
+  transition: width 1.5s ease;
+}
+
+/* ========== SLIDE 16: ROADMAP ========== */
+.roadmap {
+  position: relative; padding: 20px 0;
+}
+.roadmap::before {
+  content: ''; position: absolute; top: 50%; left: 40px; right: 40px;
+  height: 3px; background: linear-gradient(90deg, var(--ibm-blue), var(--accent-green), var(--accent-purple));
+  border-radius: 2px;
+}
+.roadmap-steps {
+  display: flex; justify-content: space-between; position: relative; z-index: 1;
+}
+.roadmap-step {
+  text-align: center; width: 200px;
+}
+.roadmap-step .step-dot {
+  width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; border: 3px solid;
+  background: var(--bg-primary);
+}
+.roadmap-step .step-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.roadmap-step .step-time { font-size: 11px; color: var(--accent-green); font-weight: 600; margin-bottom: 8px; }
+.roadmap-step .step-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+/* ========== SLIDE 17: Q&A ========== */
+.qa-content { text-align: center; }
+.qa-icon {
+  width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 24px;
+  background: linear-gradient(135deg, var(--ibm-blue), var(--accent-green));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px; color: white;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+.contact-cards {
+  display: flex; gap: 20px; justify-content: center; margin-top: 32px;
+}
+.contact-card {
+  padding: 20px 28px; border-radius: 12px; text-align: center;
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+}
+.contact-card i { font-size: 24px; margin-bottom: 8px; display: block; }
+.contact-card .contact-label { font-size: 11px; color: var(--text-muted); }
+.contact-card .contact-value { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .slide { padding: 20px; }
+  .cover-title { font-size: 32px; }
+  .slide-title { font-size: 28px; }
+  .water-visual { flex-direction: column; }
+  .chat-container { flex-direction: column; }
+  .chat-ontology-panel { width: 100%; }
+  .roadmap-steps { flex-direction: column; align-items: center; gap: 24px; }
+  .roadmap::before { display: none; }
+  .contact-cards { flex-direction: column; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== TOP NAVIGATION ========== -->
+<nav class="top-nav">
+  <div class="nav-title">
+    <span class="page-indicator" id="navPageNum">01</span>
+    <span id="navPageTitle">封面</span>
+  </div>
+  <div class="nav-right">
+    <a href="../index.html" class="btn-back"><i class="fas fa-arrow-left"></i> 返回平台</a>
+  </div>
+</nav>
+
+<!-- ========== SLIDES ========== -->
+<div class="slides-container">
+
+  <!-- ===== SLIDE 1: COVER ===== -->
+  <div class="slide active" data-title="封面" data-index="0">
+    <div class="cover-bg"></div>
+    <div class="cover-content">
+      <div class="cover-logo anim-up delay-1"><i class="fas fa-brain"></i></div>
+      <h1 class="cover-title anim-up delay-2">数智融合，链动未来</h1>
+      <div class="cover-divider anim-up delay-3"></div>
+      <p class="cover-subtitle anim-up delay-4">农夫山泉本体智能决策中枢</p>
+      <div class="cover-tags anim-up delay-5">
+        <span class="cover-tag"><i class="fas fa-project-diagram"></i>&nbsp; 本体论 Ontology</span>
+        <span class="cover-tag"><i class="fas fa-robot"></i>&nbsp; AI Agent</span>
+        <span class="cover-tag"><i class="fas fa-link"></i>&nbsp; 知识图谱</span>
+        <span class="cover-tag"><i class="fas fa-chart-line"></i>&nbsp; 智能决策</span>
+      </div>
+      <p style="margin-top:40px; font-size:13px; color:var(--text-muted);" class="anim-up delay-6">
+        IBM Consulting &nbsp;|&nbsp; 2025 &nbsp;|&nbsp; Richard Chen
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 2: TABLE OF CONTENTS ===== -->
+  <div class="slide" data-title="目录" data-index="1">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-list"></i> CONTENTS</div>
+      <h2 class="slide-title anim-up delay-2">演示目录</h2>
+      <p class="slide-subtitle anim-up delay-3">从理论到实践，全面展示本体智能决策中枢的核心价值</p>
+      <div class="toc-grid">
+        <div class="toc-item anim-left delay-3" onclick="goToSlide(2)"><div class="toc-num">01</div><div><div class="toc-text">本体论本质</div><div class="toc-desc">什么是本体论，为什么重要</div></div></div>
+        <div class="toc-item anim-right delay-3" onclick="goToSlide(3)"><div class="toc-num">02</div><div><div class="toc-text">业务痛点</div><div class="toc-desc">农夫山泉面临的核心挑战</div></div></div>
+        <div class="toc-item anim-left delay-4" onclick="goToSlide(4)"><div class="toc-num">03</div><div><div class="toc-text">Palantir对标</div><div class="toc-desc">行业标杆核心数据与能力</div></div></div>
+        <div class="toc-item anim-right delay-4" onclick="goToSlide(5)"><div class="toc-num">04</div><div><div class="toc-text">IBM差异化</div><div class="toc-desc">开放技术栈与本地合规优势</div></div></div>
+        <div class="toc-item anim-left delay-5" onclick="goToSlide(6)"><div class="toc-num">05</div><div><div class="toc-text">案例展示</div><div class="toc-desc">IBM/沃尔沃等成功案例</div></div></div>
+        <div class="toc-item anim-right delay-5" onclick="goToSlide(7)"><div class="toc-num">06</div><div><div class="toc-text">实体映射</div><div class="toc-desc">从一瓶水到企业大脑</div></div></div>
+        <div class="toc-item anim-left delay-6" onclick="goToSlide(8)"><div class="toc-num">07</div><div><div class="toc-text">一瓶水的拆解</div><div class="toc-desc">550ml天然水成本结构</div></div></div>
+        <div class="toc-item anim-right delay-6" onclick="goToSlide(9)"><div class="toc-num">08</div><div><div class="toc-text">供应链流程</div><div class="toc-desc">从水源到零售的完整流程</div></div></div>
+        <div class="toc-item anim-left delay-7" onclick="goToSlide(10)"><div class="toc-num">09</div><div><div class="toc-text">本体建模</div><div class="toc-desc">四要素框架</div></div></div>
+        <div class="toc-item anim-right delay-7" onclick="goToSlide(11)"><div class="toc-num">10</div><div><div class="toc-text">智能问数</div><div class="toc-desc">本体驱动的智能问答</div></div></div>
+        <div class="toc-item anim-left delay-8" onclick="goToSlide(12)"><div class="toc-num">11</div><div><div class="toc-text">多Agent协作</div><div class="toc-desc">感知-推理-质检-执行</div></div></div>
+        <div class="toc-item anim-right delay-8" onclick="goToSlide(13)"><div class="toc-num">12</div><div><div class="toc-text">九大痛点映射</div><div class="toc-desc">痛点与本体方案对照</div></div></div>
+        <div class="toc-item anim-left delay-8" onclick="goToSlide(14)"><div class="toc-num">13</div><div><div class="toc-text">ROI量化</div><div class="toc-desc">效率提升数据展示</div></div></div>
+        <div class="toc-item anim-right delay-8" onclick="goToSlide(15)"><div class="toc-num">14</div><div><div class="toc-text">实施路线图</div><div class="toc-desc">诊断-设计-MVP-扩展</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 3: ONTOLOGY ESSENCE ===== -->
+  <div class="slide" data-title="本体论本质" data-index="2">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-lightbulb"></i> FUNDAMENTAL</div>
+      <h2 class="slide-title anim-up delay-2">什么是本体论？</h2>
+      <div class="quote-box anim-up delay-3">
+        "本体论是对共享概念模型的明确的形式化规范说明 —— 它定义了领域内实体、属性及其关系的统一语义框架。"<br>
+        <span style="font-size:12px; color:var(--text-muted);">—— Tom Gruber, 1993</span>
+      </div>
+      <div class="grid-4" style="margin-bottom:24px;">
+        <div class="card pillar-card anim-up delay-3">
+          <div class="icon-box icon-blue"><i class="fas fa-cubes"></i></div>
+          <h4>统一语义</h4>
+          <p>消除部门间的"语言壁垒"，让销售、生产、物流用同一套概念体系对话</p>
+        </div>
+        <div class="card pillar-card anim-up delay-4">
+          <div class="icon-box icon-green"><i class="fas fa-project-diagram"></i></div>
+          <h4>关系网络</h4>
+          <p>将孤立的业务数据编织成一张可推理、可追溯的知识网络</p>
+        </div>
+        <div class="card pillar-card anim-up delay-5">
+          <div class="icon-box icon-purple"><i class="fas fa-brain"></i></div>
+          <h4>智能推理</h4>
+          <p>基于规则和AI推理引擎，从已有知识推导出隐藏的业务洞察</p>
+        </div>
+        <div class="card pillar-card anim-up delay-6">
+          <div class="icon-box icon-orange"><i class="fas fa-cogs"></i></div>
+          <h4>动态演进</h4>
+          <p>本体模型随业务增长持续扩展，支持新实体、新关系的无缝接入</p>
+        </div>
+      </div>
+      <div class="card anim-up delay-7" style="padding:20px 28px;">
+        <p style="font-size:14px; color:var(--text-secondary); line-height:1.8;">
+          <i class="fas fa-info-circle" style="color:var(--ibm-blue-light); margin-right:8px;"></i>
+          <strong style="color:var(--text-primary);">为什么对农夫山泉重要？</strong>
+          农夫山泉拥有 <strong style="color:var(--accent-green);">12大水源地</strong>、<strong style="color:var(--accent-green);">200+SKU</strong>、<strong style="color:var(--accent-green);">300万+零售终端</strong>，每天产生海量跨域数据。没有统一的本体层，这些数据只是"信息孤岛"。本体论是连接数据与智能的 <strong style="color:var(--accent-green);">"企业大脑"</strong>。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 4: PAIN POINTS ===== -->
+  <div class="slide" data-title="业务痛点" data-index="3">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-exclamation-triangle"></i> CHALLENGES</div>
+      <h2 class="slide-title anim-up delay-2">农夫山泉面临的核心挑战</h2>
+      <p class="slide-subtitle anim-up delay-3">快速扩张中的数据孤岛、决策延迟与效率瓶颈</p>
+      <div class="grid-3">
+        <div class="card pain-card anim-up delay-3">
+          <h4><i class="fas fa-chart-bar" style="color:var(--accent-red);"></i> 销售预测脱节</h4>
+          <p>各区销售数据格式不统一，预测模型无法跨区域复用，导致库存积压或断货</p>
+          <div class="pain-metric"><i class="fas fa-arrow-down"></i> 预测准确率仅 62%，行业标杆 >85%</div>
+        </div>
+        <div class="card pain-card anim-up delay-4">
+          <h4><i class="fas fa-search" style="color:var(--accent-red);"></i> 质量追溯困难</h4>
+          <p>从水源到瓶身的全链路质量数据分散在7个系统中，问题定位平均需要48小时</p>
+          <div class="pain-metric"><i class="fas fa-clock"></i> 质量追溯平均耗时 48小时</div>
+        </div>
+        <div class="card pain-card anim-up delay-5">
+          <h4><i class="fas fa-truck" style="color:var(--accent-red);"></i> 供应链响应慢</h4>
+          <p>供应商、工厂、仓库、终端之间缺乏实时联动，异常事件响应延迟超过24小时</p>
+          <div class="pain-metric"><i class="fas fa-hourglass-half"></i> 异常响应延迟 >24小时</div>
+        </div>
+        <div class="card pain-card anim-up delay-5">
+          <h4><i class="fas fa-database" style="color:var(--accent-orange);"></i> 数据孤岛严重</h4>
+          <p>ERP、CRM、MES、WMS等系统各自为政，跨系统数据查询需要IT部门手动导出</p>
+          <div class="pain-metric"><i class="fas fa-server"></i> 核心系统 >15套，数据打通率 <30%</div>
+        </div>
+        <div class="card pain-card anim-up delay-6">
+          <h4><i class="fas fa-users" style="color:var(--accent-orange);"></i> 经验依赖严重</h4>
+          <p>关键业务决策高度依赖资深员工经验，新人培养周期长达6-12个月</p>
+          <div class="pain-metric"><i class="fas fa-user-graduate"></i> 新人培养周期 6-12个月</div>
+        </div>
+        <div class="card pain-card anim-up delay-7">
+          <h4><i class="fas fa-shield-alt" style="color:var(--accent-orange);"></i> 合规与安全</h4>
+          <p>食品安全法规日益严格，现有系统难以满足全链路合规审计要求</p>
+          <div class="pain-metric"><i class="fas fa-file-alt"></i> 年度合规审计准备 >2周</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 5: PALANTIR BENCHMARK ===== -->
+  <div class="slide" data-title="Palantir对标" data-index="4">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-balance-scale"></i> BENCHMARK</div>
+      <h2 class="slide-title anim-up delay-2">Palantir Ontology 行业标杆</h2>
+      <p class="slide-subtitle anim-up delay-3">了解竞品核心能力，明确IBM差异化优势</p>
+      <div class="compare-header anim-up delay-3">
+        <div class="compare-logo" style="background:rgba(5,74,218,0.15); color:var(--ibm-blue-light);">P</div>
+        <div>
+          <div style="font-size:18px; font-weight:700;">Palantir Foundry + Ontology</div>
+          <div style="font-size:12px; color:var(--text-muted);">企业级本体平台 · 2003年成立 · 纽约上市</div>
+        </div>
+      </div>
+      <div class="stat-row anim-up delay-4">
+        <div class="stat-box">
+          <div class="stat-number" style="color:var(--ibm-blue-light);">$2.2B</div>
+          <div class="stat-label">2024年度营收</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" style="color:var(--accent-green);">300+</div>
+          <div class="stat-label">企业客户</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" style="color:var(--accent-purple);">40%</div>
+          <div class="stat-label">年增长率</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" style="color:var(--accent-orange);">$120K</div>
+          <div class="stat-label">平均客单价/月</div>
+        </div>
+      </div>
+      <div class="grid-3 anim-up delay-5">
+        <div class="card" style="padding:20px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:8px;"><i class="fas fa-check-circle" style="color:var(--accent-green); margin-right:6px;"></i>核心优势</h4>
+          <ul style="list-style:none; font-size:12px; color:var(--text-secondary); line-height:2;">
+            <li><i class="fas fa-caret-right" style="color:var(--accent-green); margin-right:6px;"></i>Ontology对象模型统一数据语义</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-green); margin-right:6px;"></i>AIP平台快速构建AI应用</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-green); margin-right:6px;"></i>强大的数据管道和ETL能力</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-green); margin-right:6px;"></i>军事/政府级安全标准</li>
+          </ul>
+        </div>
+        <div class="card" style="padding:20px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:8px;"><i class="fas fa-times-circle" style="color:var(--accent-red); margin-right:6px;"></i>已知局限</h4>
+          <ul style="list-style:none; font-size:12px; color:var(--text-secondary); line-height:2;">
+            <li><i class="fas fa-caret-right" style="color:var(--accent-red); margin-right:6px;"></i>封闭平台，供应商锁定风险高</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-red); margin-right:6px;"></i>部署周期长（6-18个月）</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-red); margin-right:6px;"></i>成本高昂，中小项目ROI难保证</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-red); margin-right:6px;"></i>中国本地化支持有限</li>
+          </ul>
+        </div>
+        <div class="card" style="padding:20px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:8px;"><i class="fas fa-industry" style="color:var(--accent-orange); margin-right:6px;"></i>典型客户</h4>
+          <ul style="list-style:none; font-size:12px; color:var(--text-secondary); line-height:2;">
+            <li><i class="fas fa-caret-right" style="color:var(--accent-orange); margin-right:6px;"></i>BP - 能源供应链优化</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-orange); margin-right:6px;"></i>Airbus - 航空制造数据集成</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-orange); margin-right:6px;"></i>US Army - 军事决策支持</li>
+            <li><i class="fas fa-caret-right" style="color:var(--accent-orange); margin-right:6px;"></i>CIA - 情报分析平台</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 6: IBM DIFFERENTIATION ===== -->
+  <div class="slide" data-title="IBM差异化优势" data-index="5">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-gem"></i> IBM ADVANTAGE</div>
+      <h2 class="slide-title anim-up delay-2">IBM方案的差异化优势</h2>
+      <p class="slide-subtitle anim-up delay-3">开放 · 合规 · 灵活 · 高性价比</p>
+      <div class="grid-2">
+        <div class="card diff-card anim-left delay-3" style="border-left:3px solid var(--ibm-blue);">
+          <div class="diff-icon tag-blue">核心优势</div>
+          <div class="icon-box icon-blue"><i class="fas fa-lock-open"></i></div>
+          <h4>开放技术栈</h4>
+          <p>基于Apache Jena、RDF/OWL国际标准，无供应商锁定</p>
+          <ul class="diff-list">
+            <li><i class="fas fa-check"></i> 支持W3C标准本体语言（RDFS, OWL, SKOS）</li>
+            <li><i class="fas fa-check"></i> 可与现有IT架构无缝集成</li>
+            <li><i class="fas fa-check"></i> 支持混合云/私有化部署</li>
+            <li><i class="fas fa-check"></i> 开源生态丰富，社区活跃</li>
+          </ul>
+        </div>
+        <div class="card diff-card anim-right delay-4" style="border-left:3px solid var(--accent-green);">
+          <div class="diff-icon tag-green">关键差异</div>
+          <div class="icon-box icon-green"><i class="fas fa-shield-alt"></i></div>
+          <h4>本地合规</h4>
+          <p>完全满足中国数据安全法、个人信息保护法要求</p>
+          <ul class="diff-list">
+            <li><i class="fas fa-check"></i> 数据不出境，完全本地化部署</li>
+            <li><i class="fas fa-check"></i> 通过等保三级认证</li>
+            <li><i class="fas fa-check"></i> 支持国产化适配（信创）</li>
+            <li><i class="fas fa-check"></i> IBM中国团队全程支持</li>
+          </ul>
+        </div>
+        <div class="card diff-card anim-left delay-5" style="border-left:3px solid var(--accent-purple);">
+          <div class="diff-icon tag-purple">灵活选择</div>
+          <div class="icon-box icon-purple"><i class="fas fa-robot"></i></div>
+          <h4>灵活LLM选择</h4>
+          <p>不绑定特定大模型，支持国产LLM和开源模型</p>
+          <ul class="diff-list">
+            <li><i class="fas fa-check"></i> 支持通义千问、文心一言、ChatGLM</li>
+            <li><i class="fas fa-check"></i> 支持IBM watsonx.ai企业级AI</li>
+            <li><i class="fas fa-check"></i> 支持Llama、Mistral等开源模型</li>
+            <li><i class="fas fa-check"></i> 模型可按场景灵活切换</li>
+          </ul>
+        </div>
+        <div class="card diff-card anim-right delay-6" style="border-left:3px solid var(--accent-orange);">
+          <div class="diff-icon tag-orange">经济高效</div>
+          <div class="icon-box icon-orange"><i class="fas fa-coins"></i></div>
+          <h4>成本优势</h4>
+          <p>总体拥有成本比Palantir低40-60%</p>
+          <ul class="diff-list">
+            <li><i class="fas fa-check"></i> 无高额平台授权费</li>
+            <li><i class="fas fa-check"></i> 按需扩展，弹性计费</li>
+            <li><i class="fas fa-check"></i> MVP阶段投入可控制在50万以内</li>
+            <li><i class="fas fa-check"></i> 12个月内实现正向ROI</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 7: CASE STUDIES ===== -->
+  <div class="slide" data-title="案例展示" data-index="6">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-trophy"></i> CASE STUDIES</div>
+      <h2 class="slide-title anim-up delay-2">成功案例</h2>
+      <p class="slide-subtitle anim-up delay-3">IBM本体方案在全球领先企业中的实践成果</p>
+      <div class="grid-3">
+        <div class="card case-card anim-up delay-3">
+          <div class="case-logo" style="background:rgba(5,74,218,0.15); color:var(--ibm-blue-light);">V</div>
+          <h4>沃尔沃汽车</h4>
+          <div class="case-role">全球制造 · 供应链优化</div>
+          <p>IBM帮助沃尔沃构建制造本体，打通全球30+工厂的供应链数据，实现零部件全生命周期追溯。</p>
+          <div>
+            <span class="case-metric"><i class="fas fa-arrow-up"></i> 生产效率 +25%</span>
+            <span class="case-metric"><i class="fas fa-arrow-down"></i> 缺陷率 -40%</span>
+            <span class="case-metric"><i class="fas fa-clock"></i> 追溯时间 -80%</span>
+          </div>
+        </div>
+        <div class="card case-card anim-up delay-4">
+          <div class="case-logo" style="background:rgba(0,212,170,0.15); color:var(--accent-green);">B</div>
+          <h4>巴西国家石油</h4>
+          <div class="case-role">能源 · 知识管理</div>
+          <p>IBM构建石油领域本体知识图谱，整合地质、钻井、生产等跨域数据，支撑智能决策。</p>
+          <div>
+            <span class="case-metric"><i class="fas fa-search"></i> 数据检索 +300%</span>
+            <span class="case-metric"><i class="fas fa-brain"></i> 决策质量 +35%</span>
+            <span class="case-metric"><i class="fas fa-dollar-sign"></i> 成本节约 $50M</span>
+          </div>
+        </div>
+        <div class="card case-card anim-up delay-5">
+          <div class="case-logo" style="background:rgba(124,58,237,0.15); color:var(--accent-purple);">M</div>
+          <h4>梅奥诊所</h4>
+          <div class="case-role">医疗 · 临床决策支持</div>
+          <p>IBM Watson Health构建医学本体，整合电子病历、临床指南和医学文献，辅助医生精准诊疗。</p>
+          <div>
+            <span class="case-metric"><i class="fas fa-heartbeat"></i> 诊断准确率 +20%</span>
+            <span class="case-metric"><i class="fas fa-user-md"></i> 医生效率 +30%</span>
+            <span class="case-metric"><i class="fas fa-procedures"></i> 误诊率 -15%</span>
+          </div>
+        </div>
+      </div>
+      <div class="card anim-up delay-6" style="margin-top:20px; padding:16px 24px; border-left:3px solid var(--accent-green);">
+        <p style="font-size:13px; color:var(--text-secondary); line-height:1.7;">
+          <i class="fas fa-quote-left" style="color:var(--accent-green); margin-right:8px;"></i>
+          <strong style="color:var(--text-primary);">农夫山泉类比：</strong>
+          农夫山泉的业务复杂度（多水源、多SKU、全渠道）与沃尔沃的多工厂制造高度相似。IBM在制造业的成熟方案可直接适配到饮料行业的供应链场景。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 8: ENTITY MAPPING (KNOWLEDGE GRAPH) ===== -->
+  <div class="slide" data-title="实体映射" data-index="7">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-project-diagram"></i> KNOWLEDGE GRAPH</div>
+      <h2 class="slide-title anim-up delay-2">从一瓶水到企业大脑</h2>
+      <p class="slide-subtitle anim-up delay-3">交互式知识图谱 — 点击节点查看实体详情，拖拽探索关系网络</p>
+      <div id="knowledgeGraph" class="anim-up delay-4"></div>
+      <div class="grid-4 anim-up delay-5" style="margin-top:16px;">
+        <div style="text-align:center; padding:8px;">
+          <div style="font-size:24px; font-weight:900; color:var(--ibm-blue-light);">6</div>
+          <div style="font-size:11px; color:var(--text-muted);">核心实体类</div>
+        </div>
+        <div style="text-align:center; padding:8px;">
+          <div style="font-size:24px; font-weight:900; color:var(--accent-green);">18</div>
+          <div style="font-size:11px; color:var(--text-muted);">关系连接</div>
+        </div>
+        <div style="text-align:center; padding:8px;">
+          <div style="font-size:24px; font-weight:900; color:var(--accent-purple);">42</div>
+          <div style="font-size:11px; color:var(--text-muted);">属性维度</div>
+        </div>
+        <div style="text-align:center; padding:8px;">
+          <div style="font-size:24px; font-weight:900; color:var(--accent-orange);">100%</div>
+          <div style="font-size:11px; color:var(--text-muted);">全链路覆盖</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 9: WATER COST BREAKDOWN ===== -->
+  <div class="slide" data-title="一瓶水的拆解" data-index="8">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-tint"></i> COST ANALYSIS</div>
+      <h2 class="slide-title anim-up delay-2">550ml天然水成本结构</h2>
+      <p class="slide-subtitle anim-up delay-3">每一瓶农夫山泉背后的精细成本拆解</p>
+      <div class="water-visual">
+        <div class="water-bottle anim-left delay-4">
+          <div class="water-bottle-shape">
+            <div class="water-fill" id="waterFill" style="height:0%;"></div>
+          </div>
+          <div style="text-align:center; margin-top:12px;">
+            <div style="font-size:20px; font-weight:900; color:var(--accent-green);">550ml</div>
+            <div style="font-size:12px; color:var(--text-muted);">天然饮用水</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:4px;">零售价 ¥2.0</div>
+          </div>
+        </div>
+        <div class="cost-bars anim-right delay-5">
+          <div class="cost-bar-item">
+            <div class="cost-bar-label">水源/水处理</div>
+            <div class="cost-bar-track">
+              <div class="cost-bar-fill" data-width="1" style="width:0%; background:linear-gradient(90deg, #054ADA, #3B82F6);">
+                ¥0.01 (1%)
+              </div>
+            </div>
+          </div>
+          <div class="cost-bar-item">
+            <div class="cost-bar-label">PET瓶身</div>
+            <div class="cost-bar-track">
+              <div class="cost-bar-fill" data-width="30" style="width:0%; background:linear-gradient(90deg, #00D4AA, #34D399);">
+                ¥0.30 (30%)
+              </div>
+            </div>
+          </div>
+          <div class="cost-bar-item">
+            <div class="cost-bar-label">瓶盖/标签</div>
+            <div class="cost-bar-track">
+              <div class="cost-bar-fill" data-width="15" style="width:0%; background:linear-gradient(90deg, #7C3AED, #A78BFA);">
+                ¥0.15 (15%)
+              </div>
+            </div>
+          </div>
+          <div class="cost-bar-item">
+            <div class="cost-bar-label">印刷/包装</div>
+            <div class="cost-bar-track">
+              <div class="cost-bar-fill" data-width="10" style="width:0%; background:linear-gradient(90deg, #F59E0B, #FBBF24);">
+                ¥0.10 (10%)
+              </div>
+            </div>
+          </div>
+          <div class="cost-bar-item">
+            <div class="cost-bar-label">人工/制造</div>
+            <div class="cost-bar-track">
+              <div class="cost-bar-fill" data-width="14" style="width:0%; background:linear-gradient(90deg, #EF4444, #F87171);">
+                ¥0.14 (14%)
+              </div>
+            </div>
+          </div>
+          <div class="cost-bar-item">
+            <div class="cost-bar-label">物流/仓储</div>
+            <div class="cost-bar-track">
+              <div class="cost-bar-fill" data-width="20" style="width:0%; background:linear-gradient(90deg, #06B6D4, #22D3EE);">
+                ¥0.20 (20%)
+              </div>
+            </div>
+          </div>
+          <div class="cost-bar-item">
+            <div class="cost-bar-label">营销/渠道</div>
+            <div class="cost-bar-track">
+              <div class="cost-bar-fill" data-width="10" style="width:0%; background:linear-gradient(90deg, #EC4899, #F472B6);">
+                ¥0.10 (10%)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card anim-up delay-7" style="margin-top:20px; padding:14px 24px;">
+        <p style="font-size:13px; color:var(--text-secondary);">
+          <i class="fas fa-lightbulb" style="color:var(--accent-orange); margin-right:8px;"></i>
+          <strong style="color:var(--text-primary);">本体洞察：</strong>
+          通过本体映射，我们可以将每个成本要素关联到具体的供应商、工厂、物流节点，实现成本异常的实时预警和根因分析。例如：当PET瓶身成本上涨5%时，本体可自动追溯到原材料供应商的报价变动。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 10: SUPPLY CHAIN ===== -->
+  <div class="slide" data-title="供应链流程" data-index="9">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-link"></i> SUPPLY CHAIN</div>
+      <h2 class="slide-title anim-up delay-2">从水源到零售的完整流程</h2>
+      <p class="slide-subtitle anim-up delay-3">本体驱动的全链路可视化与智能协同</p>
+      <div class="flow-container anim-up delay-4">
+        <div class="flow-node" style="border-color:rgba(5,74,218,0.4);">
+          <i class="fas fa-mountain" style="color:var(--ibm-blue-light);"></i>
+          <div class="flow-label">水源地</div>
+          <div class="flow-desc">12大天然水源</div>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-node" style="border-color:rgba(0,212,170,0.4);">
+          <i class="fas fa-flask" style="color:var(--accent-green);"></i>
+          <div class="flow-label">水质检测</div>
+          <div class="flow-desc">100+项指标</div>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-node" style="border-color:rgba(124,58,237,0.4);">
+          <i class="fas fa-industry" style="color:var(--accent-purple);"></i>
+          <div class="flow-label">生产灌装</div>
+          <div class="flow-desc">36条产线</div>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-node" style="border-color:rgba(245,158,11,0.4);">
+          <i class="fas fa-box" style="color:var(--accent-orange);"></i>
+          <div class="flow-label">包装仓储</div>
+          <div class="flow-desc">8大区域仓</div>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-node" style="border-color:rgba(239,68,68,0.4);">
+          <i class="fas fa-truck" style="color:var(--accent-red);"></i>
+          <div class="flow-label">物流配送</div>
+          <div class="flow-desc">200+城市</div>
+        </div>
+        <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="flow-node" style="border-color:rgba(6,182,212,0.4);">
+          <i class="fas fa-store" style="color:#06B6D4;"></i>
+          <div class="flow-label">零售终端</div>
+          <div class="flow-desc">300万+网点</div>
+        </div>
+      </div>
+      <div class="grid-3 anim-up delay-5" style="margin-top:24px;">
+        <div class="card" style="padding:18px;">
+          <h4 style="font-size:13px; font-weight:700; margin-bottom:8px;"><i class="fas fa-eye" style="color:var(--ibm-blue-light); margin-right:6px;"></i>全链路可视化</h4>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.6;">本体将6个环节的实体和关系统一建模，实现从水源到消费者的端到端可视化追踪。</p>
+        </div>
+        <div class="card" style="padding:18px;">
+          <h4 style="font-size:13px; font-weight:700; margin-bottom:8px;"><i class="fas fa-bell" style="color:var(--accent-green); margin-right:6px;"></i>异常实时预警</h4>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.6;">当任意节点出现异常（如水质波动、设备故障），本体推理引擎自动触发上下游联动预警。</p>
+        </div>
+        <div class="card" style="padding:18px;">
+          <h4 style="font-size:13px; font-weight:700; margin-bottom:8px;"><i class="fas fa-sync" style="color:var(--accent-purple); margin-right:6px;"></i>动态路径优化</h4>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.6;">基于实时供需数据，本体驱动的智能调度系统动态优化物流路径，降低配送成本。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 11: ONTOLOGY MODELING ===== -->
+  <div class="slide" data-title="本体建模" data-index="10">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-cubes"></i> MODELING</div>
+      <h2 class="slide-title anim-up delay-2">本体建模四要素框架</h2>
+      <p class="slide-subtitle anim-up delay-3">类、属性、关系、约束 —— 构建企业知识体系的基石</p>
+      <div class="grid-4">
+        <div class="card model-box anim-up delay-3">
+          <div class="model-icon icon-blue"><i class="fas fa-cube"></i></div>
+          <h4>类 (Class)</h4>
+          <p>定义领域中的核心概念实体</p>
+          <div class="model-example">
+            <div style="color:var(--text-muted);">/* 农夫山泉核心类 */</div>
+            :Product  (产品)<br>
+            :Factory  (工厂)<br>
+            :Supplier (供应商)<br>
+            :Warehouse (仓库)<br>
+            :Retailer (零售商)<br>
+            :WaterSource (水源)
+          </div>
+        </div>
+        <div class="card model-box anim-up delay-4">
+          <div class="model-icon icon-green"><i class="fas fa-tag"></i></div>
+          <h4>属性 (Property)</h4>
+          <p>描述实体的特征和数据</p>
+          <div class="model-example">
+            <div style="color:var(--text-muted);">/* 产品属性 */</div>
+            :name "550ml天然水"<br>
+            :sku "NFS-550-001"<br>
+            :cost 1.00<br>
+            :price 2.00<br>
+            :productionDate<br>
+            :shelfLife 24个月
+          </div>
+        </div>
+        <div class="card model-box anim-up delay-5">
+          <div class="model-icon icon-purple"><i class="fas fa-link"></i></div>
+          <h4>关系 (Relation)</h4>
+          <p>定义实体间的语义关联</p>
+          <div class="model-example">
+            <div style="color:var(--text-muted);">/* 核心关系 */</div>
+            :producedAt -> :Factory<br>
+            :sourcedFrom -> :WaterSource<br>
+            :suppliedBy -> :Supplier<br>
+            :storedIn -> :Warehouse<br>
+            :soldAt -> :Retailer
+          </div>
+        </div>
+        <div class="card model-box anim-up delay-6">
+          <div class="model-icon icon-orange"><i class="fas fa-shield-alt"></i></div>
+          <h4>约束 (Constraint)</h4>
+          <p>保证数据质量和一致性</p>
+          <div class="model-example">
+            <div style="color:var(--text-muted);">/* 业务规则 */</div>
+            cost < price<br>
+            shelfLife > 12个月<br>
+            水源->工厂 距离<500km<br>
+            每批必关联质检报告<br>
+            供应商必须有资质认证
+          </div>
+        </div>
+      </div>
+      <div class="card anim-up delay-7" style="margin-top:20px; padding:16px 24px; text-align:center;">
+        <p style="font-size:14px; color:var(--text-secondary);">
+          <i class="fas fa-rocket" style="color:var(--accent-green); margin-right:8px;"></i>
+          四要素协同工作，形成 <strong style="color:var(--text-primary);">"定义-描述-连接-治理"</strong> 的完整闭环，确保企业知识体系既丰富又可靠。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 12: INTELLIGENT Q&A ===== -->
+  <div class="slide" data-title="智能问数" data-index="11">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-comments"></i> AI ASSISTANT</div>
+      <h2 class="slide-title anim-up delay-2">本体驱动的智能问答</h2>
+      <p class="slide-subtitle anim-up delay-3">自然语言查询企业知识图谱，秒级获得精准答案</p>
+      <div class="chat-container anim-up delay-4">
+        <div class="chat-panel">
+          <div class="chat-header"><i class="fas fa-robot" style="color:var(--accent-green);"></i> 本体智能助手</div>
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg bot">
+              <div>您好！我是农夫山泉本体智能助手。您可以问我任何关于产品、供应链、销售的问题。</div>
+              <div class="msg-meta">系统 · 刚刚</div>
+            </div>
+            <div class="chat-msg user">
+              <div>千岛湖水源的550ml天然水，这个月的华东区销量是多少？</div>
+              <div class="msg-meta">用户 · 14:32</div>
+            </div>
+            <div class="chat-msg bot">
+              <div>
+                <strong>查询结果：</strong><br>
+                产品：550ml天然水（SKU: NFS-550-001）<br>
+                水源：千岛湖（水源ID: QDH-001）<br>
+                区域：华东区<br>
+                本月销量：<strong style="color:var(--accent-green);">1,285万瓶</strong>（同比 +8.3%）<br>
+                库存：华东仓剩余 320万瓶<br>
+                预计断货日期：6月18日（建议补货）
+              </div>
+              <div class="msg-meta">本体助手 · 14:32 · 查询耗时 0.8s</div>
+            </div>
+            <div class="chat-msg user">
+              <div>这个产品的PET瓶供应商是谁？最近有没有质量异常？</div>
+              <div class="msg-meta">用户 · 14:33</div>
+            </div>
+            <div class="chat-msg bot">
+              <div>
+                <strong>供应商信息：</strong><br>
+                供应商：浙江华宝新材料（ID: SUP-0128）<br>
+                合作年限：6年 | 评级：<span style="color:var(--accent-green);">A+</span><br><br>
+                <strong>质量监控：</strong><br>
+                近30天检测批次：<strong>48批</strong> | 合格率：<strong style="color:var(--accent-green);">99.8%</strong><br>
+                最近异常：无<br>
+                上次异常：2025年1月（瓶壁厚度偏差，已整改完成）
+              </div>
+              <div class="msg-meta">本体助手 · 14:33 · 关联查询 3个本体节点</div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" placeholder="输入您的问题..." id="chatInput">
+            <button onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i> 发送</button>
+          </div>
+        </div>
+        <div class="chat-ontology-panel">
+          <div class="chat-header"><i class="fas fa-sitemap" style="color:var(--ibm-blue-light);"></i> 本体结构</div>
+          <div class="ontology-tree">
+            <div class="tree-node active"><i class="fas fa-folder-open"></i> 农夫山泉本体</div>
+            <div class="tree-children">
+              <div class="tree-node"><i class="fas fa-tint"></i> 水源 (WaterSource)</div>
+              <div class="tree-children">
+                <div class="tree-node" style="padding-left:28px;"><i class="fas fa-circle" style="font-size:6px;"></i> 千岛湖</div>
+                <div class="tree-node" style="padding-left:28px;"><i class="fas fa-circle" style="font-size:6px;"></i> 丹江口</div>
+                <div class="tree-node" style="padding-left:28px;"><i class="fas fa-circle" style="font-size:6px;"></i> 长白山</div>
+              </div>
+              <div class="tree-node"><i class="fas fa-box"></i> 产品 (Product)</div>
+              <div class="tree-children">
+                <div class="tree-node" style="padding-left:28px;"><i class="fas fa-circle" style="font-size:6px;"></i> 天然水系列</div>
+                <div class="tree-node" style="padding-left:28px;"><i class="fas fa-circle" style="font-size:6px;"></i> 茶饮料系列</div>
+                <div class="tree-node" style="padding-left:28px;"><i class="fas fa-circle" style="font-size:6px;"></i> 果汁系列</div>
+              </div>
+              <div class="tree-node"><i class="fas fa-industry"></i> 工厂 (Factory)</div>
+              <div class="tree-node"><i class="fas fa-truck"></i> 供应商 (Supplier)</div>
+              <div class="tree-node"><i class="fas fa-warehouse"></i> 仓库 (Warehouse)</div>
+              <div class="tree-node"><i class="fas fa-store"></i> 零售终端 (Retailer)</div>
+              <div class="tree-node"><i class="fas fa-vial"></i> 质检 (QualityCheck)</div>
+              <div class="tree-node"><i class="fas fa-chart-line"></i> 销售订单 (SalesOrder)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 13: MULTI-AGENT ===== -->
+  <div class="slide" data-title="多Agent协作" data-index="12">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-robot"></i> MULTI-AGENT</div>
+      <h2 class="slide-title anim-up delay-2">多Agent智能协作流程</h2>
+      <p class="slide-subtitle anim-up delay-3">感知 → 推理 → 质检 → 执行，全自动化闭环</p>
+      <div class="agent-flow anim-up delay-4">
+        <div class="agent-node card" style="border-color:rgba(5,74,218,0.4);">
+          <div class="agent-icon icon-blue"><i class="fas fa-eye"></i></div>
+          <div class="agent-name">感知Agent</div>
+          <div class="agent-desc">数据采集与监控</div>
+        </div>
+        <div class="agent-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="agent-node card" style="border-color:rgba(0,212,170,0.4);">
+          <div class="agent-icon icon-green"><i class="fas fa-brain"></i></div>
+          <div class="agent-name">推理Agent</div>
+          <div class="agent-desc">本体推理与分析</div>
+        </div>
+        <div class="agent-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="agent-node card" style="border-color:rgba(124,58,237,0.4);">
+          <div class="agent-icon icon-purple"><i class="fas fa-clipboard-check"></i></div>
+          <div class="agent-name">质检Agent</div>
+          <div class="agent-desc">规则校验与审计</div>
+        </div>
+        <div class="agent-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="agent-node card" style="border-color:rgba(245,158,11,0.4);">
+          <div class="agent-icon icon-orange"><i class="fas fa-cogs"></i></div>
+          <div class="agent-name">执行Agent</div>
+          <div class="agent-desc">自动执行与反馈</div>
+        </div>
+      </div>
+      <div class="grid-2 anim-up delay-5" style="margin-top:24px;">
+        <div class="card" style="padding:20px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="fas fa-play-circle" style="color:var(--accent-green); margin-right:6px;"></i>运行示例：库存异常自动处理</h4>
+          <div style="font-size:12px; color:var(--text-secondary); line-height:2;">
+            <div><span class="tag tag-blue">Step 1</span> 感知Agent检测到华东仓550ml天然水库存低于安全线</div>
+            <div><span class="tag tag-green">Step 2</span> 推理Agent查询本体，关联千岛湖工厂产能和物流排期</div>
+            <div><span class="tag tag-purple">Step 3</span> 质检Agent验证补货方案符合业务规则（成本、时效约束）</div>
+            <div><span class="tag tag-orange">Step 4</span> 执行Agent自动生成补货工单并通知相关部门</div>
+          </div>
+        </div>
+        <div class="card" style="padding:20px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;"><i class="fas fa-chart-pie" style="color:var(--ibm-blue-light); margin-right:6px;"></i>Agent能力矩阵</h4>
+          <div style="font-size:12px; line-height:2.2;">
+            <div style="display:flex; justify-content:space-between; padding:0 8px;">
+              <span style="color:var(--text-secondary);">感知Agent</span>
+              <span style="color:var(--ibm-blue-light); font-weight:700;">IoT + ERP + CRM 数据接入</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:0 8px;">
+              <span style="color:var(--text-secondary);">推理Agent</span>
+              <span style="color:var(--accent-green); font-weight:700;">SPARQL + LLM 混合推理</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:0 8px;">
+              <span style="color:var(--text-secondary);">质检Agent</span>
+              <span style="color:var(--accent-purple); font-weight:700;">SHACL规则引擎</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:0 8px;">
+              <span style="color:var(--text-secondary);">执行Agent</span>
+              <span style="color:var(--accent-orange); font-weight:700;">API + RPA 自动化</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 14: PAIN MAPPING ===== -->
+  <div class="slide" data-title="九大痛点映射" data-index="13">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-map"></i> PAIN MAPPING</div>
+      <h2 class="slide-title anim-up delay-2">九大痛点与本体解决方案</h2>
+      <p class="slide-subtitle anim-up delay-3">精准映射每一个业务痛点到本体能力</p>
+      <div class="card anim-up delay-4" style="padding:0; overflow:hidden;">
+        <table class="mapping-table">
+          <thead>
+            <tr>
+              <th style="width:5%;">#</th>
+              <th style="width:18%;">业务痛点</th>
+              <th style="width:10%;">影响</th>
+              <th style="width:32%;">本体解决方案</th>
+              <th style="width:20%;">关键能力</th>
+              <th style="width:15%;">预期效果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:700; color:var(--accent-red);">1</td>
+              <td>销售预测脱节</td>
+              <td><span class="pain-tag" style="background:rgba(239,68,68,0.15); color:var(--accent-red);">高</span></td>
+              <td>统一销售本体，关联天气、节假日、促销等外部因素</td>
+              <td>多源数据融合推理</td>
+              <td style="color:var(--accent-green); font-weight:600;">准确率 62% → 88%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--accent-red);">2</td>
+              <td>质量追溯困难</td>
+              <td><span class="pain-tag" style="background:rgba(239,68,68,0.15); color:var(--accent-red);">高</span></td>
+              <td>全链路实体关联，一批次一码全程可追溯</td>
+              <td>知识图谱遍历</td>
+              <td style="color:var(--accent-green); font-weight:600;">48h → 5min</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--accent-orange);">3</td>
+              <td>供应链响应慢</td>
+              <td><span class="pain-tag" style="background:rgba(245,158,11,0.15); color:var(--accent-orange);">中</span></td>
+              <td>实时本体状态同步，异常事件自动传播预警</td>
+              <td>事件驱动推理</td>
+              <td style="color:var(--accent-green); font-weight:600;">24h → 2h</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--accent-red);">4</td>
+              <td>数据孤岛严重</td>
+              <td><span class="pain-tag" style="background:rgba(239,68,68,0.15); color:var(--accent-red);">高</span></td>
+              <td>本体作为统一语义层，屏蔽底层系统差异</td>
+              <td>语义映射与集成</td>
+              <td style="color:var(--accent-green); font-weight:600;">打通率 30% → 95%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--accent-orange);">5</td>
+              <td>经验依赖严重</td>
+              <td><span class="pain-tag" style="background:rgba(245,158,11,0.15); color:var(--accent-orange);">中</span></td>
+              <td>将专家知识编码为本体规则，AI辅助决策</td>
+              <td>知识工程 + LLM</td>
+              <td style="color:var(--accent-green); font-weight:600;">培养周期缩短60%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--accent-orange);">6</td>
+              <td>合规审计困难</td>
+              <td><span class="pain-tag" style="background:rgba(245,158,11,0.15); color:var(--accent-orange);">中</span></td>
+              <td>本体约束自动校验，合规报告一键生成</td>
+              <td>SHACL规则引擎</td>
+              <td style="color:var(--accent-green); font-weight:600;">2周 → 1天</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--accent-orange);">7</td>
+              <td>新品上市慢</td>
+              <td><span class="pain-tag" style="background:rgba(245,158,11,0.15); color:var(--accent-orange);">中</span></td>
+              <td>基于本体相似度分析，快速匹配供应链资源</td>
+              <td>相似度推理</td>
+              <td style="color:var(--accent-green); font-weight:600;">上市周期 -30%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--text-muted);">8</td>
+              <td>渠道管理粗放</td>
+              <td><span class="pain-tag" style="background:rgba(100,116,139,0.15); color:var(--text-muted);">低</span></td>
+              <td>零售终端本体建模，精细化门店画像与分类</td>
+              <td>实体画像分析</td>
+              <td style="color:var(--accent-green); font-weight:600;">铺货效率 +40%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:var(--text-muted);">9</td>
+              <td>成本控制难</td>
+              <td><span class="pain-tag" style="background:rgba(100,116,139,0.15); color:var(--text-muted);">低</span></td>
+              <td>成本要素本体化，关联分析驱动降本</td>
+              <td>成本根因分析</td>
+              <td style="color:var(--accent-green); font-weight:600;">年降本 5-8%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 15: ROI ===== -->
+  <div class="slide" data-title="ROI量化" data-index="14">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-chart-line"></i> ROI</div>
+      <h2 class="slide-title anim-up delay-2">投资回报量化</h2>
+      <p class="slide-subtitle anim-up delay-3">基于IBM全球项目经验和农夫山泉业务规模的ROI测算</p>
+      <div class="grid-4 anim-up delay-4" style="margin-bottom:24px;">
+        <div class="card roi-card">
+          <div class="roi-number" style="color:var(--accent-green);">340%</div>
+          <div class="roi-label">3年综合ROI</div>
+          <div class="roi-desc">含效率提升+成本节约+收入增长</div>
+        </div>
+        <div class="card roi-card">
+          <div class="roi-number" style="color:var(--ibm-blue-light);">12月</div>
+          <div class="roi-label">回本周期</div>
+          <div class="roi-desc">MVP上线后12个月内</div>
+        </div>
+        <div class="card roi-card">
+          <div class="roi-number" style="color:var(--accent-purple);">¥2.8亿</div>
+          <div class="roi-label">3年累计价值</div>
+          <div class="roi-desc">效率+成本+增长综合</div>
+        </div>
+        <div class="card roi-card">
+          <div class="roi-number" style="color:var(--accent-orange);">¥8000万</div>
+          <div class="roi-label">总投资估算</div>
+          <div class="roi-desc">含平台+实施+运维</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card anim-left delay-5" style="padding:20px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:16px;"><i class="fas fa-arrow-up" style="color:var(--accent-green); margin-right:6px;"></i>效率提升</h4>
+          <div class="roi-bar-chart">
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">销售预测准确率</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="88" style="width:0%; background:linear-gradient(90deg, #054ADA, #3B82F6);">+42%</div></div>
+            </div>
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">质量追溯速度</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="96" style="width:0%; background:linear-gradient(90deg, #00D4AA, #34D399);">+576x</div></div>
+            </div>
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">供应链响应速度</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="75" style="width:0%; background:linear-gradient(90deg, #7C3AED, #A78BFA);">+12x</div></div>
+            </div>
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">跨系统数据打通</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="95" style="width:0%; background:linear-gradient(90deg, #F59E0B, #FBBF24);">+217%</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card anim-right delay-6" style="padding:20px;">
+          <h4 style="font-size:14px; font-weight:700; margin-bottom:16px;"><i class="fas fa-piggy-bank" style="color:var(--accent-orange); margin-right:6px;"></i>成本节约（年度）</h4>
+          <div class="roi-bar-chart">
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">库存优化</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="60" style="width:0%; background:linear-gradient(90deg, #054ADA, #3B82F6);">¥3,200万</div></div>
+            </div>
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">物流效率</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="45" style="width:0%; background:linear-gradient(90deg, #00D4AA, #34D399);">¥2,400万</div></div>
+            </div>
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">人力效率</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="35" style="width:0%; background:linear-gradient(90deg, #7C3AED, #A78BFA);">¥1,800万</div></div>
+            </div>
+            <div class="roi-bar-row">
+              <div class="roi-bar-label">质量成本</div>
+              <div class="roi-bar-track"><div class="roi-bar-fill" data-width="25" style="width:0%; background:linear-gradient(90deg, #F59E0B, #FBBF24);">¥1,200万</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 16: ROADMAP ===== -->
+  <div class="slide" data-title="实施路线图" data-index="15">
+    <div class="slide-inner">
+      <div class="section-badge anim-up delay-1"><i class="fas fa-road"></i> ROADMAP</div>
+      <h2 class="slide-title anim-up delay-2">实施路线图</h2>
+      <p class="slide-subtitle anim-up delay-3">分阶段、渐进式推进，确保快速见效与长期价值</p>
+      <div class="roadmap anim-up delay-4">
+        <div class="roadmap-steps">
+          <div class="roadmap-step">
+            <div class="step-dot" style="border-color:var(--ibm-blue); color:var(--ibm-blue-light);"><i class="fas fa-stethoscope"></i></div>
+            <div class="step-title">诊断评估</div>
+            <div class="step-time">第1-2月</div>
+            <div class="step-desc">业务痛点调研<br>数据资产盘点<br>技术可行性评估<br>ROI初步测算</div>
+          </div>
+          <div class="roadmap-step">
+            <div class="step-dot" style="border-color:var(--accent-green); color:var(--accent-green);"><i class="fas fa-drafting-compass"></i></div>
+            <div class="step-title">本体设计</div>
+            <div class="step-time">第3-4月</div>
+            <div class="step-desc">核心实体建模<br>关系与规则定义<br>数据映射方案<br>技术架构设计</div>
+          </div>
+          <div class="roadmap-step">
+            <div class="step-dot" style="border-color:var(--accent-purple); color:var(--accent-purple);"><i class="fas fa-rocket"></i></div>
+            <div class="step-title">MVP验证</div>
+            <div class="step-time">第5-8月</div>
+            <div class="step-desc">1-2个场景落地<br>知识图谱构建<br>智能问答上线<br>效果评估优化</div>
+          </div>
+          <div class="roadmap-step">
+            <div class="step-dot" style="border-color:var(--accent-orange); color:var(--accent-orange);"><i class="fas fa-expand-arrows-alt"></i></div>
+            <div class="step-title">规模扩展</div>
+            <div class="step-time">第9-18月</div>
+            <div class="step-desc">全业务线推广<br>多Agent协作上线<br>生态伙伴接入<br>持续迭代优化</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-3 anim-up delay-5" style="margin-top:32px;">
+        <div class="card" style="padding:18px; text-align:center;">
+          <div style="font-size:28px; font-weight:900; color:var(--ibm-blue-light);">4个月</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">首个场景上线</div>
+        </div>
+        <div class="card" style="padding:18px; text-align:center;">
+          <div style="font-size:28px; font-weight:900; color:var(--accent-green);">8个月</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">MVP验证完成</div>
+        </div>
+        <div class="card" style="padding:18px; text-align:center;">
+          <div style="font-size:28px; font-weight:900; color:var(--accent-purple);">18个月</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">全面推广完成</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLIDE 17: Q&A ===== -->
+  <div class="slide" data-title="Q&A" data-index="16">
+    <div class="qa-content">
+      <div class="qa-icon anim-up delay-1"><i class="fas fa-question"></i></div>
+      <h2 class="slide-title anim-up delay-2" style="font-size:42px;">感谢聆听</h2>
+      <p class="slide-subtitle anim-up delay-3" style="text-align:center; max-width:100%; margin:0 auto 24px;">
+        数智融合，链动未来 —— 让数据成为决策的智慧之源
+      </p>
+      <div class="cover-divider anim-up delay-4" style="margin:0 auto 32px;"></div>
+      <div class="contact-cards anim-up delay-5">
+        <div class="contact-card">
+          <i class="fas fa-user" style="color:var(--ibm-blue-light);"></i>
+          <div class="contact-label">项目负责人</div>
+          <div class="contact-value">Richard Chen 陈宏强</div>
+        </div>
+        <div class="contact-card">
+          <i class="fas fa-building" style="color:var(--accent-green);"></i>
+          <div class="contact-label">团队</div>
+          <div class="contact-value">IBM Consulting</div>
+        </div>
+        <div class="contact-card">
+          <i class="fas fa-envelope" style="color:var(--accent-purple);"></i>
+          <div class="contact-label">邮箱</div>
+          <div class="contact-value">richard.chen@ibm.com</div>
+        </div>
+        <div class="contact-card">
+          <i class="fas fa-globe" style="color:var(--accent-orange);"></i>
+          <div class="contact-label">平台地址</div>
+          <div class="contact-value">IBM-Ontology-POC</div>
+        </div>
+      </div>
+      <p style="margin-top:40px; font-size:12px; color:var(--text-muted);" class="anim-up delay-6">
+        IBM Consulting &copy; 2025 &nbsp;|&nbsp; Richard Chen 陈宏强 &nbsp;|&nbsp; 机密文件，仅供内部使用
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== BOTTOM BAR ========== -->
+<div class="bottom-bar">
+  <button class="nav-btn" onclick="prevSlide()" title="上一页"><i class="fas fa-chevron-left"></i></button>
+  <div class="page-dots" id="pageDots"></div>
+  <span class="page-info" id="pageInfo">1 / 17</span>
+  <button class="nav-btn" onclick="nextSlide()" title="下一页"><i class="fas fa-chevron-right"></i></button>
+</div>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+(function() {
+  // ===== SLIDE MANAGEMENT =====
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let currentSlide = 0;
+  let isTransitioning = false;
+
+  const navPageNum = document.getElementById('navPageNum');
+  const navPageTitle = document.getElementById('navPageTitle');
+  const pageInfo = document.getElementById('pageInfo');
+  const pageDots = document.getElementById('pageDots');
+
+  // Create page dots
+  for (let i = 0; i < totalSlides; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'page-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goToSlide(i);
+    pageDots.appendChild(dot);
+  }
+
+  function updateSlide(newIndex, direction) {
+    if (isTransitioning || newIndex === currentSlide || newIndex < 0 || newIndex >= totalSlides) return;
+    isTransitioning = true;
+
+    const oldSlide = slides[currentSlide];
+    const newSlideEl = slides[newIndex];
+
+    // Exit old slide
+    oldSlide.classList.remove('active');
+    oldSlide.classList.add(direction === 'next' ? 'exit-left' : 'exit-right');
+
+    // Prepare new slide entry - use CSS class for initial position
+    newSlideEl.classList.add(direction === 'next' ? 'enter-from-right' : 'enter-from-left');
+
+    // Reset animations on new slide
+    const animEls = newSlideEl.querySelectorAll('.anim-up, .anim-left, .anim-right');
+    animEls.forEach(el => {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    });
+
+    // Trigger reflow then activate
+    void newSlideEl.offsetWidth;
+
+    newSlideEl.classList.add('active');
+    newSlideEl.classList.remove('exit-left', 'enter-from-right', 'enter-from-left');
+
+    // Update dots
+    document.querySelectorAll('.page-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === newIndex);
+    });
+
+    // Update nav
+    const title = newSlideEl.getAttribute('data-title') || '';
+    navPageNum.textContent = String(newIndex + 1).padStart(2, '0');
+    navPageTitle.textContent = title;
+    pageInfo.textContent = (newIndex + 1) + ' / ' + totalSlides;
+
+    currentSlide = newIndex;
+
+    // Trigger slide-specific animations
+    setTimeout(() => triggerSlideAnimations(newIndex), 300);
+
+    setTimeout(() => {
+      isTransitioning = false;
+      oldSlide.classList.remove('exit-left', 'exit-right', 'active');
+    }, 600);
+  }
+
+  window.nextSlide = function() { updateSlide(currentSlide + 1, 'next'); };
+  window.prevSlide = function() { updateSlide(currentSlide - 1, 'prev'); };
+  window.goToSlide = function(index) {
+    const dir = index > currentSlide ? 'next' : 'prev';
+    updateSlide(index, dir);
+  };
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault(); nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault(); prevSlide();
+    } else if (e.key === 'Home') {
+      e.preventDefault(); goToSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault(); goToSlide(totalSlides - 1);
+    }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextSlide(); else prevSlide();
+    }
+  });
+
+  // ===== SLIDE-SPECIFIC ANIMATIONS =====
+  function triggerSlideAnimations(index) {
+    // Slide 8 (index 7): Water cost bars
+    if (index === 8) {
+      animateCostBars();
+    }
+    // Slide 7 (index 6): Knowledge graph
+    if (index === 7) {
+      initKnowledgeGraph();
+    }
+    // Slide 14 (index 13): ROI bars
+    if (index === 14) {
+      animateROIBars();
+    }
+  }
+
+  // ===== KNOWLEDGE GRAPH (vis-network) =====
+  let graphInitialized = false;
+  function initKnowledgeGraph() {
+    if (graphInitialized) return;
+    graphInitialized = true;
+
+    const container = document.getElementById('knowledgeGraph');
+    if (!container) return;
+
+    const nodes = new vis.DataSet([
+      { id: 1, label: '农夫山泉\n企业本体', shape: 'box', color: { background: '#054ADA', border: '#3B82F6' }, font: { color: '#fff', size: 14, bold: true }, borderWidth: 2, size: 40 },
+      { id: 2, label: '水源地\nWaterSource', shape: 'box', color: { background: '#1E40AF', border: '#3B82F6' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 3, label: '产品\nProduct', shape: 'box', color: { background: '#065F46', border: '#00D4AA' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 4, label: '工厂\nFactory', shape: 'box', color: { background: '#4C1D95', border: '#7C3AED' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 5, label: '供应商\nSupplier', shape: 'box', color: { background: '#92400E', border: '#F59E0B' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 6, label: '仓库\nWarehouse', shape: 'box', color: { background: '#991B1B', border: '#EF4444' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 7, label: '零售终端\nRetailer', shape: 'box', color: { background: '#155E75', border: '#06B6D4' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 8, label: '质检\nQualityCheck', shape: 'box', color: { background: '#581C87', border: '#A855F7' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 9, label: '销售订单\nSalesOrder', shape: 'box', color: { background: '#1E3A5F', border: '#60A5FA' }, font: { color: '#fff', size: 12 }, borderWidth: 1 },
+      { id: 10, label: '千岛湖', shape: 'dot', color: { background: '#3B82F6' }, font: { color: '#fff', size: 10 }, size: 20 },
+      { id: 11, label: '丹江口', shape: 'dot', color: { background: '#3B82F6' }, font: { color: '#fff', size: 10 }, size: 20 },
+      { id: 12, label: '长白山', shape: 'dot', color: { background: '#3B82F6' }, font: { color: '#fff', size: 10 }, size: 20 },
+      { id: 13, label: '550ml天然水', shape: 'dot', color: { background: '#00D4AA' }, font: { color: '#fff', size: 10 }, size: 20 },
+      { id: 14, label: '茶π', shape: 'dot', color: { background: '#00D4AA' }, font: { color: '#fff', size: 10 }, size: 20 },
+      { id: 15, label: '东方树叶', shape: 'dot', color: { background: '#00D4AA' }, font: { color: '#fff', size: 10 }, size: 20 },
+      { id: 16, label: 'PET供应商', shape: 'dot', color: { background: '#F59E0B' }, font: { color: '#fff', size: 10 }, size: 18 },
+      { id: 17, label: '标签供应商', shape: 'dot', color: { background: '#F59E0B' }, font: { color: '#fff', size: 10 }, size: 18 },
+    ]);
+
+    const edges = new vis.DataSet([
+      { from: 1, to: 2, label: '拥有', color: { color: '#3B82F6' }, font: { color: '#94A3B8', size: 10, strokeWidth: 0 }, arrows: 'to', smooth: { type: 'curvedCW' } },
+      { from: 1, to: 3, label: '生产', color: { color: '#00D4AA' }, font: { color: '#94A3B8', size: 10, strokeWidth: 0 }, arrows: 'to', smooth: { type: 'curvedCW' } },
+      { from: 1, to: 4, label: '运营', color: { color: '#7C3AED' }, font: { color: '#94A3B8', size: 10, strokeWidth: 0 }, arrows: 'to', smooth: { type: 'curvedCW' } },
+      { from: 1, to: 5, label: '合作', color: { color: '#F59E0B' }, font: { color: '#94A3B8', size: 10, strokeWidth: 0 }, arrows: 'to', smooth: { type: 'curvedCW' } },
+      { from: 1, to: 6, label: '管理', color: { color: '#EF4444' }, font: { color: '#94A3B8', size: 10, strokeWidth: 0 }, arrows: 'to', smooth: { type: 'curvedCW' } },
+      { from: 1, to: 7, label: '销售', color: { color: '#06B6D4' }, font: { color: '#94A3B8', size: 10, strokeWidth: 0 }, arrows: 'to', smooth: { type: 'curvedCW' } },
+      { from: 3, to: 2, label: 'sourcedFrom', color: { color: '#475569' }, font: { color: '#64748B', size: 9, strokeWidth: 0 }, arrows: 'to', dashes: true },
+      { from: 3, to: 4, label: 'producedAt', color: { color: '#475569' }, font: { color: '#64748B', size: 9, strokeWidth: 0 }, arrows: 'to', dashes: true },
+      { from: 3, to: 5, label: 'suppliedBy', color: { color: '#475569' }, font: { color: '#64748B', size: 9, strokeWidth: 0 }, arrows: 'to', dashes: true },
+      { from: 3, to: 6, label: 'storedIn', color: { color: '#475569' }, font: { color: '#64748B', size: 9, strokeWidth: 0 }, arrows: 'to', dashes: true },
+      { from: 3, to: 7, label: 'soldAt', color: { color: '#475569' }, font: { color: '#64748B', size: 9, strokeWidth: 0 }, arrows: 'to', dashes: true },
+      { from: 3, to: 8, label: 'checkedBy', color: { color: '#475569' }, font: { color: '#64748B', size: 9, strokeWidth: 0 }, arrows: 'to', dashes: true },
+      { from: 7, to: 9, label: 'generates', color: { color: '#475569' }, font: { color: '#64748B', size: 9, strokeWidth: 0 }, arrows: 'to', dashes: true },
+      { from: 2, to: 10, arrows: 'to', color: { color: '#1E3A5F' } },
+      { from: 2, to: 11, arrows: 'to', color: { color: '#1E3A5F' } },
+      { from: 2, to: 12, arrows: 'to', color: { color: '#1E3A5F' } },
+      { from: 3, to: 13, arrows: 'to', color: { color: '#065F46' } },
+      { from: 3, to: 14, arrows: 'to', color: { color: '#065F46' } },
+      { from: 3, to: 15, arrows: 'to', color: { color: '#065F46' } },
+      { from: 5, to: 16, arrows: 'to', color: { color: '#78350F' } },
+      { from: 5, to: 17, arrows: 'to', color: { color: '#78350F' } },
+    ]);
+
+    const options = {
+      physics: {
+        stabilization: { iterations: 200 },
+        barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 180, springConstant: 0.04 }
+      },
+      interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragView: true },
+      nodes: { borderWidthSelected: 3, shadow: { enabled: true, color: 'rgba(0,0,0,0.3)', size: 10 } },
+      edges: { shadow: { enabled: true, color: 'rgba(0,0,0,0.2)', size: 5 } }
+    };
+
+    const network = new vis.Network(container, { nodes, edges }, options);
+  }
+
+  // ===== COST BAR ANIMATION =====
+  function animateCostBars() {
+    const fills = document.querySelectorAll('.cost-bar-fill');
+    fills.forEach((fill, i) => {
+      const w = fill.getAttribute('data-width');
+      setTimeout(() => { fill.style.width = w + '%'; }, i * 150);
+    });
+    // Water fill animation
+    const waterFill = document.getElementById('waterFill');
+    if (waterFill) {
+      setTimeout(() => { waterFill.style.height = '85%'; }, 300);
+    }
+  }
+
+  // ===== ROI BAR ANIMATION =====
+  function animateROIBars() {
+    const fills = document.querySelectorAll('.roi-bar-fill');
+    fills.forEach((fill, i) => {
+      const w = fill.getAttribute('data-width');
+      setTimeout(() => { fill.style.width = w + '%'; }, i * 100);
+    });
+  }
+
+  // ===== CHAT DEMO =====
+  const chatResponses = [
+    {
+      keywords: ['销量', '销售', '卖'],
+      response: `<strong>销量查询结果：</strong><br>本月全国总销量：<strong style="color:var(--accent-green);">8,520万瓶</strong>（同比 +6.2%）<br>华东区：2,180万瓶 | 华南区：1,950万瓶<br>华北区：1,680万瓶 | 西南区：1,420万瓶<br>其他：1,290万瓶<br><br><em style="color:var(--text-muted);">数据来源：本体关联 ERP + CRM + 经销商系统</em>`
+    },
+    {
+      keywords: ['库存', '仓'],
+      response: `<strong>库存概览：</strong><br>全国总库存：<strong style="color:var(--accent-green);">3,200万瓶</strong><br>库存周转天数：12.3天（健康值 <15天）<br><br>预警：<br><span style="color:var(--accent-orange);">⚠ 华东仓 550ml天然水库存低于安全线（剩余82万瓶）</span><br>建议：从千岛湖工厂紧急调拨 200万瓶<br><br><em style="color:var(--text-muted);">本体推理引擎自动触发补货建议</em>`
+    },
+    {
+      keywords: ['供应商', '供应'],
+      response: `<strong>供应商状态：</strong><br>活跃供应商总数：<strong>128家</strong><br>A级供应商：42家 | B级：65家 | C级：21家<br><br>近期动态：<br>• 浙江华宝新材料 — 评级维持A+，合同续签中<br>• 江苏包装集团 — 上月交付延迟2次，已降级为B<br>• 广东标签印刷 — 新增备选供应商，样品检测中<br><br><em style="color:var(--text-muted);">本体自动关联质检报告与交付记录</em>`
+    },
+    {
+      keywords: ['质量', '质检', '检测'],
+      response: `<strong>质量监控面板：</strong><br>近30天检测批次：<strong>1,248批</strong><br>整体合格率：<strong style="color:var(--accent-green);">99.7%</strong><br><br>不合格项：<br>• 3月12日 — 华南工厂 批次#B20250312 瓶盖密封性不达标（已隔离）<br>• 3月8日 — 华东工厂 批次#B20250308 标签色差（已返工）<br><br>溯源：批次#B20250312 → 瓶盖供应商：苏州精密塑胶 → 已启动原因调查<br><br><em style="color:var(--text-muted);">本体知识图谱实现3步溯源（行业平均需48小时）</em>`
+    }
+  ];
+
+  window.sendChatMessage = function() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const messages = document.getElementById('chatMessages');
+
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-msg user';
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    userMsg.innerHTML = `<div>${escapeHtml(text)}</div><div class="msg-meta">用户 · ${time}</div>`;
+    messages.appendChild(userMsg);
+    input.value = '';
+    messages.scrollTop = messages.scrollHeight;
+
+    // Find matching response
+    let response = null;
+    for (const r of chatResponses) {
+      if (r.keywords.some(k => text.includes(k))) {
+        response = r.response;
+        break;
+      }
+    }
+    if (!response) {
+      response = `感谢您的提问！<br><br>基于本体知识图谱的分析：<br>• 已识别 <strong>3个相关实体</strong> 和 <strong>7条关联关系</strong><br>• 正在调用推理引擎进行深度分析...<br><br>这是一个演示系统。在生产环境中，本体助手将：<br>1. 解析自然语言查询意图<br>2. 映射到本体SPARQL查询<br>3. 调用LLM生成自然语言回答<br>4. 返回精确数据 + 推理洞察<br><br><em style="color:var(--text-muted);">您可以尝试询问：销量、库存、供应商、质量 等相关问题</em>`;
+    }
+
+    // Simulate typing delay
+    setTimeout(() => {
+      const botMsg = document.createElement('div');
+      botMsg.className = 'chat-msg bot';
+      botMsg.innerHTML = `<div>${response}</div><div class="msg-meta">本体助手 · ${time} · 关联 ${Math.floor(Math.random()*5)+2} 个本体节点</div>`;
+      messages.appendChild(botMsg);
+      messages.scrollTop = messages.scrollHeight;
+    }, 800);
+  };
+
+  // Enter key for chat
+  document.getElementById('chatInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+  });
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ===== INIT =====
+  // Set initial nav state
+  navPageNum.textContent = '01';
+  navPageTitle.textContent = slides[0].getAttribute('data-title') || '封面';
+
+})();
+</script>
+
+<!-- ========== FOOTER ========== -->
+<div style="position:fixed; bottom:64px; left:0; right:0; text-align:center; padding:4px 0; font-size:10px; color:var(--text-muted); z-index:50; pointer-events:none;">
+  IBM Consulting &copy; 2025 &nbsp;&middot;&nbsp; Richard Chen 陈宏强
+</div>
+
+</body>
+</html>
