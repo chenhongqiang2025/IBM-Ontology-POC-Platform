@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一瓶水的商业宇宙 | 3D本体交互演示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0A0E1A;
+  --bg-card: rgba(15, 20, 40, 0.85);
+  --primary: #054ADA;
+  --accent: #00D4AA;
+  --purple: #7C3AED;
+  --text: #E8ECF4;
+  --text-dim: #8892A8;
+  --border: rgba(255,255,255,0.08);
+  --glass: rgba(15, 20, 40, 0.75);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ===== Top Bar ===== */
+.top-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 32px;
+  background: linear-gradient(180deg, rgba(10,14,26,0.95) 0%, rgba(10,14,26,0) 100%);
+  pointer-events: none;
+}
+.top-bar > * { pointer-events: auto; }
+.top-bar .logo {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 15px; letter-spacing: 0.5px;
+}
+.top-bar .logo i { color: var(--accent); font-size: 20px; }
+.btn-back {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 20px; border-radius: 8px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  color: var(--text); font-size: 13px; font-weight: 500;
+  text-decoration: none; transition: all 0.3s;
+}
+.btn-back:hover { background: var(--primary); border-color: var(--primary); }
+
+/* ===== Slides Container ===== */
+.slides-wrapper {
+  width: 100%; height: 100%; position: relative;
+}
+.slide {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease, transform 0.6s ease;
+  transform: translateY(30px);
+  padding: 80px 40px 60px;
+}
+.slide.active {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+
+/* ===== Navigation ===== */
+.slide-nav {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px; z-index: 100;
+}
+.slide-nav button {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--glass);
+  color: var(--text-dim); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.3s; backdrop-filter: blur(10px);
+}
+.slide-nav button.active {
+  background: var(--primary); border-color: var(--primary);
+  color: #fff; box-shadow: 0 0 20px rgba(5,74,218,0.4);
+}
+.slide-nav button:hover:not(.active) {
+  border-color: var(--accent); color: var(--accent);
+}
+
+/* ===== Slide 1: Cover ===== */
+.cover-content {
+  text-align: center; max-width: 800px;
+}
+.cover-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 18px; border-radius: 20px;
+  background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);
+  color: var(--accent); font-size: 13px; font-weight: 500;
+  margin-bottom: 28px;
+}
+.cover-badge i { font-size: 11px; }
+.cover-title {
+  font-size: 52px; font-weight: 800; line-height: 1.15;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff 0%, #8892A8 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.cover-title span {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+  -webkit-background-clip: text; background-clip: text;
+}
+.cover-sub {
+  font-size: 20px; color: var(--text-dim); font-weight: 300;
+  margin-bottom: 40px; letter-spacing: 2px;
+}
+.cover-tags {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+}
+.cover-tags .tag {
+  padding: 8px 18px; border-radius: 8px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  font-size: 13px; color: var(--text-dim);
+}
+.cover-tags .tag i { margin-right: 6px; color: var(--accent); }
+
+/* Floating particles for cover */
+.cover-particles {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; overflow: hidden;
+}
+.cover-particles .particle {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,212,170,0.3), transparent);
+  animation: float-particle linear infinite;
+}
+@keyframes float-particle {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* ===== Slide 2: 3D Bottle ===== */
+.slide-3d { padding: 80px 0 60px; }
+.slide-3d .slide-inner {
+  width: 100%; height: 100%; display: flex; gap: 0;
+}
+.bottle-canvas-area {
+  flex: 1; position: relative; min-width: 0;
+}
+#bottle-canvas {
+  width: 100%; height: 100%; display: block;
+  cursor: grab;
+}
+#bottle-canvas:active { cursor: grabbing; }
+
+.bottle-info-panel {
+  width: 360px; padding: 24px 28px;
+  display: flex; flex-direction: column; gap: 16px;
+  overflow-y: auto;
+}
+.bottle-info-panel h2 {
+  font-size: 22px; font-weight: 700; margin-bottom: 4px;
+}
+.bottle-info-panel .subtitle {
+  font-size: 13px; color: var(--text-dim); margin-bottom: 8px;
+}
+.info-card {
+  padding: 16px 18px; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.3s;
+}
+.info-card:hover, .info-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(0,212,170,0.1);
+}
+.info-card .ic-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.info-card .ic-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.info-card .ic-title { font-size: 14px; font-weight: 600; }
+.info-card .ic-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+.ic-cap .ic-icon { background: rgba(124,58,237,0.15); color: var(--purple); }
+.ic-body .ic-icon { background: rgba(5,74,218,0.15); color: var(--primary); }
+.ic-label .ic-icon { background: rgba(0,212,170,0.15); color: var(--accent); }
+.ic-bottom .ic-icon { background: rgba(59,130,246,0.15); color: #3B82F6; }
+
+/* 3D Tooltip */
+.bottle-tooltip {
+  position: absolute; padding: 14px 20px; border-radius: 12px;
+  background: var(--glass); backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  max-width: 280px; z-index: 50;
+}
+.bottle-tooltip.visible { opacity: 1; }
+.bottle-tooltip h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.bottle-tooltip p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+.bottle-hint {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 18px; border-radius: 20px;
+  background: var(--glass); backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim);
+  animation: hint-pulse 2s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ===== Slide 3: Ontology Architecture ===== */
+.arch-content {
+  max-width: 900px; width: 100%;
+}
+.arch-content h2 {
+  font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 8px;
+}
+.arch-content .arch-sub {
+  text-align: center; color: var(--text-dim); font-size: 14px; margin-bottom: 40px;
+}
+.arch-layers {
+  display: flex; flex-direction: column; gap: 16px; align-items: center;
+}
+.arch-layer {
+  width: 100%; max-width: 700px; padding: 20px 28px; border-radius: 14px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 20px;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.arch-layer::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+}
+.arch-layer:hover {
+  transform: translateX(8px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+.arch-layer:nth-child(1)::before { background: var(--purple); }
+.arch-layer:nth-child(2)::before { background: var(--primary); }
+.arch-layer:nth-child(3)::before { background: #3B82F6; }
+.arch-layer:nth-child(4)::before { background: var(--accent); }
+.arch-layer:nth-child(5)::before { background: #F59E0B; }
+
+.al-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.arch-layer:nth-child(1) .al-icon { background: rgba(124,58,237,0.15); color: var(--purple); }
+.arch-layer:nth-child(2) .al-icon { background: rgba(5,74,218,0.15); color: var(--primary); }
+.arch-layer:nth-child(3) .al-icon { background: rgba(59,130,246,0.15); color: #3B82F6; }
+.arch-layer:nth-child(4) .al-icon { background: rgba(0,212,170,0.15); color: var(--accent); }
+.arch-layer:nth-child(5) .al-icon { background: rgba(245,158,11,0.15); color: #F59E0B; }
+
+.al-text h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.al-text p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.al-arrow {
+  position: absolute; left: 50%; bottom: -20px; transform: translateX(-50%);
+  color: var(--text-dim); font-size: 14px; z-index: 2;
+}
+
+/* ===== Slide 4: Multi-Agent ===== */
+.agent-content {
+  max-width: 960px; width: 100%;
+}
+.agent-content h2 {
+  font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 8px;
+}
+.agent-content .agent-sub {
+  text-align: center; color: var(--text-dim); font-size: 14px; margin-bottom: 40px;
+}
+.agent-flow {
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  flex-wrap: wrap;
+}
+.agent-node {
+  width: 180px; padding: 24px 16px; border-radius: 16px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  text-align: center; transition: all 0.4s;
+  position: relative;
+}
+.agent-node:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.agent-node .an-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin: 0 auto 14px;
+}
+.agent-node:nth-child(1) .an-icon { background: rgba(0,212,170,0.15); color: var(--accent); }
+.agent-node:nth-child(3) .an-icon { background: rgba(5,74,218,0.15); color: var(--primary); }
+.agent-node:nth-child(5) .an-icon { background: rgba(124,58,237,0.15); color: var(--purple); }
+.agent-node:nth-child(7) .an-icon { background: rgba(245,158,11,0.15); color: #F59E0B; }
+
+.agent-node h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.agent-node p { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+.agent-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; color: var(--text-dim); font-size: 20px;
+}
+.agent-arrow i { animation: arrow-flow 1.5s ease-in-out infinite; }
+@keyframes arrow-flow {
+  0%, 100% { transform: translateX(0); opacity: 0.4; }
+  50% { transform: translateX(4px); opacity: 1; }
+}
+
+.agent-details {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-top: 36px;
+}
+.agent-detail-card {
+  padding: 18px; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--border);
+}
+.agent-detail-card h5 {
+  font-size: 13px; font-weight: 600; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.agent-detail-card h5 i { font-size: 12px; }
+.agent-detail-card ul {
+  list-style: none; font-size: 12px; color: var(--text-dim); line-height: 1.8;
+}
+.agent-detail-card ul li::before {
+  content: ''; display: inline-block; width: 4px; height: 4px;
+  border-radius: 50%; margin-right: 8px; vertical-align: middle;
+}
+.agent-detail-card:nth-child(1) ul li::before { background: var(--accent); }
+.agent-detail-card:nth-child(2) ul li::before { background: var(--primary); }
+.agent-detail-card:nth-child(3) ul li::before { background: var(--purple); }
+.agent-detail-card:nth-child(4) ul li::before { background: #F59E0B; }
+
+/* ===== Slide 5: ROI & Roadmap ===== */
+.roi-content {
+  max-width: 960px; width: 100%;
+}
+.roi-content h2 {
+  font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 8px;
+}
+.roi-content .roi-sub {
+  text-align: center; color: var(--text-dim); font-size: 14px; margin-bottom: 36px;
+}
+.roi-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-bottom: 36px;
+}
+.roi-card {
+  padding: 22px 18px; border-radius: 14px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  text-align: center; transition: all 0.3s;
+}
+.roi-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.roi-card .roi-value {
+  font-size: 32px; font-weight: 800; margin-bottom: 4px;
+}
+.roi-card:nth-child(1) .roi-value { color: var(--accent); }
+.roi-card:nth-child(2) .roi-value { color: var(--primary); }
+.roi-card:nth-child(3) .roi-value { color: var(--purple); }
+.roi-card:nth-child(4) .roi-value { color: #F59E0B; }
+.roi-card .roi-label { font-size: 13px; color: var(--text-dim); }
+
+.roadmap {
+  display: flex; gap: 0; align-items: flex-start;
+}
+.roadmap-phase {
+  flex: 1; padding: 20px 16px; position: relative;
+}
+.roadmap-phase::before {
+  content: ''; position: absolute; top: 36px; left: 0; right: 0;
+  height: 3px; background: var(--border);
+}
+.roadmap-phase:first-child::before { left: 50%; }
+.roadmap-phase:last-child::before { right: 50%; }
+.roadmap-phase .rp-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  margin: 28px auto 16px; position: relative; z-index: 2;
+  border: 3px solid;
+}
+.roadmap-phase:nth-child(1) .rp-dot { border-color: var(--accent); background: rgba(0,212,170,0.2); }
+.roadmap-phase:nth-child(2) .rp-dot { border-color: var(--primary); background: rgba(5,74,218,0.2); }
+.roadmap-phase:nth-child(3) .rp-dot { border-color: var(--purple); background: rgba(124,58,237,0.2); }
+.roadmap-phase:nth-child(4) .rp-dot { border-color: #F59E0B; background: rgba(245,158,11,0.2); }
+
+.roadmap-phase h4 {
+  font-size: 14px; font-weight: 600; text-align: center; margin-bottom: 4px;
+}
+.roadmap-phase .rp-time {
+  font-size: 11px; color: var(--text-dim); text-align: center; margin-bottom: 10px;
+}
+.roadmap-phase .rp-items {
+  font-size: 11px; color: var(--text-dim); line-height: 1.8; text-align: center;
+}
+.roadmap-phase .rp-items span {
+  display: block;
+}
+
+/* ===== Footer ===== */
+.footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 8px 32px; text-align: center;
+  font-size: 11px; color: rgba(136,146,168,0.5);
+  z-index: 90; pointer-events: none;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .slide-3d .slide-inner { flex-direction: column; }
+  .bottle-info-panel { width: 100%; max-height: 40%; }
+  .agent-flow { flex-direction: column; gap: 8px; }
+  .agent-arrow { transform: rotate(90deg); width: auto; height: 32px; }
+  .agent-details { grid-template-columns: repeat(2, 1fr); }
+  .roi-grid { grid-template-columns: repeat(2, 1fr); }
+  .roadmap { flex-direction: column; gap: 16px; }
+  .roadmap-phase::before { display: none; }
+  .cover-title { font-size: 36px; }
+}
+
+/* ===== Glow effects ===== */
+.glow-accent { text-shadow: 0 0 20px rgba(0,212,170,0.3); }
+.glow-primary { text-shadow: 0 0 20px rgba(5,74,218,0.3); }
+
+/* Background grid */
+.bg-grid {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none; z-index: 0;
+}
+.bg-glow {
+  position: fixed; width: 600px; height: 600px; border-radius: 50%;
+  filter: blur(120px); pointer-events: none; z-index: 0;
+}
+.bg-glow-1 { top: -200px; right: -200px; background: rgba(5,74,218,0.08); }
+.bg-glow-2 { bottom: -200px; left: -200px; background: rgba(0,212,170,0.06); }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="logo">
+    <i class="fas fa-cube"></i>
+    <span>IBM Ontology POC</span>
+  </div>
+  <a href="../index.html" class="btn-back">
+    <i class="fas fa-arrow-left"></i>
+    返回平台
+  </a>
+</div>
+
+<!-- Slides -->
+<div class="slides-wrapper">
+
+  <!-- Slide 1: Cover -->
+  <div class="slide active" id="slide-1">
+    <div class="cover-particles" id="particles"></div>
+    <div class="cover-content">
+      <div class="cover-badge">
+        <i class="fas fa-flask"></i>
+        IBM Consulting · 概念验证演示
+      </div>
+      <h1 class="cover-title">
+        一瓶水的<span>商业宇宙</span>
+      </h1>
+      <p class="cover-sub">3D 本体交互演示</p>
+      <div class="cover-tags">
+        <div class="tag"><i class="fas fa-brain"></i>企业本体</div>
+        <div class="tag"><i class="fas fa-cube"></i>3D 交互</div>
+        <div class="tag"><i class="fas fa-robot"></i>多 Agent 协作</div>
+        <div class="tag"><i class="fas fa-chart-line"></i>ROI 分析</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 2: 3D Bottle -->
+  <div class="slide slide-3d" id="slide-2">
+    <div class="slide-inner">
+      <div class="bottle-canvas-area">
+        <canvas id="bottle-canvas"></canvas>
+        <div class="bottle-tooltip" id="bottle-tooltip">
+          <h4 id="tooltip-title"></h4>
+          <p id="tooltip-desc"></p>
+        </div>
+        <div class="bottle-hint">
+          <i class="fas fa-hand-pointer"></i>
+          拖拽旋转 · 滚轮缩放 · 点击部位查看本体信息
+        </div>
+      </div>
+      <div class="bottle-info-panel">
+        <div>
+          <h2>3D 水瓶本体</h2>
+          <p class="subtitle">点击3D模型各部位，探索本体知识图谱</p>
+        </div>
+        <div class="info-card ic-cap" data-part="cap" onclick="focusPart('cap')">
+          <div class="ic-header">
+            <div class="ic-icon"><i class="fas fa-crown"></i></div>
+            <div class="ic-title">瓶盖 · Cap</div>
+          </div>
+          <div class="ic-desc">PP材质螺旋盖，供应商：中粮包装。密封性能等级 A+，开启扭矩 2.8N·m。</div>
+        </div>
+        <div class="info-card ic-body" data-part="body" onclick="focusPart('body')">
+          <div class="ic-header">
+            <div class="ic-icon"><i class="fas fa-wine-bottle"></i></div>
+            <div class="ic-title">瓶身 · Body</div>
+          </div>
+          <div class="ic-desc">PET材质，克重 18.5g，壁厚 0.28mm。供应商：华润化学材料。透光率 92%。</div>
+        </div>
+        <div class="info-card ic-label" data-part="label" onclick="focusPart('label')">
+          <div class="ic-header">
+            <div class="ic-icon"><i class="fas fa-tag"></i></div>
+            <div class="ic-title">标签 · Label</div>
+          </div>
+          <div class="ic-desc">品牌：农夫山泉。产品编码 NFS-550-GL。广告语："我们不生产水，我们只是大自然的搬运工"。</div>
+        </div>
+        <div class="info-card ic-bottom" data-part="bottom" onclick="focusPart('bottom')">
+          <div class="ic-header">
+            <div class="ic-icon"><i class="fas fa-mountain"></i></div>
+            <div class="ic-title">底部 · Base</div>
+          </div>
+          <div class="ic-desc">水源地：千岛湖/长白山/丹江口。水质类别：天然水。矿物质含量：钙≥4mg/L，镁≥0.5mg/L。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Ontology Architecture -->
+  <div class="slide" id="slide-3">
+    <div class="arch-content">
+      <h2>本体知识架构</h2>
+      <p class="arch-sub">从产品实体到企业智能大脑的五层架构</p>
+      <div class="arch-layers">
+        <div class="arch-layer">
+          <div class="al-icon"><i class="fas fa-brain"></i></div>
+          <div class="al-text">
+            <h3>L5 · 企业智能大脑</h3>
+            <p>全局决策优化 · 战略预测 · 跨域知识融合 · 自主学习进化</p>
+          </div>
+        </div>
+        <div class="arch-layer">
+          <div class="al-icon"><i class="fas fa-project-diagram"></i></div>
+          <div class="al-text">
+            <h3>L4 · 领域知识图谱</h3>
+            <p>供应链图谱 · 质量追溯图谱 · 客户画像图谱 · 合规知识图谱</p>
+          </div>
+        </div>
+        <div class="arch-layer">
+          <div class="al-icon"><i class="fas fa-cubes"></i></div>
+          <div class="al-text">
+            <h3>L3 · 本体模型层</h3>
+            <p>OWL/RDF 本体定义 · 概念分类体系 · 关系推理规则 · 语义映射</p>
+          </div>
+        </div>
+        <div class="arch-layer">
+          <div class="al-icon"><i class="fas fa-database"></i></div>
+          <div class="al-text">
+            <h3>L2 · 数据集成层</h3>
+            <p>ERP/MES/WMS 数据接入 · IoT 传感器数据 · 外部数据源 · 数据清洗标准化</p>
+          </div>
+        </div>
+        <div class="arch-layer">
+          <div class="al-icon"><i class="fas fa-box"></i></div>
+          <div class="al-text">
+            <h3>L1 · 产品实体层</h3>
+            <p>一瓶农夫山泉 = 原料 + 包装 + 生产 + 物流 + 渠道 + 消费者反馈</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4: Multi-Agent -->
+  <div class="slide" id="slide-4">
+    <div class="agent-content">
+      <h2>多 Agent 协作系统</h2>
+      <p class="agent-sub">基于本体驱动的智能协作流程</p>
+      <div class="agent-flow">
+        <div class="agent-node">
+          <div class="an-icon"><i class="fas fa-eye"></i></div>
+          <h4>感知 Agent</h4>
+          <p>数据采集<br>异常检测</p>
+        </div>
+        <div class="agent-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="agent-node">
+          <div class="an-icon"><i class="fas fa-microchip"></i></div>
+          <h4>推理 Agent</h4>
+          <p>本体推理<br>知识关联</p>
+        </div>
+        <div class="agent-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="agent-node">
+          <div class="an-icon"><i class="fas fa-lightbulb"></i></div>
+          <h4>决策 Agent</h4>
+          <p>策略生成<br>方案评估</p>
+        </div>
+        <div class="agent-arrow"><i class="fas fa-chevron-right"></i></div>
+        <div class="agent-node">
+          <div class="an-icon"><i class="fas fa-bolt"></i></div>
+          <h4>执行 Agent</h4>
+          <p>任务调度<br>结果反馈</p>
+        </div>
+      </div>
+      <div class="agent-details">
+        <div class="agent-detail-card">
+          <h5><i class="fas fa-eye" style="color:var(--accent)"></i> 感知 Agent</h5>
+          <ul>
+            <li>实时采集生产线数据</li>
+            <li>监控供应链状态</li>
+            <li>异常模式识别</li>
+            <li>多模态数据融合</li>
+          </ul>
+        </div>
+        <div class="agent-detail-card">
+          <h5><i class="fas fa-microchip" style="color:var(--primary)"></i> 推理 Agent</h5>
+          <ul>
+            <li>本体知识图谱查询</li>
+            <li>语义关联分析</li>
+            <li>根因推理链构建</li>
+            <li>跨域知识融合</li>
+          </ul>
+        </div>
+        <div class="agent-detail-card">
+          <h5><i class="fas fa-lightbulb" style="color:var(--purple)"></i> 决策 Agent</h5>
+          <ul>
+            <li>多方案生成与评估</li>
+            <li>约束条件优化</li>
+            <li>风险预测与规避</li>
+            <li>ROI 最大化决策</li>
+          </ul>
+        </div>
+        <div class="agent-detail-card">
+          <h5><i class="fas fa-bolt" style="color:#F59E0B"></i> 执行 Agent</h5>
+          <ul>
+            <li>自动化任务编排</li>
+            <li>系统联动执行</li>
+            <li>执行结果验证</li>
+            <li>闭环反馈学习</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: ROI & Roadmap -->
+  <div class="slide" id="slide-5">
+    <div class="roi-content">
+      <h2>实施路线图与 ROI</h2>
+      <p class="roi-sub">分阶段推进，快速验证，持续优化</p>
+      <div class="roi-grid">
+        <div class="roi-card">
+          <div class="roi-value">35%</div>
+          <div class="roi-label">供应链成本降低</div>
+        </div>
+        <div class="roi-card">
+          <div class="roi-value">60%</div>
+          <div class="roi-label">质量追溯效率提升</div>
+        </div>
+        <div class="roi-card">
+          <div class="roi-value">3x</div>
+          <div class="roi-label">决策响应速度</div>
+        </div>
+        <div class="roi-card">
+          <div class="roi-value">18mo</div>
+          <div class="roi-label">预计投资回收期</div>
+        </div>
+      </div>
+      <div class="roadmap">
+        <div class="roadmap-phase">
+          <div class="rp-dot"></div>
+          <h4>Phase 1</h4>
+          <div class="rp-time">第 1-3 月</div>
+          <div class="rp-items">
+            <span>本体建模与数据接入</span>
+            <span>核心产品知识图谱</span>
+            <span>基础查询与可视化</span>
+          </div>
+        </div>
+        <div class="roadmap-phase">
+          <div class="rp-dot"></div>
+          <h4>Phase 2</h4>
+          <div class="rp-time">第 4-6 月</div>
+          <div class="rp-items">
+            <span>Agent 框架搭建</span>
+            <span>供应链场景验证</span>
+            <span>质量追溯 POC</span>
+          </div>
+        </div>
+        <div class="roadmap-phase">
+          <div class="rp-dot"></div>
+          <h4>Phase 3</h4>
+          <div class="rp-time">第 7-12 月</div>
+          <div class="rp-items">
+            <span>多 Agent 协作上线</span>
+            <span>跨域知识融合</span>
+            <span>智能决策辅助</span>
+          </div>
+        </div>
+        <div class="roadmap-phase">
+          <div class="rp-dot"></div>
+          <h4>Phase 4</h4>
+          <div class="rp-time">第 13-18 月</div>
+          <div class="rp-items">
+            <span>企业大脑全面部署</span>
+            <span>自主学习与进化</span>
+            <span>ROI 目标达成</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<div class="slide-nav">
+  <button class="active" onclick="goSlide(0)">1</button>
+  <button onclick="goSlide(1)">2</button>
+  <button onclick="goSlide(2)">3</button>
+  <button onclick="goSlide(3)">4</button>
+  <button onclick="goSlide(4)">5</button>
+</div>
+
+<!-- Footer -->
+<div class="footer">IBM Consulting · Richard Chen</div>
+
+<script>
+// ==================== Slide Navigation ====================
+let currentSlide = 0;
+const slides = document.querySelectorAll('.slide');
+const navBtns = document.querySelectorAll('.slide-nav button');
+let threeInitialized = false;
+
+function goSlide(idx) {
+  if (idx === currentSlide) return;
+  slides[currentSlide].classList.remove('active');
+  navBtns[currentSlide].classList.remove('active');
+  currentSlide = idx;
+  slides[currentSlide].classList.add('active');
+  navBtns[currentSlide].classList.add('active');
+
+  // Init Three.js when slide 2 is first shown
+  if (idx === 1 && !threeInitialized) {
+    setTimeout(initThreeJS, 100);
+  }
+  // Resize Three.js canvas
+  if (idx === 1 && threeInitialized && window._threeRenderer) {
+    setTimeout(resizeThree, 100);
+  }
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+    e.preventDefault();
+    if (currentSlide < slides.length - 1) goSlide(currentSlide + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (currentSlide > 0) goSlide(currentSlide - 1);
+  }
+});
+
+// ==================== Cover Particles ====================
+(function initParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 6 + 2;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (Math.random() * 8 + 6) + 's';
+    p.style.animationDelay = (Math.random() * 6) + 's';
+    container.appendChild(p);
+  }
+})();
+
+// ==================== Three.js 3D Bottle ====================
+let scene, camera, renderer, bottleGroup;
+let raycaster, mouse;
+let hoveredMesh = null;
+let bottleParts = {};
+const originalColors = {};
+const highlightColor = new THREE.Color(0x00D4AA);
+
+const partInfo = {
+  cap: {
+    title: '瓶盖 · Cap',
+    desc: 'PP材质螺旋盖 | 供应商：中粮包装 | 密封等级 A+ | 开启扭矩 2.8N·m'
+  },
+  body: {
+    title: '瓶身 · Body',
+    desc: 'PET材质 | 克重 18.5g | 壁厚 0.28mm | 供应商：华润化学材料 | 透光率 92%'
+  },
+  label: {
+    title: '标签 · Label',
+    desc: '品牌：农夫山泉 | 编码：NFS-550-GL | "我们不生产水，我们只是大自然的搬运工"'
+  },
+  bottom: {
+    title: '底部 · Base',
+    desc: '水源地：千岛湖/长白山/丹江口 | 天然水 | 钙≥4mg/L | 镁≥0.5mg/L'
+  }
+};
+
+function initThreeJS() {
+  if (threeInitialized) return;
+  threeInitialized = true;
+
+  const canvas = document.getElementById('bottle-canvas');
+  const container = canvas.parentElement;
+
+  // Scene
+  scene = new THREE.Scene();
+
+  // Camera
+  camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(3, 2, 5);
+  camera.lookAt(0, 0.5, 0);
+
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  window._threeRenderer = renderer;
+
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0x404060, 0.8);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  dirLight.position.set(5, 8, 5);
+  scene.add(dirLight);
+
+  const dirLight2 = new THREE.DirectionalLight(0x054ADA, 0.4);
+  dirLight2.position.set(-3, 4, -3);
+  scene.add(dirLight2);
+
+  const pointLight = new THREE.PointLight(0x00D4AA, 0.5, 20);
+  pointLight.position.set(0, 3, 3);
+  scene.add(pointLight);
+
+  // Bottle group
+  bottleGroup = new THREE.Group();
+  scene.add(bottleGroup);
+
+  // -- Cap (top) --
+  const capGroup = new THREE.Group();
+  capGroup.userData = { partName: 'cap' };
+
+  // Cap cylinder
+  const capGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.35, 32);
+  const capMat = new THREE.MeshPhongMaterial({
+    color: 0x7C3AED,
+    shininess: 80,
+    specular: 0x444444
+  });
+  const capMesh = new THREE.Mesh(capGeo, capMat);
+  capMesh.userData = { partName: 'cap' };
+  capGroup.add(capMesh);
+
+  // Cap top dome
+  const capTopGeo = new THREE.SphereGeometry(0.28, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+  const capTopMesh = new THREE.Mesh(capTopGeo, capMat);
+  capTopMesh.position.y = 0.175;
+  capTopMesh.userData = { partName: 'cap' };
+  capGroup.add(capTopMesh);
+
+  // Cap ring
+  const capRingGeo = new THREE.TorusGeometry(0.29, 0.03, 8, 32);
+  const capRingMat = new THREE.MeshPhongMaterial({ color: 0x6D28D9, shininess: 60 });
+  const capRing = new THREE.Mesh(capRingGeo, capRingMat);
+  capRing.position.y = -0.1;
+  capRing.rotation.x = Math.PI / 2;
+  capRing.userData = { partName: 'cap' };
+  capGroup.add(capRing);
+
+  capGroup.position.y = 2.1;
+  bottleGroup.add(capGroup);
+  bottleParts.cap = capGroup;
+
+  // -- Neck --
+  const neckGeo = new THREE.CylinderGeometry(0.22, 0.28, 0.3, 32);
+  const neckMat = new THREE.MeshPhongMaterial({
+    color: 0x1a6dd4,
+    shininess: 100,
+    specular: 0x666666,
+    transparent: true,
+    opacity: 0.7
+  });
+  const neckMesh = new THREE.Mesh(neckGeo, neckMat);
+  neckMesh.position.y = 1.8;
+  neckMesh.userData = { partName: 'body' };
+  bottleGroup.add(neckMesh);
+
+  // -- Body (main bottle) --
+  const bodyGroup = new THREE.Group();
+  bodyGroup.userData = { partName: 'body' };
+
+  // Upper body
+  const bodyUpperGeo = new THREE.CylinderGeometry(0.5, 0.55, 0.8, 32);
+  const bodyMat = new THREE.MeshPhongMaterial({
+    color: 0x1a6dd4,
+    shininess: 120,
+    specular: 0x888888,
+    transparent: true,
+    opacity: 0.45
+  });
+  const bodyUpper = new THREE.Mesh(bodyUpperGeo, bodyMat);
+  bodyUpper.position.y = 1.25;
+  bodyUpper.userData = { partName: 'body' };
+  bodyGroup.add(bodyUpper);
+
+  // Middle body
+  const bodyMidGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.9, 32);
+  const bodyMid = new THREE.Mesh(bodyMidGeo, bodyMat);
+  bodyMid.position.y = 0.4;
+  bodyMid.userData = { partName: 'body' };
+  bodyGroup.add(bodyMid);
+
+  // Lower body
+  const bodyLowerGeo = new THREE.CylinderGeometry(0.55, 0.45, 0.5, 32);
+  const bodyLower = new THREE.Mesh(bodyLowerGeo, bodyMat);
+  bodyLower.position.y = -0.3;
+  bodyLower.userData = { partName: 'body' };
+  bodyGroup.add(bodyLower);
+
+  bottleGroup.add(bodyGroup);
+  bottleParts.body = bodyGroup;
+
+  // -- Label --
+  const labelGroup = new THREE.Group();
+  labelGroup.userData = { partName: 'label' };
+
+  const labelGeo = new THREE.CylinderGeometry(0.565, 0.565, 1.0, 32, 1, true, -Math.PI * 0.45, Math.PI * 0.9);
+  const labelMat = new THREE.MeshPhongMaterial({
+    color: 0x00D4AA,
+    shininess: 60,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.85
+  });
+  const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+  labelMesh.position.y = 0.55;
+  labelMesh.userData = { partName: 'label' };
+  labelGroup.add(labelMesh);
+
+  // Label top stripe
+  const labelStripeGeo = new THREE.CylinderGeometry(0.57, 0.57, 0.05, 32, 1, true, -Math.PI * 0.45, Math.PI * 0.9);
+  const labelStripeMat = new THREE.MeshPhongMaterial({
+    color: 0xF59E0B,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.9
+  });
+  const labelStripeTop = new THREE.Mesh(labelStripeGeo, labelStripeMat);
+  labelStripeTop.position.y = 1.05;
+  labelStripeTop.userData = { partName: 'label' };
+  labelGroup.add(labelStripeTop);
+
+  const labelStripeBot = new THREE.Mesh(labelStripeGeo, labelStripeMat);
+  labelStripeBot.position.y = 0.05;
+  labelStripeBot.userData = { partName: 'label' };
+  labelGroup.add(labelStripeBot);
+
+  bottleGroup.add(labelGroup);
+  bottleParts.label = labelGroup;
+
+  // -- Bottom --
+  const bottomGroup = new THREE.Group();
+  bottomGroup.userData = { partName: 'bottom' };
+
+  // Bottom disc
+  const bottomGeo = new THREE.CircleGeometry(0.45, 32);
+  const bottomMat = new THREE.MeshPhongMaterial({
+    color: 0x3B82F6,
+    shininess: 40,
+    side: THREE.DoubleSide
+  });
+  const bottomMesh = new THREE.Mesh(bottomGeo, bottomMat);
+  bottomMesh.rotation.x = -Math.PI / 2;
+  bottomMesh.position.y = -0.55;
+  bottomMesh.userData = { partName: 'bottom' };
+  bottomGroup.add(bottomMesh);
+
+  // Bottom ring (base stand)
+  const baseRingGeo = new THREE.TorusGeometry(0.42, 0.04, 8, 32);
+  const baseRingMat = new THREE.MeshPhongMaterial({ color: 0x2563EB, shininess: 50 });
+  const baseRing = new THREE.Mesh(baseRingGeo, baseRingMat);
+  baseRing.rotation.x = Math.PI / 2;
+  baseRing.position.y = -0.55;
+  baseRing.userData = { partName: 'bottom' };
+  bottomGroup.add(baseRing);
+
+  // Inner bottom (concave)
+  const innerBottomGeo = new THREE.CircleGeometry(0.35, 32);
+  const innerBottomMat = new THREE.MeshPhongMaterial({
+    color: 0x1E40AF,
+    shininess: 30,
+    side: THREE.DoubleSide
+  });
+  const innerBottom = new THREE.Mesh(innerBottomGeo, innerBottomMat);
+  innerBottom.rotation.x = Math.PI / 2;
+  innerBottom.position.y = -0.53;
+  innerBottom.userData = { partName: 'bottom' };
+  bottomGroup.add(innerBottom);
+
+  bottleGroup.add(bottomGroup);
+  bottleParts.bottom = bottomGroup;
+
+  // Store original colors for all meshes
+  bottleGroup.traverse((child) => {
+    if (child.isMesh && child.material) {
+      originalColors[child.uuid] = child.material.color.clone();
+    }
+  });
+
+  // Raycaster
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  // Events
+  canvas.addEventListener('mousemove', onCanvasMouseMove);
+  canvas.addEventListener('click', onCanvasClick);
+  window.addEventListener('resize', resizeThree);
+
+  // OrbitControls (manual implementation for r128)
+  initOrbitControls(canvas);
+
+  // Animate
+  animate();
+}
+
+// ==================== OrbitControls (manual) ====================
+let isDragging = false;
+let prevMouse = { x: 0, y: 0 };
+let spherical = { theta: Math.PI / 4, phi: Math.PI / 3, radius: 6 };
+let targetSpherical = { ...spherical };
+let autoRotate = true;
+
+function initOrbitControls(canvas) {
+  canvas.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    autoRotate = false;
+    prevMouse = { x: e.clientX, y: e.clientY };
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevMouse.x;
+    const dy = e.clientY - prevMouse.y;
+    targetSpherical.theta -= dx * 0.008;
+    targetSpherical.phi = Math.max(0.3, Math.min(Math.PI - 0.3, targetSpherical.phi - dy * 0.008));
+    prevMouse = { x: e.clientX, y: e.clientY };
+  });
+
+  canvas.addEventListener('mouseup', () => { isDragging = false; });
+  canvas.addEventListener('mouseleave', () => { isDragging = false; });
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    targetSpherical.radius = Math.max(3, Math.min(12, targetSpherical.radius + e.deltaY * 0.005));
+  }, { passive: false });
+
+  // Touch support
+  let touchStartDist = 0;
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      autoRotate = false;
+      prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchStartDist = Math.sqrt(dx * dx + dy * dy);
+    }
+  });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && isDragging) {
+      const dx = e.touches[0].clientX - prevMouse.x;
+      const dy = e.touches[0].clientY - prevMouse.y;
+      targetSpherical.theta -= dx * 0.008;
+      targetSpherical.phi = Math.max(0.3, Math.min(Math.PI - 0.3, targetSpherical.phi - dy * 0.008));
+      prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const delta = touchStartDist - dist;
+      targetSpherical.radius = Math.max(3, Math.min(12, targetSpherical.radius + delta * 0.02));
+      touchStartDist = dist;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', () => { isDragging = false; });
+}
+
+function updateCamera() {
+  // Auto rotate slowly
+  if (autoRotate) {
+    targetSpherical.theta += 0.003;
+  }
+
+  // Smooth interpolation
+  spherical.theta += (targetSpherical.theta - spherical.theta) * 0.08;
+  spherical.phi += (targetSpherical.phi - spherical.phi) * 0.08;
+  spherical.radius += (targetSpherical.radius - spherical.radius) * 0.08;
+
+  camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+  camera.position.y = spherical.radius * Math.cos(spherical.phi);
+  camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+  camera.lookAt(0, 0.8, 0);
+}
+
+// ==================== Raycasting ====================
+function onCanvasMouseMove(e) {
+  const rect = e.target.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(bottleGroup.children, true);
+
+  // Reset previous hover
+  if (hoveredMesh) {
+    resetMeshColor(hoveredMesh);
+    hoveredMesh = null;
+  }
+
+  const tooltip = document.getElementById('bottle-tooltip');
+
+  if (intersects.length > 0) {
+    let obj = intersects[0].object;
+    while (obj && !obj.userData.partName) obj = obj.parent;
+    if (obj && obj.userData.partName) {
+      hoveredMesh = obj;
+      highlightMesh(obj);
+      e.target.style.cursor = 'pointer';
+
+      // Show tooltip
+      const info = partInfo[obj.userData.partName];
+      if (info) {
+        document.getElementById('tooltip-title').textContent = info.title;
+        document.getElementById('tooltip-desc').textContent = info.desc;
+        tooltip.style.left = (e.clientX - rect.left + 16) + 'px';
+        tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
+        tooltip.classList.add('visible');
+      }
+    } else {
+      tooltip.classList.remove('visible');
+      e.target.style.cursor = 'grab';
+    }
+  } else {
+    tooltip.classList.remove('visible');
+    e.target.style.cursor = 'grab';
+  }
+}
+
+function onCanvasClick(e) {
+  const rect = e.target.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(bottleGroup.children, true);
+
+  if (intersects.length > 0) {
+    let obj = intersects[0].object;
+    while (obj && !obj.userData.partName) obj = obj.parent;
+    if (obj && obj.userData.partName) {
+      activateInfoCard(obj.userData.partName);
+    }
+  }
+}
+
+function highlightMesh(group) {
+  group.traverse((child) => {
+    if (child.isMesh && child.material && child.material.color) {
+      child.material.emissive = new THREE.Color(0x00D4AA);
+      child.material.emissiveIntensity = 0.25;
+    }
+  });
+}
+
+function resetMeshColor(group) {
+  group.traverse((child) => {
+    if (child.isMesh && child.material) {
+      child.material.emissive = new THREE.Color(0x000000);
+      child.material.emissiveIntensity = 0;
+    }
+  });
+}
+
+function activateInfoCard(partName) {
+  document.querySelectorAll('.info-card').forEach(c => c.classList.remove('active'));
+  const card = document.querySelector(`.info-card[data-part="${partName}"]`);
+  if (card) {
+    card.classList.add('active');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function focusPart(partName) {
+  activateInfoCard(partName);
+  // Flash the 3D part
+  if (bottleParts[partName]) {
+    const group = bottleParts[partName];
+    highlightMesh(group);
+    setTimeout(() => resetMeshColor(group), 800);
+  }
+}
+
+// ==================== Animation Loop ====================
+function animate() {
+  requestAnimationFrame(animate);
+  updateCamera();
+
+  // Gentle floating animation for bottle
+  if (bottleGroup) {
+    bottleGroup.position.y = Math.sin(Date.now() * 0.001) * 0.05;
+  }
+
+  renderer.render(scene, camera);
+}
+
+function resizeThree() {
+  if (!renderer) return;
+  const container = document.getElementById('bottle-canvas').parentElement;
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+
+// ==================== Init ====================
+window.addEventListener('resize', () => {
+  if (threeInitialized) resizeThree();
+});
+</script>
+</body>
+</html>

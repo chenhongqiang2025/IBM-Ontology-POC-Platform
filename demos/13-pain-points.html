@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九大痛点 · 本体智能决策映射表</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0A0E1A;
+            --bg-secondary: #111827;
+            --bg-card: #1A2035;
+            --bg-hover: #1E2A45;
+            --bg-modal: rgba(10, 14, 26, 0.85);
+            --ibm-blue: #054ADA;
+            --ibm-blue-light: #3B7DED;
+            --ibm-blue-glow: rgba(5, 74, 218, 0.3);
+            --text-primary: #E8ECF4;
+            --text-secondary: #9CA3B8;
+            --text-muted: #6B7280;
+            --border-color: #2A3352;
+            --border-light: #374163;
+            --priority-high: #EF4444;
+            --priority-high-bg: rgba(239, 68, 68, 0.15);
+            --priority-mid: #F59E0B;
+            --priority-mid-bg: rgba(245, 158, 11, 0.15);
+            --priority-low: #22C55E;
+            --priority-low-bg: rgba(34, 197, 94, 0.15);
+            --danger: #DC2626;
+            --danger-hover: #B91C1C;
+            --success: #16A34A;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.6);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Background decoration */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 20% 20%, rgba(5, 74, 218, 0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 80%, rgba(59, 125, 237, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 14, 26, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 32px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-blue-light));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            box-shadow: 0 2px 12px var(--ibm-blue-glow);
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        .header-title span {
+            color: var(--ibm-blue-light);
+            font-weight: 400;
+            font-size: 13px;
+            margin-left: 8px;
+            opacity: 0.7;
+        }
+
+        .header-center {
+            flex: 1;
+            max-width: 420px;
+            min-width: 200px;
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .search-box input {
+            width: 100%;
+            height: 40px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 0 14px 0 40px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-box input:focus {
+            border-color: var(--ibm-blue);
+            box-shadow: 0 0 0 3px var(--ibm-blue-glow);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-blue-light));
+            color: #fff;
+            box-shadow: 0 2px 12px var(--ibm-blue-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px var(--ibm-blue-glow);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-light);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Main content */
+        .main {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 28px 32px 40px;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 160px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue { background: rgba(5, 74, 218, 0.15); color: var(--ibm-blue-light); }
+        .stat-icon.red { background: var(--priority-high-bg); color: var(--priority-high); }
+        .stat-icon.orange { background: var(--priority-mid-bg); color: var(--priority-mid); }
+        .stat-icon.green { background: var(--priority-low-bg); color: var(--priority-low); }
+
+        .stat-info { display: flex; flex-direction: column; }
+        .stat-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Table container */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+
+        thead {
+            background: rgba(5, 74, 218, 0.08);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        thead th {
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(17, 24, 39, 0.4);
+        }
+
+        tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        tbody tr.expanded {
+            background: rgba(5, 74, 218, 0.06);
+            border-bottom-color: transparent;
+        }
+
+        tbody td {
+            padding: 14px 18px;
+            font-size: 14px;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .cell-id {
+            font-weight: 600;
+            color: var(--ibm-blue-light);
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .cell-name {
+            font-weight: 500;
+            max-width: 180px;
+        }
+
+        .cell-text {
+            color: var(--text-secondary);
+            font-size: 13px;
+            max-width: 200px;
+            line-height: 1.5;
+        }
+
+        .cell-effect {
+            color: var(--priority-low);
+            font-weight: 500;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        /* Authority link */
+        .cell-authority {
+            white-space: nowrap;
+        }
+
+        .authority-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--ibm-blue-light);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 4px 10px;
+            background: rgba(5, 74, 218, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(5, 74, 218, 0.2);
+        }
+
+        .authority-link:hover {
+            background: rgba(5, 74, 218, 0.2);
+            border-color: rgba(5, 74, 218, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .authority-link i {
+            font-size: 11px;
+        }
+
+        /* Priority badge */
+        .priority-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .priority-badge.high {
+            background: var(--priority-high-bg);
+            color: var(--priority-high);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .priority-badge.mid {
+            background: var(--priority-mid-bg);
+            color: var(--priority-mid);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .priority-badge.low {
+            background: var(--priority-low-bg);
+            color: var(--priority-low);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .priority-badge i { font-size: 8px; }
+
+        /* Action buttons */
+        .cell-actions {
+            display: flex;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-light);
+        }
+
+        .action-btn.delete:hover {
+            background: var(--priority-high-bg);
+            color: var(--priority-high);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Expanded row */
+        .detail-row {
+            display: none;
+        }
+
+        .detail-row.visible {
+            display: table-row;
+        }
+
+        .detail-row td {
+            padding: 0 18px;
+            background: rgba(5, 74, 218, 0.03);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-content {
+            padding: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .detail-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+
+        .detail-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-card-header i {
+            color: var(--ibm-blue-light);
+            font-size: 14px;
+        }
+
+        .detail-card-body {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .detail-card-body a {
+            color: var(--ibm-blue-light);
+            text-decoration: none;
+        }
+
+        .detail-card-body a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: var(--bg-modal);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 560px;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-group label .required {
+            color: var(--priority-high);
+            margin-left: 2px;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 42px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 0 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--ibm-blue);
+            box-shadow: 0 0 0 3px var(--ibm-blue-glow);
+        }
+
+        textarea.form-control {
+            height: 80px;
+            padding: 10px 14px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+
+        .modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Confirm dialog */
+        .confirm-text {
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            text-align: center;
+            padding: 8px 0;
+        }
+
+        .confirm-text .item-name {
+            color: var(--ibm-blue-light);
+            font-weight: 600;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+        }
+
+        /* Toast notification */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-lg);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+            min-width: 240px;
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.success i { color: var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+        .toast.error i { color: var(--danger); }
+        .toast.info { border-left: 3px solid var(--ibm-blue); }
+        .toast.info i { color: var(--ibm-blue-light); }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(40px); }
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 24px 32px;
+            color: var(--text-muted);
+            font-size: 12px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+
+        .footer a {
+            color: var(--ibm-blue-light);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header { padding: 0 16px; height: 60px; }
+            .header-title span { display: none; }
+            .header-center { min-width: 140px; }
+            .main { padding: 16px; }
+            .stats-bar { gap: 10px; }
+            .stat-card { min-width: 120px; padding: 12px 14px; }
+            .stat-value { font-size: 18px; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="header-title">
+                九大痛点 · 本体智能决策映射表
+                <span>Ontology Pain Point Mapping</span>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="搜索痛点名称、实例或方案..." oninput="handleSearch()">
+            </div>
+        </div>
+        <div class="header-right">
+            <a href="../index.html" class="btn btn-ghost">
+                <i class="fas fa-arrow-left"></i> 返回平台
+            </a>
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> 新增痛点
+            </button>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main">
+        <!-- Stats -->
+        <div class="stats-bar" id="statsBar">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50px">编号</th>
+                            <th style="width:120px">痛点名称</th>
+                            <th style="width:180px">实例场景</th>
+                            <th style="width:180px">本体解决方案</th>
+                            <th style="width:140px">预期效果</th>
+                            <th style="width:140px">权威来源</th>
+                            <th style="width:80px">优先级</th>
+                            <th style="width:90px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="emptyState" style="display:none">
+                <i class="fas fa-search"></i>
+                <p>没有找到匹配的痛点记录</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="formModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="formModalTitle">新增痛点</h3>
+                <button class="modal-close" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>痛点名称 <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="formName" placeholder="例如：AI幻觉">
+                </div>
+                <div class="form-group">
+                    <label>实例场景 <span class="required">*</span></label>
+                    <textarea class="form-control" id="formCause" placeholder="描述具体实例场景..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>本体解决方案 <span class="required">*</span></label>
+                    <textarea class="form-control" id="formSolution" placeholder="描述基于本体的解决方案..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>预期效果 <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="formEffect" placeholder="例如：预测准确率提升25-35%">
+                </div>
+                <div class="form-group">
+                    <label>权威来源 <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="formAuthority" placeholder="例如：Palantir AIP">
+                </div>
+                <div class="form-group">
+                    <label>来源链接 <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="formLink" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>优先级 <span class="required">*</span></label>
+                    <select class="form-control" id="formPriority">
+                        <option value="">请选择优先级</option>
+                        <option value="高">高</option>
+                        <option value="中">中</option>
+                        <option value="低">低</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeFormModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveItem()"><i class="fas fa-check"></i> 保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width:400px">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle" style="color:var(--priority-high);margin-right:8px"></i>确认删除</h3>
+                <button class="modal-close" onclick="closeDeleteModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-text">
+                    确定要删除痛点 <span class="item-name" id="deleteItemName"></span> 吗？<br>此操作不可撤销。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeDeleteModal()">取消</button>
+                <button class="btn btn-danger" onclick="confirmDelete()"><i class="fas fa-trash-alt"></i> 删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        IBM Consulting &middot; Richard Chen
+    </footer>
+
+    <script>
+        // ==================== Data ====================
+        const DEFAULT_DATA = [
+            {
+                id: 'P1',
+                name: 'AI幻觉',
+                cause: '产能82%真实值（非猜测）',
+                solution: '本体锚定+事实API',
+                effect: '数据可信度提升',
+                authority: 'Palantir AIP',
+                link: 'https://www.palantir.com/platforms/aip/',
+                priority: '高'
+            },
+            {
+                id: 'P2',
+                name: '数据孤岛',
+                cause: '数据分散在三套ERP',
+                solution: '知识图谱统一语义层',
+                effect: '数据整合效率提升',
+                authority: 'W3C OWL',
+                link: 'https://www.w3.org/OWL/',
+                priority: '高'
+            },
+            {
+                id: 'P3',
+                name: '缺乏因果关系',
+                cause: '产能低→减产→缺货',
+                solution: '确定性推理+SWRL规则',
+                effect: '决策准确性提升',
+                authority: 'SWRL Standard',
+                link: 'https://www.w3.org/Submission/SWRL/',
+                priority: '高'
+            },
+            {
+                id: 'P4',
+                name: '跨企业协同',
+                cause: '金富/万凯/江天数据不可见',
+                solution: '开放本体+语义互操作',
+                effect: '供应链协同效率提升',
+                authority: 'IBM+Palantir',
+                link: 'https://www.ibm.com/consulting/',
+                priority: '高'
+            },
+            {
+                id: 'P5',
+                name: 'ROI难量化',
+                cause: '瓶盖延迟致缺货损失',
+                solution: '经济影响模拟+价值仪表盘',
+                effect: '投资回报可量化',
+                authority: 'Gartner',
+                link: 'https://www.gartner.com/en/supply-chain',
+                priority: '中'
+            },
+            {
+                id: 'P6',
+                name: '决策冗长',
+                cause: '预警后人工下单需3-5天',
+                solution: 'Action Types自动补货',
+                effect: '决策时间缩短80%',
+                authority: 'Palantir Action Types',
+                link: 'https://www.palantir.com/platforms/ontology/',
+                priority: '高'
+            },
+            {
+                id: 'P7',
+                name: '技术选择困惑',
+                cause: 'Palantir闭源vs开源',
+                solution: 'IBM混合开放架构',
+                effect: '技术路线清晰化',
+                authority: 'IBM Hybrid Cloud',
+                link: 'https://www.ibm.com/hybrid-cloud',
+                priority: '中'
+            },
+            {
+                id: 'P8',
+                name: 'AI信任度低',
+                cause: 'AI建议无解释',
+                solution: '可解释AI+决策追溯',
+                effect: 'AI采纳率提升',
+                authority: 'IBM watsonx',
+                link: 'https://www.ibm.com/watsonx',
+                priority: '中'
+            },
+            {
+                id: 'P9',
+                name: '数据主权隐忧',
+                cause: '补货逻辑被平台复用',
+                solution: '数据与模型分离(OWL)',
+                effect: '数据主权可控',
+                authority: 'W3C OWL',
+                link: 'https://www.w3.org/OWL/',
+                priority: '中'
+            }
+        ];
+
+        const STORAGE_KEY = 'ontology_pain_points_data_v2';
+        let data = [];
+        let expandedId = null;
+        let deleteTargetId = null;
+
+        // ==================== Persistence ====================
+        function loadData() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    data = JSON.parse(stored);
+                } else {
+                    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                    saveData();
+                }
+            } catch (e) {
+                data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // ==================== Render ====================
+        function renderStats() {
+            const total = data.length;
+            const high = data.filter(d => d.priority === '高').length;
+            const mid = data.filter(d => d.priority === '中').length;
+            const low = data.filter(d => d.priority === '低').length;
+
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-list-check"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value">${total}</div>
+                        <div class="stat-label">痛点总数</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fas fa-fire"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value">${high}</div>
+                        <div class="stat-label">高优先级</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fas fa-bolt"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value">${mid}</div>
+                        <div class="stat-label">中优先级</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-leaf"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value">${low}</div>
+                        <div class="stat-label">低优先级</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getPriorityClass(priority) {
+            switch (priority) {
+                case '高': return 'high';
+                case '中': return 'mid';
+                case '低': return 'low';
+                default: return 'mid';
+            }
+        }
+
+        function getPriorityIcon(priority) {
+            switch (priority) {
+                case '高': return 'fa-circle';
+                case '中': return 'fa-circle';
+                case '低': return 'fa-circle';
+                default: return 'fa-circle';
+            }
+        }
+
+        function renderTable(filter = '') {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            const keyword = filter.toLowerCase().trim();
+
+            const filtered = data.filter(item => {
+                if (!keyword) return true;
+                return item.name.toLowerCase().includes(keyword) ||
+                       item.cause.toLowerCase().includes(keyword) ||
+                       item.solution.toLowerCase().includes(keyword) ||
+                       item.effect.toLowerCase().includes(keyword) ||
+                       item.authority.toLowerCase().includes(keyword);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            let html = '';
+            filtered.forEach(item => {
+                const isExpanded = expandedId === item.id;
+                const pClass = getPriorityClass(item.priority);
+
+                html += `
+                    <tr class="${isExpanded ? 'expanded' : ''}" onclick="toggleExpand('${item.id}')">
+                        <td class="cell-id">${item.id}</td>
+                        <td class="cell-name">${escapeHtml(item.name)}</td>
+                        <td class="cell-text">${escapeHtml(item.cause)}</td>
+                        <td class="cell-text">${escapeHtml(item.solution)}</td>
+                        <td class="cell-effect">${escapeHtml(item.effect)}</td>
+                        <td class="cell-authority">
+                            <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" class="authority-link" onclick="event.stopPropagation()">
+                                ${escapeHtml(item.authority)}
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </td>
+                        <td>
+                            <span class="priority-badge ${pClass}">
+                                <i class="fas ${getPriorityIcon(item.priority)}"></i>
+                                ${escapeHtml(item.priority)}
+                            </span>
+                        </td>
+                        <td onclick="event.stopPropagation()">
+                            <div class="cell-actions">
+                                <button class="action-btn" title="编辑" onclick="openEditModal('${item.id}')">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="action-btn delete" title="删除" onclick="openDeleteModal('${item.id}')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="detail-row ${isExpanded ? 'visible' : ''}" id="detail-${item.id}">
+                        <td colspan="8">
+                            <div class="detail-content">
+                                <div class="detail-card">
+                                    <div class="detail-card-header">
+                                        <i class="fas fa-exclamation-circle"></i> 痛点名称
+                                    </div>
+                                    <div class="detail-card-body">${escapeHtml(item.name)}</div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-card-header">
+                                        <i class="fas fa-magnifying-glass-chart"></i> 实例场景
+                                    </div>
+                                    <div class="detail-card-body">${escapeHtml(item.cause)}</div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-card-header">
+                                        <i class="fas fa-lightbulb"></i> 本体解决方案
+                                    </div>
+                                    <div class="detail-card-body">${escapeHtml(item.solution)}</div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-card-header">
+                                        <i class="fas fa-chart-line"></i> 预期效果
+                                    </div>
+                                    <div class="detail-card-body" style="color:var(--priority-low);font-weight:500">${escapeHtml(item.effect)}</div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-card-header">
+                                        <i class="fas fa-link"></i> 权威来源
+                                    </div>
+                                    <div class="detail-card-body">
+                                        <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" style="color:var(--ibm-blue-light)">
+                                            ${escapeHtml(item.authority)} <i class="fas fa-external-link-alt" style="font-size:11px"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== Expand/Collapse ====================
+        function toggleExpand(id) {
+            expandedId = expandedId === id ? null : id;
+            const keyword = document.getElementById('searchInput').value;
+            renderTable(keyword);
+        }
+
+        // ==================== Search ====================
+        function handleSearch() {
+            const keyword = document.getElementById('searchInput').value;
+            expandedId = null;
+            renderTable(keyword);
+        }
+
+        // ==================== Add/Edit Modal ====================
+        function openAddModal() {
+            document.getElementById('formModalTitle').textContent = '新增痛点';
+            document.getElementById('editId').value = '';
+            document.getElementById('formName').value = '';
+            document.getElementById('formCause').value = '';
+            document.getElementById('formSolution').value = '';
+            document.getElementById('formEffect').value = '';
+            document.getElementById('formAuthority').value = '';
+            document.getElementById('formLink').value = '';
+            document.getElementById('formPriority').value = '';
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        function openEditModal(id) {
+            const item = data.find(d => d.id === id);
+            if (!item) return;
+
+            document.getElementById('formModalTitle').textContent = '编辑痛点';
+            document.getElementById('editId').value = item.id;
+            document.getElementById('formName').value = item.name;
+            document.getElementById('formCause').value = item.cause;
+            document.getElementById('formSolution').value = item.solution;
+            document.getElementById('formEffect').value = item.effect;
+            document.getElementById('formAuthority').value = item.authority;
+            document.getElementById('formLink').value = item.link;
+            document.getElementById('formPriority').value = item.priority;
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        function closeFormModal() {
+            document.getElementById('formModal').classList.remove('active');
+        }
+
+        function saveItem() {
+            const editId = document.getElementById('editId').value;
+            const name = document.getElementById('formName').value.trim();
+            const cause = document.getElementById('formCause').value.trim();
+            const solution = document.getElementById('formSolution').value.trim();
+            const effect = document.getElementById('formEffect').value.trim();
+            const authority = document.getElementById('formAuthority').value.trim();
+            const link = document.getElementById('formLink').value.trim();
+            const priority = document.getElementById('formPriority').value;
+
+            // Validation
+            if (!name) { showToast('请输入痛点名称', 'error'); return; }
+            if (!cause) { showToast('请输入实例场景', 'error'); return; }
+            if (!solution) { showToast('请输入本体解决方案', 'error'); return; }
+            if (!effect) { showToast('请输入预期效果', 'error'); return; }
+            if (!authority) { showToast('请输入权威来源', 'error'); return; }
+            if (!link) { showToast('请输入来源链接', 'error'); return; }
+            if (!priority) { showToast('请选择优先级', 'error'); return; }
+
+            if (editId) {
+                // Edit existing
+                const idx = data.findIndex(d => d.id === editId);
+                if (idx !== -1) {
+                    data[idx].name = name;
+                    data[idx].cause = cause;
+                    data[idx].solution = solution;
+                    data[idx].effect = effect;
+                    data[idx].authority = authority;
+                    data[idx].link = link;
+                    data[idx].priority = priority;
+                    showToast('痛点已更新', 'success');
+                }
+            } else {
+                // Add new
+                const maxNum = data.reduce((max, d) => {
+                    const num = parseInt(d.id.replace(/\D/g, ''), 10);
+                    return num > max ? num : max;
+                }, 0);
+                const newId = 'P' + (maxNum + 1);
+
+                data.push({
+                    id: newId,
+                    name,
+                    cause,
+                    solution,
+                    effect,
+                    authority,
+                    link,
+                    priority
+                });
+                showToast('痛点已添加', 'success');
+            }
+
+            saveData();
+            closeFormModal();
+            renderAll();
+        }
+
+        // ==================== Delete Modal ====================
+        function openDeleteModal(id) {
+            const item = data.find(d => d.id === id);
+            if (!item) return;
+
+            deleteTargetId = id;
+            document.getElementById('deleteItemName').textContent = item.name;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteTargetId = null;
+        }
+
+        function confirmDelete() {
+            if (!deleteTargetId) return;
+
+            data = data.filter(d => d.id !== deleteTargetId);
+            if (expandedId === deleteTargetId) expandedId = null;
+            saveData();
+            closeDeleteModal();
+            renderAll();
+            showToast('痛点已删除', 'info');
+        }
+
+        // ==================== Toast ====================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                info: 'fa-info-circle'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas ${iconMap[type]}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 3000);
+        }
+
+        // ==================== Render All ====================
+        function renderAll() {
+            renderStats();
+            const keyword = document.getElementById('searchInput').value;
+            renderTable(keyword);
+        }
+
+        // ==================== Init ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderAll();
+        });
+
+        // Close modals on overlay click
+        document.getElementById('formModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFormModal();
+        });
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteModal();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeFormModal();
+                closeDeleteModal();
+            }
+        });
+    </script>
+</body>
+</html>

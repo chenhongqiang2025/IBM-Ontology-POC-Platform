@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI ATP智能副驾驶 | 供应链智能计划系统</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-primary: #0A0E1A;
+    --bg-secondary: #111827;
+    --bg-card: #1A1F35;
+    --bg-card-hover: #222845;
+    --border-color: #2A3050;
+    --border-glow: #3B82F6;
+    --text-primary: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    --accent-blue: #3B82F6;
+    --accent-cyan: #06B6D4;
+    --accent-purple: #8B5CF6;
+    --accent-green: #10B981;
+    --accent-orange: #F59E0B;
+    --accent-red: #EF4444;
+    --accent-pink: #EC4899;
+    --gradient-blue: linear-gradient(135deg, #3B82F6, #06B6D4);
+    --gradient-purple: linear-gradient(135deg, #8B5CF6, #EC4899);
+    --gradient-green: linear-gradient(135deg, #10B981, #06B6D4);
+    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== Top Bar ===== */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .top-bar-logo {
+    width: 36px; height: 36px;
+    background: var(--gradient-blue);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff; font-weight: 700;
+  }
+  .top-bar-title {
+    font-size: 18px; font-weight: 600; letter-spacing: -0.3px;
+  }
+  .top-bar-title span { color: var(--accent-cyan); }
+  .top-bar-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    font-weight: 500;
+  }
+  .btn-back {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    color: var(--text-secondary); font-size: 13px;
+    text-decoration: none; transition: all 0.2s;
+    cursor: pointer;
+  }
+  .btn-back:hover {
+    background: var(--bg-card-hover); color: var(--text-primary);
+    border-color: var(--accent-blue);
+  }
+
+  /* ===== Main Layout ===== */
+  .main-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    padding: 16px 20px;
+    height: calc(100vh - 130px);
+    min-height: 560px;
+  }
+
+  /* ===== Panel Base ===== */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .panel:hover { border-color: rgba(59, 130, 246, 0.3); }
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
+  .panel-header i {
+    font-size: 16px; color: var(--accent-blue);
+  }
+  .panel-header-title {
+    font-size: 14px; font-weight: 600;
+  }
+  .panel-body {
+    flex: 1; overflow: auto; padding: 14px;
+  }
+
+  /* ===== Left Panel: Knowledge Graph ===== */
+  .kg-tabs {
+    display: flex; gap: 4px; margin-bottom: 12px; flex-shrink: 0;
+  }
+  .kg-tab {
+    flex: 1; padding: 8px 4px; text-align: center;
+    font-size: 12px; font-weight: 500;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .kg-tab.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+  .kg-tab:hover:not(.active) {
+    background: var(--bg-card-hover); color: var(--text-primary);
+  }
+  #kg-network {
+    width: 100%; height: 100%; min-height: 360px;
+    border-radius: var(--radius-sm);
+    background: rgba(10, 14, 26, 0.6);
+    border: 1px solid var(--border-color);
+  }
+
+  /* ===== Middle Panel: Query ===== */
+  .query-list { display: flex; flex-direction: column; gap: 10px; }
+  .query-card {
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer; transition: all 0.25s;
+    position: relative; overflow: hidden;
+  }
+  .query-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--gradient-blue); opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .query-card:hover { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+  .query-card:hover::before { opacity: 1; }
+  .query-card.active { border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.08); }
+  .query-card.active::before { opacity: 1; background: var(--gradient-green); }
+  .query-card-label {
+    font-size: 11px; font-weight: 600; color: var(--accent-cyan);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .query-card-title { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+  .query-chain {
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  }
+  .query-node {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: rgba(59, 130, 246, 0.12); color: var(--accent-blue);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    white-space: nowrap;
+  }
+  .query-arrow { color: var(--text-muted); font-size: 10px; }
+
+  .query-result {
+    margin-top: 14px; padding: 14px;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--radius-sm);
+    display: none;
+  }
+  .query-result.show { display: block; animation: fadeIn 0.3s ease; }
+  .query-result-header {
+    font-size: 12px; font-weight: 600; color: var(--accent-green);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .query-result-body { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
+  .query-result-body strong { color: var(--text-primary); }
+
+  /* ===== Right Panel: AI Copilot ===== */
+  .copilot-messages {
+    flex: 1; overflow-y: auto; display: flex;
+    flex-direction: column; gap: 12px; padding-bottom: 10px;
+  }
+  .msg {
+    max-width: 92%; padding: 10px 14px;
+    border-radius: 12px; font-size: 13px; line-height: 1.65;
+    animation: msgIn 0.3s ease;
+  }
+  .msg-ai {
+    align-self: flex-start;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 4px;
+    color: var(--text-primary);
+  }
+  .msg-user {
+    align-self: flex-end;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-bottom-right-radius: 4px;
+    color: var(--text-primary);
+  }
+  .msg-label {
+    font-size: 10px; font-weight: 600; margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .msg-ai .msg-label { color: var(--accent-cyan); }
+  .msg-user .msg-label { color: var(--accent-blue); }
+  .msg-content p { margin-bottom: 6px; }
+  .msg-content p:last-child { margin-bottom: 0; }
+  .msg-content .highlight { color: var(--accent-green); font-weight: 500; }
+  .msg-content .warn { color: var(--accent-orange); font-weight: 500; }
+  .msg-content .danger { color: var(--accent-red); font-weight: 500; }
+
+  .copilot-input-area {
+    padding-top: 12px; border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+  }
+  .copilot-scenarios {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px; margin-bottom: 10px;
+  }
+  .scenario-btn {
+    padding: 8px 6px; font-size: 11px; font-weight: 500;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.2s; text-align: center;
+    font-family: inherit;
+  }
+  .scenario-btn:hover {
+    border-color: var(--accent-purple); color: var(--accent-purple);
+    background: rgba(139, 92, 246, 0.08);
+  }
+  .scenario-btn i { margin-right: 4px; }
+
+  .copilot-input-row {
+    display: flex; gap: 8px;
+  }
+  .copilot-input {
+    flex: 1; padding: 10px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary); font-size: 13px;
+    font-family: inherit; outline: none;
+    transition: border-color 0.2s;
+  }
+  .copilot-input::placeholder { color: var(--text-muted); }
+  .copilot-input:focus { border-color: var(--accent-blue); }
+  .copilot-send {
+    padding: 10px 16px; border-radius: var(--radius-sm);
+    background: var(--gradient-blue); border: none;
+    color: #fff; font-size: 14px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .copilot-send:hover { opacity: 0.85; }
+
+  /* ===== Bottom Bar ===== */
+  .bottom-bar {
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--border-color);
+    background: rgba(17, 24, 39, 0.7);
+    backdrop-filter: blur(8px);
+  }
+  .demo-buttons { display: flex; gap: 10px; }
+  .demo-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; font-family: inherit;
+    border: 1px solid var(--border-color);
+    cursor: pointer; transition: all 0.25s;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+  }
+  .demo-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow); }
+  .demo-btn.btn-urgent { border-color: rgba(239, 68, 68, 0.4); color: var(--accent-red); }
+  .demo-btn.btn-urgent:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--accent-red); }
+  .demo-btn.btn-surge { border-color: rgba(245, 158, 11, 0.4); color: var(--accent-orange); }
+  .demo-btn.btn-surge:hover { background: rgba(245, 158, 11, 0.1); border-color: var(--accent-orange); }
+  .demo-btn.btn-shortage { border-color: rgba(139, 92, 246, 0.4); color: var(--accent-purple); }
+  .demo-btn.btn-shortage:hover { background: rgba(139, 92, 246, 0.1); border-color: var(--accent-purple); }
+  .demo-btn.btn-bottleneck { border-color: rgba(6, 182, 212, 0.4); color: var(--accent-cyan); }
+  .demo-btn.btn-bottleneck:hover { background: rgba(6, 182, 212, 0.1); border-color: var(--accent-cyan); }
+
+  .copyright {
+    font-size: 12px; color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ===== Animations ===== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .typing-indicator {
+    display: inline-flex; gap: 4px; padding: 8px 14px;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 12px; border-bottom-left-radius: 4px;
+  }
+  .typing-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-cyan); animation: pulse 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <div class="top-bar-logo"><i class="fas fa-brain"></i></div>
+    <div class="top-bar-title">AI <span>ATP</span> 智能副驾驶</div>
+    <div class="top-bar-badge">Supply Chain Intelligence v2.0</div>
+  </div>
+  <a href="../index.html" class="btn-back">
+    <i class="fas fa-arrow-left"></i> 返回平台
+  </a>
+</div>
+
+<!-- Main 3-Column Layout -->
+<div class="main-container">
+
+  <!-- Left: Knowledge Graph -->
+  <div class="panel">
+    <div class="panel-header">
+      <i class="fas fa-project-diagram"></i>
+      <span class="panel-header-title">知识图谱可视化</span>
+    </div>
+    <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="kg-tabs">
+        <div class="kg-tab active" data-tab="demand" onclick="switchKGTab('demand')">
+          <i class="fas fa-shopping-cart"></i> 需求域
+        </div>
+        <div class="kg-tab" data-tab="supply" onclick="switchKGTab('supply')">
+          <i class="fas fa-industry"></i> 供应域
+        </div>
+        <div class="kg-tab" data-tab="plan" onclick="switchKGTab('plan')">
+          <i class="fas fa-calendar-check"></i> 计划域
+        </div>
+      </div>
+      <div id="kg-network"></div>
+    </div>
+  </div>
+
+  <!-- Middle: Multi-hop Query -->
+  <div class="panel">
+    <div class="panel-header">
+      <i class="fas fa-route"></i>
+      <span class="panel-header-title">多跳查询演示</span>
+    </div>
+    <div class="panel-body">
+      <div class="query-list">
+
+        <div class="query-card" data-query="q1" onclick="runQuery('q1', this)">
+          <div class="query-card-label"><i class="fas fa-link"></i> 查询链路 A</div>
+          <div class="query-card-title">全链路可承诺量追踪</div>
+          <div class="query-chain">
+            <span class="query-node">客户</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">订单</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">成品</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">BOM</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">物料</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">供应商</span>
+          </div>
+        </div>
+
+        <div class="query-card" data-query="q2" onclick="runQuery('q2', this)">
+          <div class="query-card-label"><i class="fas fa-warehouse"></i> 查询链路 B</div>
+          <div class="query-card-title">库存分布可视化</div>
+          <div class="query-chain">
+            <span class="query-node">成品</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">库存</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">仓库</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">位置</span>
+          </div>
+        </div>
+
+        <div class="query-card" data-query="q3" onclick="runQuery('q3', this)">
+          <div class="query-card-label"><i class="fas fa-truck"></i> 查询链路 C</div>
+          <div class="query-card-title">供应商交期评估</div>
+          <div class="query-chain">
+            <span class="query-node">物料</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">供应商</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">产能</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">交期</span>
+          </div>
+        </div>
+
+        <div class="query-card" data-query="q4" onclick="runQuery('q4', this)">
+          <div class="query-card-label"><i class="fas fa-clock"></i> 查询链路 D</div>
+          <div class="query-card-title">订单承诺与物流跟踪</div>
+          <div class="query-chain">
+            <span class="query-node">订单</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">ATP检查</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">承诺日期</span>
+            <span class="query-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="query-node">物流</span>
+          </div>
+        </div>
+
+        <div class="query-result" id="query-result">
+          <div class="query-result-header">
+            <i class="fas fa-check-circle"></i> 查询结果
+          </div>
+          <div class="query-result-body" id="query-result-body"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: AI Copilot -->
+  <div class="panel">
+    <div class="panel-header">
+      <i class="fas fa-robot"></i>
+      <span class="panel-header-title">AI Copilot 智能助手</span>
+    </div>
+    <div class="panel-body" style="display:flex;flex-direction:column;">
+      <div class="copilot-messages" id="copilot-messages">
+        <div class="msg msg-ai">
+          <div class="msg-label"><i class="fas fa-robot"></i> ATP Copilot</div>
+          <div class="msg-content">
+            <p>您好，我是 <span class="highlight">AI ATP 智能副驾驶</span>，基于知识图谱与供应链本体模型，为您提供实时可承诺量分析与决策支持。</p>
+            <p>请选择下方业务场景，或直接输入您的问题。</p>
+          </div>
+        </div>
+      </div>
+      <div class="copilot-input-area">
+        <div class="copilot-scenarios">
+          <button class="scenario-btn" onclick="triggerScenario('urgent')">
+            <i class="fas fa-bolt"></i> 紧急插单处理
+          </button>
+          <button class="scenario-btn" onclick="triggerScenario('surge')">
+            <i class="fas fa-chart-line"></i> 需求激增应对
+          </button>
+          <button class="scenario-btn" onclick="triggerScenario('shortage')">
+            <i class="fas fa-exclamation-triangle"></i> 包材短缺预警
+          </button>
+          <button class="scenario-btn" onclick="triggerScenario('bottleneck')">
+            <i class="fas fa-cogs"></i> 产能瓶颈分析
+          </button>
+        </div>
+        <div class="copilot-input-row">
+          <input class="copilot-input" id="copilot-input" placeholder="输入供应链问题..." onkeydown="if(event.key==='Enter')sendMessage()">
+          <button class="copilot-send" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Bar -->
+<div class="bottom-bar">
+  <div class="demo-buttons">
+    <button class="demo-btn btn-urgent" onclick="triggerDemo('urgent')">
+      <i class="fas fa-bolt"></i> 紧急插单处理
+    </button>
+    <button class="demo-btn btn-surge" onclick="triggerDemo('surge')">
+      <i class="fas fa-chart-line"></i> 需求激增应对
+    </button>
+    <button class="demo-btn btn-shortage" onclick="triggerDemo('shortage')">
+      <i class="fas fa-exclamation-triangle"></i> 包材短缺预警
+    </button>
+    <button class="demo-btn btn-bottleneck" onclick="triggerDemo('bottleneck')">
+      <i class="fas fa-cogs"></i> 产能瓶颈分析
+    </button>
+  </div>
+  <div class="copyright">IBM Consulting &middot; Richard Chen</div>
+</div>
+
+<script>
+// =============================================
+// Knowledge Graph Data & Rendering
+// =============================================
+const graphData = {
+  demand: {
+    nodes: [
+      { id: 'd1', label: '客户\n(沃尔玛)', group: 'customer' },
+      { id: 'd2', label: '订单\n(PO-20240601)', group: 'order' },
+      { id: 'd3', label: '成品\n(550ml天然水)', group: 'product' },
+      { id: 'd4', label: '客户\n(永辉超市)', group: 'customer' },
+      { id: 'd5', label: '订单\n(PO-20240615)', group: 'order' },
+      { id: 'd6', label: '成品\n(茶π 500ml)', group: 'product' },
+      { id: 'd7', label: '客户\n(天猫旗舰店)', group: 'customer' },
+      { id: 'd8', label: '订单\n(PO-20240620)', group: 'order' },
+    ],
+    edges: [
+      { from: 'd1', to: 'd2', label: '下达' },
+      { from: 'd2', to: 'd3', label: '包含' },
+      { from: 'd4', to: 'd5', label: '下达' },
+      { from: 'd5', to: 'd6', label: '包含' },
+      { from: 'd7', to: 'd8', label: '下达' },
+      { from: 'd8', to: 'd3', label: '包含' },
+    ]
+  },
+  supply: {
+    nodes: [
+      { id: 's1', label: '成品\n(550ml天然水)', group: 'product' },
+      { id: 's2', label: 'BOM\n(BOM-001)', group: 'bom' },
+      { id: 's3', label: '物料\n(PET瓶坯)', group: 'material' },
+      { id: 's4', label: '物料\n(瓶盖)', group: 'material' },
+      { id: 's5', label: '物料\n(标签纸)', group: 'material' },
+      { id: 's6', label: '供应商\n(中富容器)', group: 'supplier' },
+      { id: 's7', label: '供应商\n(紫江企业)', group: 'supplier' },
+      { id: 's8', label: '供应商\n(正美标签)', group: 'supplier' },
+    ],
+    edges: [
+      { from: 's1', to: 's2', label: '分解' },
+      { from: 's2', to: 's3', label: '包含' },
+      { from: 's2', to: 's4', label: '包含' },
+      { from: 's2', to: 's5', label: '包含' },
+      { from: 's3', to: 's6', label: '供应' },
+      { from: 's4', to: 's7', label: '供应' },
+      { from: 's5', to: 's8', label: '供应' },
+    ]
+  },
+  plan: {
+    nodes: [
+      { id: 'p1', label: '订单\n(PO-20240601)', group: 'order' },
+      { id: 'p2', label: 'ATP检查\n(实时)', group: 'atp' },
+      { id: 'p3', label: '生产计划\n(PP-0610)', group: 'production' },
+      { id: 'p4', label: '采购计划\n(PR-0605)', group: 'purchase' },
+      { id: 'p5', label: '承诺日期\n(06-15)', group: 'date' },
+      { id: 'p6', label: '产能校验\n(线体A)', group: 'capacity' },
+      { id: 'p7', label: '物料齐套\n(检查中)', group: 'material_check' },
+    ],
+    edges: [
+      { from: 'p1', to: 'p2', label: '触发' },
+      { from: 'p2', to: 'p3', label: '通过→生成' },
+      { from: 'p2', to: 'p4', label: '通过→生成' },
+      { from: 'p2', to: 'p5', label: '输出' },
+      { from: 'p3', to: 'p6', label: '校验' },
+      { from: 'p4', to: 'p7', label: '校验' },
+    ]
+  }
+};
+
+const groupStyles = {
+  customer:     { color: { background: '#3B82F6', border: '#60A5FA', highlight: { background: '#60A5FA', border: '#93C5FD' } }, font: { color: '#E5E7EB' } },
+  order:        { color: { background: '#F59E0B', border: '#FBBF24', highlight: { background: '#FBBF24', border: '#FCD34D' } }, font: { color: '#1A1F35' } },
+  product:      { color: { background: '#10B981', border: '#34D399', highlight: { background: '#34D399', border: '#6EE7B7' } }, font: { color: '#1A1F35' } },
+  bom:          { color: { background: '#8B5CF6', border: '#A78BFA', highlight: { background: '#A78BFA', border: '#C4B5FD' } }, font: { color: '#E5E7EB' } },
+  material:     { color: { background: '#06B6D4', border: '#22D3EE', highlight: { background: '#22D3EE', border: '#67E8F9' } }, font: { color: '#1A1F35' } },
+  supplier:     { color: { background: '#EC4899', border: '#F472B6', highlight: { background: '#F472B6', border: '#F9A8D4' } }, font: { color: '#E5E7EB' } },
+  atp:          { color: { background: '#EF4444', border: '#F87171', highlight: { background: '#F87171', border: '#FCA5A5' } }, font: { color: '#fff' } },
+  production:   { color: { background: '#F59E0B', border: '#FBBF24', highlight: { background: '#FBBF24', border: '#FCD34D' } }, font: { color: '#1A1F35' } },
+  purchase:     { color: { background: '#8B5CF6', border: '#A78BFA', highlight: { background: '#A78BFA', border: '#C4B5FD' } }, font: { color: '#E5E7EB' } },
+  date:         { color: { background: '#10B981', border: '#34D399', highlight: { background: '#34D399', border: '#6EE7B7' } }, font: { color: '#1A1F35' } },
+  capacity:     { color: { background: '#06B6D4', border: '#22D3EE', highlight: { background: '#22D3EE', border: '#67E8F9' } }, font: { color: '#1A1F35' } },
+  material_check:{ color: { background: '#EC4899', border: '#F472B6', highlight: { background: '#F472B6', border: '#F9A8D4' } }, font: { color: '#E5E7EB' } },
+};
+
+let network = null;
+let currentTab = 'demand';
+
+function initNetwork(tab) {
+  const container = document.getElementById('kg-network');
+  const data = graphData[tab];
+
+  const nodes = new vis.DataSet(data.nodes.map(n => ({
+    ...n,
+    shape: 'box',
+    borderWidth: 2,
+    shadow: { enabled: true, color: 'rgba(0,0,0,0.3)', size: 8 },
+    font: { size: 11, face: 'Inter, Noto Sans SC, sans-serif', ...groupStyles[n.group]?.font },
+    color: groupStyles[n.group]?.color || { background: '#6B7280', border: '#9CA3AF' },
+  })));
+
+  const edges = new vis.DataSet(data.edges.map(e => ({
+    ...e,
+    arrows: 'to',
+    color: { color: 'rgba(107, 114, 128, 0.5)', highlight: '#3B82F6', hover: '#60A5FA' },
+    font: { size: 10, color: '#9CA3AF', strokeWidth: 0, face: 'Inter, Noto Sans SC, sans-serif' },
+    smooth: { type: 'curvedCW', roundness: 0.15 },
+    width: 1.5,
+  })));
+
+  const options = {
+    physics: { enabled: true, solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -80, springLength: 140, springConstant: 0.06 }, stabilization: { iterations: 80 } },
+    interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragView: true },
+    layout: { improvedLayout: true },
+  };
+
+  if (network) network.destroy();
+  network = new vis.Network(container, { nodes, edges }, options);
+}
+
+function switchKGTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.kg-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  initNetwork(tab);
+}
+
+// =============================================
+// Query System
+// =============================================
+const queryResults = {
+  q1: `<p><strong>链路追踪完成：</strong>客户(沃尔玛) → 订单(PO-20240601) → 成品(550ml天然水) → BOM(BOM-001) → 物料(PET瓶坯/瓶盖/标签纸) → 供应商(中富/紫江/正美)</p>
+<p><span class="highlight">ATP结论：</span>当前库存 <strong>12,000箱</strong>，订单需求 <strong>8,000箱</strong>，可完全满足。</p>
+<p>物料齐套率：<span class="highlight">96.7%</span>（标签纸库存偏低，建议提前采购）</p>`,
+
+  q2: `<p><strong>库存分布查询完成：</strong></p>
+<p>成品(550ml天然水) → 全国总库存 <strong>85,400箱</strong></p>
+<p>├─ 华东仓(杭州)：32,100箱 <span class="highlight">[充足]</span></p>
+<p>├─ 华南仓(广州)：18,600箱 <span class="highlight">[充足]</span></p>
+<p>├─ 华北仓(北京)：21,200箱 <span class="highlight">[充足]</span></p>
+<p>└─ 西南仓(成都)：13,500箱 <span class="warn">[偏低]</span></p>
+<p>建议：从华东仓调拨 <strong>3,000箱</strong> 至西南仓。</p>`,
+
+  q3: `<p><strong>供应商交期评估：</strong></p>
+<p>物料(PET瓶坯) → 供应商(中富容器)</p>
+<p>├─ 当前产能利用率：<strong>87%</strong></p>
+<p>├─ 标准交期：<span class="highlight">7天</span></p>
+<p>└─ 预计交期：<span class="highlight">7天</span> <span class="highlight">[正常]</span></p>
+<p>物料(瓶盖) → 供应商(紫江企业)</p>
+<p>├─ 当前产能利用率：<span class="warn">92%</span></p>
+<p>├─ 标准交期：<span class="highlight">5天</span></p>
+<p>└─ 预计交期：<span class="danger">8天</span> <span class="danger">[延迟风险]</span></p>
+<p>建议：紫江企业产能接近饱和，建议启动备选供应商。</p>`,
+
+  q4: `<p><strong>订单承诺与物流追踪：</strong></p>
+<p>订单(PO-20240601) → ATP检查 → <span class="highlight">通过</span></p>
+<p>├─ 承诺日期：<strong>2024-06-15</strong></p>
+<p>├─ 计划发货：2024-06-14</p>
+<p>├─ 物流方式：整车运输(顺丰冷链)</p>
+<p>├─ 预计到达：2024-06-16</p>
+<p>└─ 配送地址：上海市浦东新区沃尔玛配送中心</p>
+<p>全链路状态：<span class="highlight">绿色 - 按时交付</span></p>`
+};
+
+function runQuery(qId, cardEl) {
+  document.querySelectorAll('.query-card').forEach(c => c.classList.remove('active'));
+  cardEl.classList.add('active');
+
+  const resultEl = document.getElementById('query-result');
+  const bodyEl = document.getElementById('query-result-body');
+
+  resultEl.classList.remove('show');
+  setTimeout(() => {
+    bodyEl.innerHTML = queryResults[qId];
+    resultEl.classList.add('show');
+  }, 150);
+
+  // Highlight path in graph
+  highlightQueryPath(qId);
+}
+
+function highlightQueryPath(qId) {
+  if (!network) return;
+  const highlightMap = {
+    q1: { tab: 'demand', nodes: ['d1','d2','d3'], edges: [0,1] },
+    q2: { tab: 'supply', nodes: ['s1'], edges: [] },
+    q3: { tab: 'supply', nodes: ['s3','s6','s4','s7'], edges: [4,5] },
+    q4: { tab: 'plan', nodes: ['p1','p2','p5'], edges: [0,3] },
+  };
+  const cfg = highlightMap[qId];
+  if (!cfg) return;
+
+  if (cfg.tab !== currentTab) switchKGTab(cfg.tab);
+
+  setTimeout(() => {
+    network.setSelection({ nodes: cfg.nodes, edges: cfg.edges }, { highlightEdges: true });
+  }, 300);
+}
+
+// =============================================
+// AI Copilot
+// =============================================
+const scenarioResponses = {
+  urgent: {
+    user: '紧急插单：沃尔玛追加 5,000 箱 550ml 天然水，要求 3 天内交付。',
+    ai: `<p><strong>紧急插单分析报告</strong></p>
+<p>━━━━━━━━━━━━━━━━━━━━</p>
+<p><strong>1. ATP 实时检查</strong></p>
+<p>├─ 华东仓可用库存：<span class="highlight">32,100箱</span></p>
+<p>├─ 本次需求：5,000箱</p>
+<p>├─ 库存满足率：<span class="highlight">100%</span></p>
+<p>└─ 结论：<span class="highlight">可直接从库存分配</span></p>
+<p><strong>2. 物流方案</strong></p>
+<p>├─ 推荐路线：杭州仓 → 上海浦东</p>
+<p>├─ 运输方式：整车直发</p>
+<p>├─ 预计时效：<span class="highlight">1天</span></p>
+<p>└─ 物流成本：约 ¥8,500</p>
+<p><strong>3. 建议行动</strong></p>
+<p>✅ 立即创建发货单，锁定华东仓库存</p>
+<p>✅ 通知物流调度安排车辆</p>
+<p>✅ 同步沃尔玛确认收货时间窗口</p>
+<p><span class="highlight">→ 该插单可在承诺期内完成，无需启动生产。</span></p>`
+  },
+  surge: {
+    user: '夏季高温预警，预计未来两周天然水需求将激增 40%，如何应对？',
+    ai: `<p><strong>需求激增应对方案</strong></p>
+<p>━━━━━━━━━━━━━━━━━━━━</p>
+<p><strong>1. 需求预测分析</strong></p>
+<p>├─ 历史同期增幅：<span class="warn">35%~45%</span></p>
+<p>├─ 预测增量：约 <strong>120,000箱/周</strong></p>
+<p>└─ 影响产品：550ml天然水、380ml天然水</p>
+<p><strong>2. 产能评估</strong></p>
+<p>├─ 当前产能利用率：<span class="warn">78%</span></p>
+<p>├─ 可提升空间：增加至 <span class="highlight">95%</span></p>
+<p>├─ 需启动产线：杭州线3、广州线2</p>
+<p>└─ 额外产出：<span class="highlight">+85,000箱/周</span></p>
+<p><strong>3. 物料保障</strong></p>
+<p>├─ PET瓶坯：库存 <span class="highlight">充足</span>（可支撑3周）</p>
+<p>├─ 瓶盖：库存 <span class="warn">需补充</span>（建议立即下单）</p>
+<p>└─ 标签纸：库存 <span class="danger">紧张</span>（需紧急采购）</p>
+<p><strong>4. 综合建议</strong></p>
+<p>✅ 立即启动产能提升计划</p>
+<p>✅ 向紫江企业追加瓶盖订单 50万件</p>
+<p>✅ 向正美标签紧急采购标签纸</p>
+<p>✅ 提前锁定物流运力</p>`
+  },
+  shortage: {
+    user: '包材供应商正美标签通知：标签纸产线故障，预计停机 5 天，影响范围？',
+    ai: `<p><strong>包材短缺影响评估</strong></p>
+<p>━━━━━━━━━━━━━━━━━━━━</p>
+<p><strong>1. 影响范围分析</strong></p>
+<p>├─ 受影响物料：标签纸（正美标签供应）</p>
+<p>├─ 关联成品：550ml天然水、茶π 500ml、东方树叶 500ml</p>
+<p>├─ 当前库存：<span class="warn">可支撑约4天生产</span></p>
+<p>└─ 缺口量：约 <span class="danger">28万张</span></p>
+<p><strong>2. 替代方案</strong></p>
+<p>├─ 备选供应商A：上海彩印厂</p>
+<p>│  ├─ 产能：可承接 <span class="highlight">15万张</span></p>
+<p>│  └─ 交期：<span class="highlight">3天</span></p>
+<p>├─ 备选供应商B：深圳永祥包装</p>
+<p>│  ├─ 产能：可承接 <span class="highlight">20万张</span></p>
+<p>│  └─ 交期：<span class="warn">5天</span></p>
+<p>└─ 建议组合：A + B 分批交付</p>
+<p><strong>3. 风险提示</strong></p>
+<p><span class="danger">⚠ 若不立即行动，预计 6 月 20 日起将影响成品下线。</span></p>
+<p><strong>4. 建议行动</strong></p>
+<p>✅ 立即向上海彩印厂下达紧急订单</p>
+<p>✅ 同步深圳永祥启动备选产能</p>
+<p>✅ 调整生产排程，优先使用库存标签纸</p>
+<p>✅ 每日跟踪正美标签恢复进度</p>`
+  },
+  bottleneck: {
+    user: '杭州工厂灌装线A产能利用率已达 98%，如何优化？',
+    ai: `<p><strong>产能瓶颈分析报告</strong></p>
+<p>━━━━━━━━━━━━━━━━━━━━</p>
+<p><strong>1. 瓶颈定位</strong></p>
+<p>├─ 瓶颈工序：灌装线A（杭州工厂）</p>
+<p>├─ 当前利用率：<span class="danger">98%</span></p>
+<p>├─ 理论产能：600瓶/分钟</p>
+<p>└─ 实际产出：588瓶/分钟（效率 <span class="warn">98%</span>）</p>
+<p><strong>2. 根因分析</strong></p>
+<p>├─ 换型时间过长：平均 <span class="warn">45分钟/次</span>（行业标杆 25分钟）</p>
+<p>├─ 微停机频次偏高：<span class="warn">12次/班</span></p>
+<p>└─ 备件等待时间：平均 <span class="warn">30分钟</span></p>
+<p><strong>3. 优化方案</strong></p>
+<p>├─ <span class="highlight">方案一：SMED 快速换型</span></p>
+<p>│  └─ 预计提升产能 <span class="highlight">+5%</span></p>
+<p>├─ <span class="highlight">方案二：TPM 全员生产维护</span></p>
+<p>│  └─ 减少微停机至 5次/班</p>
+<p>├─ <span class="highlight">方案三：备件预置管理</span></p>
+<p>│  └─ 备件等待降至 <span class="highlight">5分钟</span></p>
+<p>└─ 综合提升：<span class="highlight">+8%~12%</span></p>
+<p><strong>4. 短期缓解</strong></p>
+<p>✅ 将部分订单分流至灌装线B（利用率 72%）</p>
+<p>✅ 非紧急品种排至夜班生产</p>
+<p>✅ 预计可释放 <span class="highlight">15%</span> 产能空间</p>`
+  }
+};
+
+function triggerScenario(key) {
+  const data = scenarioResponses[key];
+  if (!data) return;
+
+  const container = document.getElementById('copilot-messages');
+
+  // User message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg msg-user';
+  userMsg.innerHTML = `<div class="msg-label"><i class="fas fa-user"></i> 用户</div><div class="msg-content"><p>${data.user}</p></div>`;
+  container.appendChild(userMsg);
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.id = 'typing';
+  typing.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  // AI response after delay
+  setTimeout(() => {
+    typing.remove();
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'msg msg-ai';
+    aiMsg.innerHTML = `<div class="msg-label"><i class="fas fa-robot"></i> ATP Copilot</div><div class="msg-content">${data.ai}</div>`;
+    container.appendChild(aiMsg);
+    container.scrollTop = container.scrollHeight;
+  }, 1200);
+}
+
+function sendMessage() {
+  const input = document.getElementById('copilot-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const container = document.getElementById('copilot-messages');
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg msg-user';
+  userMsg.innerHTML = `<div class="msg-label"><i class="fas fa-user"></i> 用户</div><div class="msg-content"><p>${text}</p></div>`;
+  container.appendChild(userMsg);
+
+  // Typing
+  const typing = document.createElement('div');
+  typing.className = 'typing-indicator';
+  typing.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  setTimeout(() => {
+    typing.remove();
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'msg msg-ai';
+    aiMsg.innerHTML = `<div class="msg-label"><i class="fas fa-robot"></i> ATP Copilot</div><div class="msg-content"><p>已收到您的问题。基于知识图谱分析：</p><p>该查询涉及供应链多域数据关联，正在通过本体推理引擎进行语义解析与路径规划。建议您点击左侧预设的业务场景按钮，获取更详细的分析报告。</p><p>如需进一步协助，请描述具体的业务场景。</p></div>`;
+    container.appendChild(aiMsg);
+    container.scrollTop = container.scrollHeight;
+  }, 1000);
+}
+
+// =============================================
+// Bottom Demo Buttons
+// =============================================
+function triggerDemo(key) {
+  // Switch to plan tab
+  switchKGTab('plan');
+
+  // Activate corresponding query
+  const queryMap = { urgent: 'q4', surge: 'q1', shortage: 'q3', bottleneck: 'q2' };
+  const qId = queryMap[key];
+  if (qId) {
+    const card = document.querySelector(`.query-card[data-query="${qId}"]`);
+    if (card) runQuery(qId, card);
+  }
+
+  // Trigger copilot scenario
+  setTimeout(() => triggerScenario(key), 400);
+}
+
+// =============================================
+// Init
+// =============================================
+window.addEventListener('DOMContentLoaded', () => {
+  initNetwork('demand');
+});
+</script>
+</body>
+</html>

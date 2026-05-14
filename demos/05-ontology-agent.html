@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本体智能问数Agent - IBM Ontology POC Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ===== Reset & Base ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-card-hover: rgba(30, 41, 59, 0.9);
+            --cyan: #00D4AA;
+            --blue: #0077B6;
+            --red: #FF6B6B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --border: rgba(148, 163, 184, 0.15);
+            --glow-cyan: rgba(0, 212, 170, 0.3);
+            --glow-blue: rgba(0, 119, 182, 0.3);
+            --glow-red: rgba(255, 107, 107, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Top Bar ===== */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.6);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .top-bar-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .top-bar-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .top-bar-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-back:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: rgba(0, 212, 170, 0.08);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px var(--glow-cyan);
+        }
+
+        /* ===== Page Header ===== */
+        .page-header {
+            text-align: center;
+            padding: 40px 32px 24px;
+        }
+
+        .page-header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--cyan), var(--blue), #60A5FA, var(--cyan));
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 6s ease infinite;
+            letter-spacing: -0.5px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .page-header p {
+            margin-top: 10px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        /* ===== Main Layout ===== */
+        .main-container {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 24px;
+            padding: 0 32px 32px;
+            max-width: 1440px;
+            margin: 0 auto;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* ===== Left Panel - Agent Flow ===== */
+        .agent-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            color: var(--cyan);
+            font-size: 18px;
+        }
+
+        .panel-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        /* Flow Nodes */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            flex: 1;
+        }
+
+        .flow-node {
+            display: flex;
+            gap: 16px;
+            position: relative;
+            padding-bottom: 28px;
+            opacity: 0.4;
+            transition: all 0.5s ease;
+        }
+
+        .flow-node.active {
+            opacity: 1;
+        }
+
+        .flow-node.completed {
+            opacity: 0.7;
+        }
+
+        .flow-node:last-child {
+            padding-bottom: 0;
+        }
+
+        /* Timeline line */
+        .flow-node:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 44px;
+            width: 2px;
+            height: calc(100% - 44px);
+            background: var(--border);
+            transition: background 0.5s ease;
+        }
+
+        .flow-node.completed:not(:last-child)::after {
+            background: linear-gradient(to bottom, var(--cyan), var(--blue));
+        }
+
+        .flow-node.active:not(:last-child)::after {
+            background: linear-gradient(to bottom, var(--cyan), var(--border));
+        }
+
+        /* Node icon */
+        .node-icon {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            transition: all 0.5s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .flow-node.active .node-icon {
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(0, 119, 182, 0.2));
+            border-color: var(--cyan);
+            color: var(--cyan);
+            box-shadow: 0 0 20px var(--glow-cyan), 0 0 40px rgba(0, 212, 170, 0.1);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .flow-node.completed .node-icon {
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            border-color: transparent;
+            color: #fff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px var(--glow-cyan), 0 0 40px rgba(0, 212, 170, 0.1); }
+            50% { box-shadow: 0 0 30px var(--glow-cyan), 0 0 60px rgba(0, 212, 170, 0.2); }
+        }
+
+        .node-content {
+            flex: 1;
+            padding-top: 2px;
+        }
+
+        .node-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            transition: color 0.5s ease;
+        }
+
+        .flow-node.active .node-title {
+            color: var(--cyan);
+        }
+
+        .flow-node.completed .node-title {
+            color: var(--text-primary);
+        }
+
+        .node-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            transition: color 0.5s ease;
+        }
+
+        .flow-node.active .node-desc {
+            color: var(--text-secondary);
+        }
+
+        .node-detail {
+            margin-top: 8px;
+            padding: 10px 14px;
+            background: rgba(0, 212, 170, 0.05);
+            border: 1px solid rgba(0, 212, 170, 0.15);
+            border-radius: 8px;
+            font-size: 11px;
+            color: var(--cyan);
+            line-height: 1.6;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .flow-node.active .node-detail {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Status indicator at bottom */
+        .agent-status {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: background 0.3s ease;
+        }
+
+        .status-dot.running {
+            background: var(--cyan);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        .status-dot.done {
+            background: var(--cyan);
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ===== Right Panel - Chat ===== */
+        .chat-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--blue), #60A5FA);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .chat-header-info h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .chat-header-info span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .chat-online {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--cyan);
+        }
+
+        .chat-online::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--cyan);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        /* Question buttons */
+        .question-section {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .question-section-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .question-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .question-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.5);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        .question-btn:hover {
+            border-color: var(--blue);
+            color: var(--text-primary);
+            background: rgba(0, 119, 182, 0.08);
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px var(--glow-blue);
+        }
+
+        .question-btn:active {
+            transform: translateX(2px);
+        }
+
+        .question-btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .question-btn .q-icon {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: rgba(0, 119, 182, 0.15);
+            color: var(--blue);
+        }
+
+        .question-btn:hover .q-icon {
+            background: rgba(0, 119, 182, 0.25);
+        }
+
+        /* Chat messages */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 300px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .welcome-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.15), rgba(0, 119, 182, 0.15));
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+            color: var(--cyan);
+        }
+
+        .welcome-message h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .welcome-message p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Message bubbles */
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: msgIn 0.4s ease;
+        }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .message.assistant .msg-avatar {
+            background: linear-gradient(135deg, var(--blue), #60A5FA);
+            color: #fff;
+        }
+
+        .message.user .msg-avatar {
+            background: linear-gradient(135deg, var(--cyan), #34D399);
+            color: #fff;
+        }
+
+        .msg-bubble {
+            max-width: 80%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 13.5px;
+            line-height: 1.75;
+        }
+
+        .message.assistant .msg-bubble {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-top-left-radius: 4px;
+        }
+
+        .message.user .msg-bubble {
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.15), rgba(0, 119, 182, 0.15));
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            color: var(--text-primary);
+            border-top-right-radius: 4px;
+        }
+
+        .msg-bubble .highlight {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .msg-bubble .data-val {
+            color: var(--blue);
+            font-weight: 600;
+        }
+
+        .msg-bubble .warn {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .msg-bubble .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin: 0 2px;
+        }
+
+        .msg-bubble .tag-cyan {
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--cyan);
+        }
+
+        .msg-bubble .tag-blue {
+            background: rgba(0, 119, 182, 0.15);
+            color: var(--blue);
+        }
+
+        .msg-bubble .tag-red {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--red);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+
+        .typing-indicator span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            text-align: center;
+            padding: 20px 32px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .footer span {
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            .agent-panel {
+                max-height: 400px;
+                overflow-y: auto;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .top-bar { padding: 12px 16px; }
+            .page-header { padding: 24px 16px 16px; }
+            .page-header h1 { font-size: 24px; }
+            .main-container { padding: 0 16px 16px; gap: 16px; }
+            .agent-panel, .chat-panel { padding: 0; }
+            .question-section { padding: 16px; }
+            .chat-messages { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="top-bar-logo">ON</div>
+            <div>
+                <div class="top-bar-title">IBM Ontology POC Platform</div>
+                <div class="top-bar-subtitle">Enterprise Knowledge Graph & Intelligent Agent</div>
+            </div>
+        </div>
+        <a href="../index.html" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            返回平台
+        </a>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>本体智能问数 Agent</h1>
+        <p>基于企业本体知识图谱的AI Agent，通过多跳推理与语义检索实现精准智能问答</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+
+        <!-- Left: Agent Flow Panel -->
+        <div class="agent-panel">
+            <div class="panel-title">
+                <i class="fas fa-robot"></i>
+                Agent 工作流程
+            </div>
+            <div class="panel-desc">观察AI Agent如何通过本体知识图谱，逐步解析问题、执行推理并生成专业回答。</div>
+
+            <div class="flow-container">
+                <!-- Node 1 -->
+                <div class="flow-node" id="node-1">
+                    <div class="node-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <div class="node-content">
+                        <div class="node-title">Step 1 - 用户提问</div>
+                        <div class="node-desc">接收自然语言问题，进行意图识别与实体抽取</div>
+                        <div class="node-detail">
+                            <i class="fas fa-microchip"></i> NLU引擎识别实体类型、关系意图与查询范围，构建结构化查询请求
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Node 2 -->
+                <div class="flow-node" id="node-2">
+                    <div class="node-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="node-content">
+                        <div class="node-title">Step 2 - 本体解析</div>
+                        <div class="node-desc">映射问题到本体模型，定位相关概念与关系路径</div>
+                        <div class="node-detail">
+                            <i class="fas fa-sitemap"></i> 将实体映射至Ontology Class，识别属性关系(ObjectProperty/DataProperty)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Node 3 -->
+                <div class="flow-node" id="node-3">
+                    <div class="node-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <div class="node-content">
+                        <div class="node-title">Step 3 - 多跳推理</div>
+                        <div class="node-desc">沿知识图谱执行多跳路径推理，发现隐含关联</div>
+                        <div class="node-detail">
+                            <i class="fas fa-brain"></i> SPARQL多跳查询 + 规则引擎推理，遍历关联节点发现深层知识
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Node 4 -->
+                <div class="flow-node" id="node-4">
+                    <div class="node-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="node-content">
+                        <div class="node-title">Step 4 - 知识检索</div>
+                        <div class="node-desc">从知识图谱与关联数据源聚合检索结构化数据</div>
+                        <div class="node-detail">
+                            <i class="fas fa-search"></i> 聚合KG三元组、时序数据、文档知识，构建完整证据链
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Node 5 -->
+                <div class="flow-node" id="node-5">
+                    <div class="node-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="node-content">
+                        <div class="node-title">Step 5 - 答案生成</div>
+                        <div class="node-desc">基于检索结果生成专业、数据驱动的结构化回答</div>
+                        <div class="node-detail">
+                            <i class="fas fa-magic"></i> LLM结合知识图谱上下文，生成包含数据引用的专业回答
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Status -->
+            <div class="agent-status">
+                <div class="status-dot" id="status-dot"></div>
+                <div class="status-text" id="status-text">等待提问...</div>
+            </div>
+        </div>
+
+        <!-- Right: Chat Panel -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <div class="chat-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="chat-header-info">
+                        <h3>Ontology Agent</h3>
+                        <span>Powered by Knowledge Graph + LLM</span>
+                    </div>
+                </div>
+                <div class="chat-online">在线</div>
+            </div>
+
+            <!-- Question Buttons -->
+            <div class="question-section">
+                <div class="question-section-label">
+                    <i class="fas fa-lightbulb"></i> 试试这些问题
+                </div>
+                <div class="question-grid">
+                    <button class="question-btn" onclick="askQuestion(0)" id="qbtn-0">
+                        <div class="q-icon"><i class="fas fa-industry"></i></div>
+                        <span>550ml天然水的瓶盖供应商是谁？产能如何？</span>
+                    </button>
+                    <button class="question-btn" onclick="askQuestion(1)" id="qbtn-1">
+                        <div class="q-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <span>如果万凯新材PET断供，影响范围是什么？</span>
+                    </button>
+                    <button class="question-btn" onclick="askQuestion(2)" id="qbtn-2">
+                        <div class="q-icon"><i class="fas fa-water"></i></div>
+                        <span>农夫山泉有哪些水源地？水质标准是什么？</span>
+                    </button>
+                    <button class="question-btn" onclick="askQuestion(3)" id="qbtn-3">
+                        <div class="q-icon"><i class="fas fa-coins"></i></div>
+                        <span>一瓶550ml天然水的成本构成是怎样的？</span>
+                    </button>
+                    <button class="question-btn" onclick="askQuestion(4)" id="qbtn-4">
+                        <div class="q-icon"><i class="fas fa-chart-line"></i></div>
+                        <span>金富科技瓶盖产能低于阈值会怎样？</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="welcome-message" id="welcome-msg">
+                    <div class="welcome-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>本体智能问数 Agent</h3>
+                    <p>我是基于企业本体知识图谱构建的智能问答Agent。<br>点击上方问题，观察我如何通过知识推理为您解答。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <span>IBM Consulting</span> &middot; Richard Chen &middot; &copy; 2024
+    </div>
+
+    <script>
+        // ===== Data =====
+        const qaData = [
+            {
+                question: "550ml天然水的瓶盖供应商是谁？产能如何？",
+                answer: `经过本体知识图谱检索，为您找到以下信息：
+
+<span class="highlight">550ml天然水</span>的瓶盖供应商为 <span class="tag tag-cyan">金富科技</span>（股票代码：300502.SZ）。
+
+<span class="tag tag-blue">产能数据：</span>
+&bull; 年设计产能：<span class="data-val">120亿只/年</span>
+&bull; 当前利用率：<span class="data-val">87.3%</span>
+&bull; 月均供货量：<span class="data-val">8.7亿只</span>
+&bull; 供货占比：占农夫山泉瓶盖总采购量的 <span class="data-val">62%</span>
+
+<span class="tag tag-blue">产品规格：</span>
+&bull; 3025标准口径瓶盖，单只重量 <span class="data-val">2.8g</span>
+&bull; 材质：HDPE食品级树脂
+&bull; 通过FDA、EU10/2011食品接触材料认证
+
+<span class="tag tag-cyan">知识图谱路径：</span>
+550ml天然水 → hasComponent → 瓶盖 → suppliedBy → 金富科技 → hasCapacity → 120亿只/年`
+            },
+            {
+                question: "如果万凯新材PET断供，影响范围是什么？",
+                answer: `通过本体多跳推理引擎分析，<span class="warn">万凯新材PET断供</span>将产生以下连锁影响：
+
+<span class="tag tag-red">直接影响（Tier 1）：</span>
+&bull; PET瓶坯供应缺口：<span class="data-val">约15万吨/年</span>
+&bull; 影响产品线：550ml、380ml、1.5L天然水系列
+&bull; 预计产能损失：<span class="data-val">约23%</span>的瓶装水产量
+
+<span class="tag tag-red">间接影响（Tier 2）：</span>
+&bull; <span class="highlight">华南生产基地</span>（广州、深圳）首当其冲，万凯供货占比达 <span class="data-val">71%</span>
+&bull; <span class="highlight">华中生产基地</span>（武汉）受影响比例 <span class="data-val">45%</span>
+&bull; 预计月度营收影响：<span class="data-val">1.8~2.3亿元</span>
+
+<span class="tag tag-blue">替代方案评估：</span>
+&bull; 备选供应商1：<span class="tag tag-cyan">华润材料</span>，可承接 <span class="data-val">8万吨/年</span>
+&bull; 备选供应商2：<span class="tag tag-cyan">逸盛石化</span>，可承接 <span class="data-val">5万吨/年</span>
+&bull; 切换周期：<span class="data-val">45~60天</span>（含认证与试产）
+
+<span class="tag tag-cyan">知识图谱路径：</span>
+万凯新材 → supplies → PET树脂 → usedBy → 瓶坯 → assembledInto → PET瓶 → packagingOf → 天然水产品 → producedAt → 各生产基地`
+            },
+            {
+                question: "农夫山泉有哪些水源地？水质标准是什么？",
+                answer: `根据本体知识图谱的水源地子图检索，农夫山泉目前拥有 <span class="highlight">12大优质水源地</span>：
+
+<span class="tag tag-blue">核心水源地：</span>
+&bull; <span class="highlight">浙江千岛湖</span> — 国家一级水源保护区，pH 7.3&plusmn;0.2
+&bull; <span class="highlight">吉林长白山</span>（靖宇/抚松）— 火山岩层深层地下水，TDS 35~65mg/L
+&bull; <span class="highlight">湖北丹江口</span> — 南水北调中线源头，水温恒定9~11&deg;C
+&bull; <span class="highlight">广东万绿湖</span> — 华南最大人工湖，溶解氧 &ge;7.5mg/L
+&bull; <span class="highlight">新疆天山玛纳斯</span> — 冰川融水，矿化度 80~120mg/L
+&bull; <span class="highlight">四川峨眉山</span> — 深层玄武岩裂隙水，锶含量 &ge;0.2mg/L
+&bull; <span class="highlight">陕西太白山</span> — 秦岭主峰冰川水源，钠含量 &le;5mg/L
+&bull; <span class="highlight">贵州武陵山</span> — 碳酸岩溶滤水，偏硅酸 &ge;25mg/L
+&bull; <span class="highlight">黑龙江大兴安岭</span> — 寒温带原始森林水源
+&bull; <span class="highlight">河北雾灵山</span> — 燕山山脉深层水
+&bull; <span class="highlight">安徽黄山</span> — 花岗岩裂隙水
+&bull; <span class="highlight">福建武夷山</span> — 丹霞地貌水源
+
+<span class="tag tag-cyan">水质标准体系：</span>
+&bull; 执行标准：<span class="data-val">GB 19298</span>（包装饮用水）+ <span class="data-val">GB 5749</span>（生活饮用水）
+&bull; 内控标准严于国标 <span class="data-val">127项</span>，涵盖重金属、有机物、微生物等
+&bull; 水源地实时监测：水温、pH、电导率、浊度、溶解氧 5项核心指标 <span class="data-val">24h连续监控</span>
+
+<span class="tag tag-cyan">知识图谱路径：</span>
+农夫山泉 → hasWaterSource → 12大水源地 → hasWaterQuality → 水质指标体系 → conformsTo → GB标准`
+            },
+            {
+                question: "一瓶550ml天然水的成本构成是怎样的？",
+                answer: `通过本体知识图谱的成本子图聚合分析，<span class="highlight">550ml天然水</span>的成本构成如下：
+
+<span class="tag tag-blue">直接材料成本（占72%）：</span>
+&bull; <span class="highlight">PET瓶坯+瓶身</span>：<span class="data-val">0.128元</span>（占比28.4%）— 万凯新材/华润材料供应
+&bull; <span class="highlight">瓶盖（HDPE）</span>：<span class="data-val">0.032元</span>（占比7.1%）— 金富科技供应
+&bull; <span class="highlight">标签（BOPP膜）</span>：<span class="data-val">0.028元</span>（占比6.2%）— 永新股份供应
+&bull; <span class="highlight">包装纸箱</span>：<span class="data-val">0.055元</span>（占比12.2%）— 纸箱+热缩膜
+&bull; <span class="highlight">水+处理</span>：<span class="data-val">0.008元</span>（占比1.8%）— 水资源费+过滤+杀菌
+&bull; <span class="highlight">其他辅料</span>：<span class="data-val">0.015元</span>（占比3.3%）— 热熔胶、油墨等
+
+<span class="tag tag-blue">制造费用（占16%）：</span>
+&bull; 人工成本：<span class="data-val">0.038元</span>（8.4%）
+&bull; 设备折旧：<span class="data-val">0.022元</span>（4.9%）
+&bull; 水电能耗：<span class="data-val">0.012元</span>（2.7%）
+
+<span class="tag tag-blue">物流费用（占12%）：</span>
+&bull; 干线运输：<span class="data-val">0.035元</span>（7.8%）
+&bull; 仓储配送：<span class="data-val">0.019元</span>（4.2%）
+
+<span class="tag tag-cyan">综合成本：</span>
+&bull; 单瓶总成本：<span class="data-val">&asymp;0.45元</span>
+&bull; 出厂价：<span class="data-val">&asymp;0.65元</span>
+&bull; 终端零售价：<span class="data-val">2.0元</span>
+&bull; 毛利率：<span class="data-val">~58%</span>（出厂口径）
+
+<span class="tag tag-cyan">知识图谱路径：</span>
+550ml天然水 → hasCostStructure → 材料成本/制造费用/物流费用 → each → 供应商/工序/线路明细`
+            },
+            {
+                question: "金富科技瓶盖产能低于阈值会怎样？",
+                answer: `通过本体规则引擎进行<span class="warn">阈值预警推理</span>，分析金富科技瓶盖产能不足的影响链：
+
+<span class="tag tag-red">预警阈值设定：</span>
+&bull; 产能利用率下限：<span class="data-val">80%</span>（当前87.3%，安全裕度 <span class="data-val">7.3%</span>）
+&bull; 月供货量下限：<span class="data-val">8亿只</span>（当前8.7亿只）
+&bull; 不良率上限：<span class="data-val">0.3%</span>（当前0.12%）
+
+<span class="tag tag-red">若产能降至80%以下的影响：</span>
+&bull; <span class="highlight">一级影响</span>：月度瓶盖缺口 <span class="data-val">7000万~1.2亿只</span>，影响 <span class="data-val">2~3天</span> 的生产排期
+&bull; <span class="highlight">二级影响</span>：550ml天然水月产量下降 <span class="data-val">8~14%</span>，影响华南、华东区域供货
+&bull; <span class="highlight">三级影响</span>：渠道库存周转天数从 <span class="data-val">18天</span> 降至 <span class="data-val">12天</span>，部分区域可能出现断货
+
+<span class="tag tag-blue">应急响应预案：</span>
+&bull; <span class="tag tag-cyan">短期（1~7天）</span>：启动安全库存，当前瓶盖安全库存 <span class="data-val">2.1亿只</span>（约7天用量）
+&bull; <span class="tag tag-cyan">中期（1~4周）</span>：激活备选供应商 <span class="highlight">紫江企业</span>（产能 <span class="data-val">45亿只/年</span>），紧急采购协议已就位
+&bull; <span class="tag tag-cyan">长期（1~3月）</span>：协助金富科技产线扩产，或引入第三供应商 <span class="highlight">中粮包装</span>
+
+<span class="tag tag-cyan">知识图谱路径：</span>
+金富科技 → hasCapacity → 产能指标 → belowThreshold → 触发预警 → impacts → 瓶盖供应 → impacts → 生产排期 → impacts → 渠道库存 → mitigationPlan → 应急预案`
+            }
+        ];
+
+        // ===== State =====
+        let isProcessing = false;
+
+        // ===== Functions =====
+        function askQuestion(index) {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const data = qaData[index];
+
+            // Disable all buttons
+            document.querySelectorAll('.question-btn').forEach(btn => btn.classList.add('disabled'));
+
+            // Hide welcome
+            const welcome = document.getElementById('welcome-msg');
+            if (welcome) welcome.style.display = 'none';
+
+            // Add user message
+            addMessage('user', data.question);
+
+            // Start agent flow
+            startAgentFlow(data, index);
+        }
+
+        function addMessage(role, content, isHTML = true) {
+            const container = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+
+            const avatarIcon = role === 'user' ? 'fa-user' : 'fa-robot';
+            msgDiv.innerHTML = `
+                <div class="msg-avatar"><i class="fas ${avatarIcon}"></i></div>
+                <div class="msg-bubble">${isHTML ? content : escapeHtml(content)}</div>
+            `;
+
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+            return msgDiv;
+        }
+
+        function addTypingIndicator() {
+            const container = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message assistant';
+            msgDiv.id = 'typing-msg';
+            msgDiv.innerHTML = `
+                <div class="msg-avatar"><i class="fas fa-robot"></i></div>
+                <div class="msg-bubble">
+                    <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typing-msg');
+            if (el) el.remove();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function setStatus(text, state) {
+            const dot = document.getElementById('status-dot');
+            const txt = document.getElementById('status-text');
+            txt.textContent = text;
+            dot.className = 'status-dot';
+            if (state === 'running') dot.classList.add('running');
+            else if (state === 'done') dot.classList.add('done');
+        }
+
+        function activateNode(nodeNum) {
+            // Set previous nodes to completed
+            for (let i = 1; i < nodeNum; i++) {
+                const prev = document.getElementById(`node-${i}`);
+                prev.classList.remove('active');
+                prev.classList.add('completed');
+            }
+            // Set current node to active
+            const current = document.getElementById(`node-${nodeNum}`);
+            current.classList.remove('completed');
+            current.classList.add('active');
+        }
+
+        function resetNodes() {
+            for (let i = 1; i <= 5; i++) {
+                const node = document.getElementById(`node-${i}`);
+                node.classList.remove('active', 'completed');
+            }
+        }
+
+        function completeAllNodes() {
+            for (let i = 1; i <= 5; i++) {
+                const node = document.getElementById(`node-${i}`);
+                node.classList.remove('active');
+                node.classList.add('completed');
+            }
+        }
+
+        async function typeAnswer(htmlContent) {
+            const container = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message assistant';
+            msgDiv.innerHTML = `
+                <div class="msg-avatar"><i class="fas fa-robot"></i></div>
+                <div class="msg-bubble"></div>
+            `;
+            container.appendChild(msgDiv);
+
+            const bubble = msgDiv.querySelector('.msg-bubble');
+
+            // Parse HTML and type it character by character (simplified: type in chunks)
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            const fullText = tempDiv.innerHTML;
+
+            let displayed = '';
+            const chunkSize = 3;
+            const delay = 8;
+
+            for (let i = 0; i < fullText.length; i += chunkSize) {
+                displayed += fullText.substring(i, i + chunkSize);
+                bubble.innerHTML = displayed;
+                container.scrollTop = container.scrollHeight;
+                await sleep(delay);
+            }
+
+            bubble.innerHTML = fullText;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startAgentFlow(data, qIndex) {
+            const nodeLabels = [
+                '正在解析用户问题...',
+                '映射本体模型...',
+                '执行多跳推理...',
+                '检索知识图谱...',
+                '生成结构化回答...'
+            ];
+
+            // Step through each node
+            for (let i = 1; i <= 5; i++) {
+                activateNode(i);
+                setStatus(nodeLabels[i - 1], 'running');
+                await sleep(700 + Math.random() * 400);
+            }
+
+            // Show typing indicator
+            addTypingIndicator();
+            setStatus('正在生成回答...', 'running');
+            await sleep(600);
+
+            // Complete all nodes
+            completeAllNodes();
+            removeTypingIndicator();
+
+            // Type the answer
+            await typeAnswer(data.answer);
+
+            setStatus('回答完成', 'done');
+
+            // Re-enable buttons
+            await sleep(500);
+            document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('disabled'));
+            isProcessing = false;
+        }
+    </script>
+</body>
+</html>

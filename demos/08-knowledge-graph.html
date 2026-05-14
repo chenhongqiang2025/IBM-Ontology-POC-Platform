@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>供应链本体知识图谱系统 | IBM Consulting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0A0E1A;
+  --bg-secondary: #111827;
+  --bg-card: #1A1F35;
+  --bg-card-hover: #232A45;
+  --border: #2A3050;
+  --text-primary: #E5E7EB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --accent: #054ADA;
+  --product: #054ADA;
+  --water: #00D4AA;
+  --factory: #F59E0B;
+  --packaging: #7C3AED;
+  --supplier: #10B981;
+  --cost: #FF6B6B;
+  --standard: #6B7280;
+  --channel: #EC4899;
+  --glow-product: rgba(5,74,218,0.5);
+  --glow-water: rgba(0,212,170,0.5);
+  --glow-factory: rgba(245,158,11,0.5);
+  --glow-packaging: rgba(124,58,237,0.5);
+  --glow-supplier: rgba(16,185,129,0.5);
+  --glow-cost: rgba(255,107,107,0.5);
+  --glow-standard: rgba(107,114,128,0.5);
+  --glow-channel: rgba(236,72,153,0.5);
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Top Bar */
+.top-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(17,24,39,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 100;
+  gap: 16px;
+}
+
+.top-bar .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.top-bar .brand i {
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.top-bar .brand span {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.search-box {
+  flex: 1;
+  max-width: 420px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  height: 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 14px 0 38px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-box input::placeholder { color: var(--text-muted); }
+
+.search-box input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(5,74,218,0.15);
+}
+
+.search-box i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.search-results {
+  position: absolute;
+  top: 42px;
+  left: 0; right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  display: none;
+  z-index: 200;
+}
+
+.search-results.active { display: block; }
+
+.search-results .result-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.search-results .result-item:hover { background: var(--bg-card-hover); }
+
+.search-results .result-item .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.search-results .result-item .label { color: var(--text-secondary); font-size: 11px; margin-left: auto; }
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(5,74,218,0.12);
+  border: 1px solid rgba(5,74,218,0.3);
+  border-radius: 8px;
+  color: #6B9FFF;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background: rgba(5,74,218,0.2);
+  border-color: rgba(5,74,218,0.5);
+}
+
+/* Left Legend Panel */
+.legend-panel {
+  position: fixed;
+  top: 72px;
+  left: 16px;
+  width: 200px;
+  background: rgba(26,31,53,0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 90;
+}
+
+.legend-panel h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.legend-item:hover { opacity: 0.8; }
+
+.legend-item .icon-circle {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.legend-item span {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.legend-item .count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.legend-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0;
+}
+
+.relation-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.relation-legend-item .line-sample {
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.relation-legend-item span {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* SVG Container */
+#graph-container {
+  position: fixed;
+  top: 56px;
+  left: 0; right: 0; bottom: 32px;
+  overflow: hidden;
+}
+
+#graph-container svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Link styles */
+.link {
+  fill: none;
+  stroke-opacity: 0.35;
+  stroke-width: 1.5;
+  transition: stroke-opacity 0.3s;
+}
+
+.link.highlighted {
+  stroke-opacity: 0.85;
+  stroke-width: 2.5;
+}
+
+.link.dimmed {
+  stroke-opacity: 0.06;
+}
+
+.link-label {
+  font-size: 10px;
+  fill: var(--text-muted);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.link-label.visible { opacity: 1; }
+
+/* Node styles */
+.node {
+  cursor: grab;
+  transition: opacity 0.3s;
+}
+
+.node:active { cursor: grabbing; }
+
+.node.dimmed { opacity: 0.15; }
+
+.node circle {
+  transition: r 0.3s, filter 0.3s;
+}
+
+.node:hover circle {
+  filter: url(#glow-strong);
+}
+
+.node text {
+  font-family: 'Noto Sans SC', 'Inter', sans-serif;
+  font-size: 11px;
+  fill: var(--text-primary);
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* Right Detail Panel */
+.detail-panel {
+  position: fixed;
+  top: 72px;
+  right: 16px;
+  width: 300px;
+  background: rgba(26,31,53,0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0;
+  z-index: 90;
+  transform: translateX(340px);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+}
+
+.detail-panel.active { transform: translateX(0); }
+
+.detail-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.detail-header .node-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.detail-header .info { margin-left: 14px; flex: 1; }
+
+.detail-header .info h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.detail-header .info .type-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.detail-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.detail-close:hover { color: var(--text-primary); }
+
+.detail-body { padding: 16px 20px; }
+
+.detail-section {
+  margin-bottom: 16px;
+}
+
+.detail-section h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+
+.detail-section p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.detail-props {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-prop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.detail-prop .key { color: var(--text-muted); }
+.detail-prop .val { color: var(--text-primary); font-weight: 500; }
+
+.detail-relations {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-relation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.detail-relation:hover { background: var(--bg-card-hover); }
+
+.detail-relation .rel-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.detail-relation .rel-label { color: var(--text-muted); font-size: 11px; }
+.detail-relation .rel-target { color: var(--text-primary); margin-left: auto; }
+
+/* Stats bar */
+.stats-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 32px;
+  background: rgba(17,24,39,0.92);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+  z-index: 100;
+}
+
+.stats-bar .stats-left {
+  display: flex;
+  gap: 20px;
+}
+
+.stats-bar .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stats-bar .stat-item i { font-size: 10px; }
+
+.stats-bar .stats-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Zoom controls */
+.zoom-controls {
+  position: fixed;
+  bottom: 48px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 90;
+}
+
+.zoom-btn {
+  width: 36px; height: 36px;
+  background: rgba(26,31,53,0.92);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.15s;
+  max-width: 200px;
+}
+
+.tooltip.active { opacity: 1; }
+
+.tooltip .tt-name { font-weight: 600; margin-bottom: 2px; }
+.tooltip .tt-type { color: var(--text-muted); font-size: 11px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="brand">
+    <i class="fas fa-project-diagram"></i>
+    <span>供应链本体知识图谱</span>
+  </div>
+  <div class="search-box">
+    <i class="fas fa-search"></i>
+    <input type="text" id="searchInput" placeholder="搜索节点（产品、水源、工厂、供应商...）" autocomplete="off">
+    <div class="search-results" id="searchResults"></div>
+  </div>
+  <a href="../index.html" class="btn-back">
+    <i class="fas fa-arrow-left"></i>
+    返回平台
+  </a>
+</div>
+
+<!-- Left Legend Panel -->
+<div class="legend-panel" id="legendPanel">
+  <h3><i class="fas fa-layer-group" style="margin-right:6px"></i>节点类型</h3>
+  <div id="nodeLegend"></div>
+  <div class="legend-divider"></div>
+  <h3><i class="fas fa-bezier-curve" style="margin-right:6px"></i>关系类型</h3>
+  <div id="relationLegend"></div>
+</div>
+
+<!-- SVG Container -->
+<div id="graph-container"></div>
+
+<!-- Right Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <div class="node-icon" id="detailIcon"><i class="fas fa-cube"></i></div>
+    <div class="info">
+      <h2 id="detailName">节点名称</h2>
+      <span class="type-badge" id="detailBadge">类型</span>
+    </div>
+    <button class="detail-close" id="detailClose"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<!-- Zoom Controls -->
+<div class="zoom-controls">
+  <button class="zoom-btn" id="zoomIn" title="放大"><i class="fas fa-plus"></i></button>
+  <button class="zoom-btn" id="zoomOut" title="缩小"><i class="fas fa-minus"></i></button>
+  <button class="zoom-btn" id="zoomReset" title="重置"><i class="fas fa-expand"></i></button>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip">
+  <div class="tt-name" id="ttName"></div>
+  <div class="tt-type" id="ttType"></div>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stats-left">
+    <div class="stat-item"><i class="fas fa-circle" style="color:var(--accent)"></i> 节点: <span id="statNodes">0</span></div>
+    <div class="stat-item"><i class="fas fa-link"></i> 关系: <span id="statLinks">0</span></div>
+    <div class="stat-item"><i class="fas fa-eye"></i> 可见: <span id="statVisible">0</span></div>
+  </div>
+  <div class="stats-right">
+    <span>IBM Consulting &middot; Richard Chen</span>
+  </div>
+</div>
+
+<script>
+// ==================== DATA ====================
+const nodeTypes = {
+  product:    { label: '产品',   color: '#054ADA', icon: 'fa-bottle-water', radius: 22 },
+  water:      { label: '水源',   color: '#00D4AA', icon: 'fa-water',        radius: 20 },
+  factory:    { label: '工厂',   color: '#F59E0B', icon: 'fa-industry',     radius: 18 },
+  packaging:  { label: '包装',   color: '#7C3AED', icon: 'fa-box',          radius: 16 },
+  supplier:   { label: '供应商', color: '#10B981', icon: 'fa-truck-field',  radius: 18 },
+  cost:       { label: '成本',   color: '#FF6B6B', icon: 'fa-coins',        radius: 16 },
+  standard:   { label: '标准',   color: '#6B7280', icon: 'fa-shield-halved',radius: 16 },
+  channel:    { label: '渠道',   color: '#EC4899', icon: 'fa-store',        radius: 16 }
+};
+
+const relationTypes = {
+  '供应':   { color: '#10B981', dash: '' },
+  '生产':   { color: '#F59E0B', dash: '' },
+  '属于':   { color: '#6366F1', dash: '6,3' },
+  '成本':   { color: '#FF6B6B', dash: '4,4' },
+  '符合':   { color: '#6B7280', dash: '8,4' },
+  '销售':   { color: '#EC4899', dash: '' },
+  '使用':   { color: '#054ADA', dash: '2,4' },
+  '来源':   { color: '#00D4AA', dash: '' },
+  '包含':   { color: '#A78BFA', dash: '4,2' }
+};
+
+const nodes = [
+  // 产品
+  { id: 'p1',  name: '550ml天然水',  type: 'product', desc: '农夫山泉经典天然饮用水，550ml PET瓶装', props: { SKU: 'NFS-550W', 年产量: '120亿瓶', 单价: '2元' }},
+  { id: 'p2',  name: '550ml红瓶',    type: 'product', desc: '农夫山泉红瓶饮用天然水，经典红色包装', props: { SKU: 'NFS-550R', 年产量: '80亿瓶', 单价: '2元' }},
+  { id: 'p3',  name: '茶π',          type: 'product', desc: '农夫山泉茶π果味茶饮料系列', props: { SKU: 'NFS-TP01', 年产量: '15亿瓶', 单价: '5元' }},
+  { id: 'p4',  name: '东方树叶',     type: 'product', desc: '农夫山泉东方树叶无糖茶饮料', props: { SKU: 'NFS-OT01', 年产量: '10亿瓶', 单价: '5元' }},
+
+  // 水源
+  { id: 'w1',  name: '千岛湖',       type: 'water', desc: '浙江千岛湖国家级水资源保护区', props: { 类型: '湖泊水', 水质等级: 'I类', 日取水量: '50万吨' }},
+  { id: 'w2',  name: '长白山',       type: 'water', desc: '吉林长白山天然矿泉水水源地', props: { 类型: '矿泉水', 水质等级: 'I类', 日取水量: '30万吨' }},
+  { id: 'w3',  name: '丹江口',       type: 'water', desc: '湖北丹江口水库水源地（南水北调）', props: { 类型: '水库水', 水质等级: 'I类', 日取水量: '20万吨' }},
+  { id: 'w4',  name: '万绿湖',       type: 'water', desc: '广东万绿湖（新丰江水库）水源地', props: { 类型: '水库水', 水质等级: 'I类', 日取水量: '15万吨' }},
+
+  // 工厂
+  { id: 'f1',  name: '千岛湖工厂',   type: 'factory', desc: '农夫山泉千岛湖生产基地，公司最大工厂', props: { 产能: '日产800万瓶', 员工: '3200人', 建厂年份: '1999年' }},
+  { id: 'f2',  name: '建德工厂',     type: 'factory', desc: '农夫山泉浙江建德生产基地', props: { 产能: '日产500万瓶', 员工: '1800人', 建厂年份: '2003年' }},
+  { id: 'f3',  name: '吉林工厂',     type: 'factory', desc: '农夫山泉吉林长白山生产基地', props: { 产能: '日产400万瓶', 员工: '1200人', 建厂年份: '2005年' }},
+
+  // 包装
+  { id: 'k1',  name: 'PET瓶身',      type: 'packaging', desc: '食品级PET塑料瓶身', props: { 材质: 'PET', 供应商: '万凯新材', 单价: '0.35元' }},
+  { id: 'k2',  name: 'HDPE瓶盖',     type: 'packaging', desc: '高密度聚乙烯瓶盖', props: { 材质: 'HDPE', 供应商: '金富科技', 单价: '0.08元' }},
+  { id: 'k3',  name: 'PVC标签',      type: 'packaging', desc: 'PVC热收缩标签膜', props: { 材质: 'PVC', 供应商: '江天科技', 单价: '0.12元' }},
+  { id: 'k4',  name: '纸箱',         type: 'packaging', desc: '瓦楞纸运输包装箱', props: { 材质: '瓦楞纸', 规格: '24瓶装', 单价: '1.80元' }},
+
+  // 供应商
+  { id: 's1',  name: '万凯新材',     type: 'supplier', desc: '国内领先的PET瓶级切片生产商', props: { 总部: '浙江海宁', 上市: '是(301216)', 合作年限: '15年' }},
+  { id: 's2',  name: '金富科技',     type: 'supplier', desc: '瓶盖及塑料包装解决方案供应商', props: { 总部: '浙江台州', 上市: '是', 合作年限: '12年' }},
+  { id: 's3',  name: '江天科技',     type: 'supplier', desc: '标签印刷及包装材料供应商', props: { 总部: '江苏苏州', 上市: '否', 合作年限: '8年' }},
+
+  // 成本
+  { id: 'c1',  name: '水源成本',     type: 'cost', desc: '水源取水及水质处理成本', props: { 占比: '5%', 年度预算: '8亿元', 趋势: '稳定' }},
+  { id: 'c2',  name: '包材成本',     type: 'cost', desc: '包装材料采购总成本', props: { 占比: '35%', 年度预算: '56亿元', 趋势: '上升' }},
+  { id: 'c3',  name: '人工成本',     type: 'cost', desc: '生产及管理人员薪酬成本', props: { 占比: '20%', 年度预算: '32亿元', 趋势: '上升' }},
+  { id: 'c4',  name: '物流成本',     type: 'cost', desc: '仓储运输及配送成本', props: { 占比: '25%', 年度预算: '40亿元', 趋势: '优化中' }},
+
+  // 标准
+  { id: 'g1',  name: 'GB19298',      type: 'standard', desc: '食品安全国家标准 包装饮用水', props: { 类型: '国家标准', 发布年份: '2014', 主管部门: '卫健委' }},
+  { id: 'g2',  name: 'GB5749',       type: 'standard', desc: '生活饮用水卫生标准', props: { 类型: '国家标准', 发布年份: '2022(修订)', 主管部门: '卫健委' }},
+
+  // 渠道
+  { id: 'ch1', name: '电商',         type: 'channel', desc: '天猫、京东、抖音等线上渠道', props: { 占比: '25%', 增长率: '+30%', 重点平台: '天猫/京东' }},
+  { id: 'ch2', name: '商超',         type: 'channel', desc: '大润发、沃尔玛、永辉等大型商超', props: { 占比: '45%', 增长率: '+5%', 重点客户: '大润发' }},
+  { id: 'ch3', name: '便利店',       type: 'channel', desc: '全家、7-11、罗森等连锁便利店', props: { 占比: '30%', 增长率: '+15%', 重点客户: '全家' }}
+];
+
+const links = [
+  // 产品 -> 水源 (来源)
+  { source: 'p1', target: 'w1', relation: '来源' },
+  { source: 'p1', target: 'w2', relation: '来源' },
+  { source: 'p2', target: 'w1', relation: '来源' },
+  { source: 'p2', target: 'w3', relation: '来源' },
+  { source: 'p3', target: 'w3', relation: '来源' },
+  { source: 'p4', target: 'w2', relation: '来源' },
+  { source: 'p4', target: 'w4', relation: '来源' },
+
+  // 产品 -> 工厂 (生产)
+  { source: 'f1', target: 'p1', relation: '生产' },
+  { source: 'f1', target: 'p2', relation: '生产' },
+  { source: 'f2', target: 'p1', relation: '生产' },
+  { source: 'f2', target: 'p3', relation: '生产' },
+  { source: 'f3', target: 'p2', relation: '生产' },
+  { source: 'f3', target: 'p4', relation: '生产' },
+
+  // 工厂 -> 水源 (使用)
+  { source: 'f1', target: 'w1', relation: '使用' },
+  { source: 'f2', target: 'w1', relation: '使用' },
+  { source: 'f3', target: 'w2', relation: '使用' },
+
+  // 产品 -> 包装 (包含)
+  { source: 'p1', target: 'k1', relation: '包含' },
+  { source: 'p1', target: 'k2', relation: '包含' },
+  { source: 'p1', target: 'k3', relation: '包含' },
+  { source: 'p1', target: 'k4', relation: '包含' },
+  { source: 'p2', target: 'k1', relation: '包含' },
+  { source: 'p2', target: 'k2', relation: '包含' },
+  { source: 'p3', target: 'k1', relation: '包含' },
+  { source: 'p4', target: 'k1', relation: '包含' },
+
+  // 供应商 -> 包装 (供应)
+  { source: 's1', target: 'k1', relation: '供应' },
+  { source: 's2', target: 'k2', relation: '供应' },
+  { source: 's3', target: 'k3', relation: '供应' },
+
+  // 产品 -> 成本 (成本)
+  { source: 'p1', target: 'c1', relation: '成本' },
+  { source: 'p1', target: 'c2', relation: '成本' },
+  { source: 'p1', target: 'c3', relation: '成本' },
+  { source: 'p1', target: 'c4', relation: '成本' },
+
+  // 产品 -> 标准 (符合)
+  { source: 'p1', target: 'g1', relation: '符合' },
+  { source: 'p1', target: 'g2', relation: '符合' },
+  { source: 'p2', target: 'g1', relation: '符合' },
+  { source: 'p3', target: 'g1', relation: '符合' },
+  { source: 'p4', target: 'g1', relation: '符合' },
+
+  // 产品 -> 渠道 (销售)
+  { source: 'p1', target: 'ch1', relation: '销售' },
+  { source: 'p1', target: 'ch2', relation: '销售' },
+  { source: 'p1', target: 'ch3', relation: '销售' },
+  { source: 'p2', target: 'ch2', relation: '销售' },
+  { source: 'p2', target: 'ch3', relation: '销售' },
+  { source: 'p3', target: 'ch1', relation: '销售' },
+  { source: 'p3', target: 'ch2', relation: '销售' },
+  { source: 'p4', target: 'ch1', relation: '销售' },
+  { source: 'p4', target: 'ch2', relation: '销售' }
+];
+
+// ==================== BUILD LEGEND ====================
+const nodeLegendEl = document.getElementById('nodeLegend');
+const relationLegendEl = document.getElementById('relationLegend');
+
+// Count by type
+const typeCounts = {};
+nodes.forEach(n => { typeCounts[n.type] = (typeCounts[n.type] || 0) + 1; });
+
+Object.entries(nodeTypes).forEach(([key, val]) => {
+  const count = typeCounts[key] || 0;
+  nodeLegendEl.innerHTML += `
+    <div class="legend-item" data-type="${key}">
+      <div class="icon-circle" style="background:${val.color};color:${val.color}"></div>
+      <span>${val.label}</span>
+      <span class="count">${count}</span>
+    </div>`;
+});
+
+Object.entries(relationTypes).forEach(([key, val]) => {
+  relationLegendEl.innerHTML += `
+    <div class="relation-legend-item">
+      <div class="line-sample" style="background:${val.color};${val.dash ? 'background:repeating-linear-gradient(90deg,'+val.color+','+val.color+' 4px,transparent 4px,transparent 8px)' : ''}"></div>
+      <span>${key}</span>
+    </div>`;
+});
+
+// Legend click to filter
+let activeTypeFilter = null;
+document.querySelectorAll('.legend-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const type = item.dataset.type;
+    if (activeTypeFilter === type) {
+      activeTypeFilter = null;
+      document.querySelectorAll('.legend-item').forEach(i => i.style.opacity = '1');
+    } else {
+      activeTypeFilter = type;
+      document.querySelectorAll('.legend-item').forEach(i => i.style.opacity = i.dataset.type === type ? '1' : '0.3');
+    }
+    updateFilter();
+  });
+});
+
+function updateFilter() {
+  nodeElements.each(function(d) {
+    const visible = !activeTypeFilter || d.type === activeTypeFilter;
+    d3.select(this).style('opacity', visible ? 1 : 0.08);
+    d._visible = visible;
+  });
+  linkElements.each(function(d) {
+    const visible = !activeTypeFilter || (d.source._visible && d.target._visible);
+    d3.select(this).style('opacity', visible ? 1 : 0.03);
+  });
+  labelElements.each(function(d) {
+    const visible = !activeTypeFilter || d._visible;
+    d3.select(this).style('opacity', visible ? 1 : 0.08);
+  });
+  const visCount = nodes.filter(n => !activeTypeFilter || n.type === activeTypeFilter).length;
+  document.getElementById('statVisible').textContent = visCount;
+}
+
+// ==================== SVG & FORCE ====================
+const container = document.getElementById('graph-container');
+const width = container.clientWidth;
+const height = container.clientHeight;
+
+const svg = d3.select('#graph-container')
+  .append('svg')
+  .attr('width', width)
+  .attr('height', height);
+
+// Defs: glow filters
+const defs = svg.append('defs');
+
+Object.entries(nodeTypes).forEach(([key, val]) => {
+  const filter = defs.append('filter')
+    .attr('id', `glow-${key}`)
+    .attr('x', '-50%').attr('y', '-50%')
+    .attr('width', '200%').attr('height', '200%');
+  filter.append('feGaussianBlur')
+    .attr('stdDeviation', '4')
+    .attr('result', 'blur');
+  filter.append('feFlood')
+    .attr('flood-color', val.color)
+    .attr('flood-opacity', '0.6');
+  filter.append('feComposite')
+    .attr('in2', 'blur')
+    .attr('operator', 'in');
+  filter.append('feMerge')
+    .selectAll('feMergeNode')
+    .data(['', 'SourceGraphic'])
+    .join('feMergeNode')
+    .attr('in', d => d);
+});
+
+// Strong glow for hover
+const strongGlow = defs.append('filter')
+  .attr('id', 'glow-strong')
+  .attr('x', '-80%').attr('y', '-80%')
+  .attr('width', '260%').attr('height', '260%');
+strongGlow.append('feGaussianBlur').attr('stdDeviation', '8').attr('result', 'blur');
+strongGlow.append('feMerge').selectAll('feMergeNode').data(['blur', 'SourceGraphic']).join('feMergeNode').attr('in', d => d);
+
+// Arrow markers
+Object.entries(relationTypes).forEach(([key, val]) => {
+  defs.append('marker')
+    .attr('id', `arrow-${key}`)
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 28)
+    .attr('refY', 0)
+    .attr('markerWidth', 6)
+    .attr('markerHeight', 6)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('fill', val.color)
+    .attr('d', 'M0,-4L10,0L0,4Z');
+});
+
+const g = svg.append('g');
+
+// Zoom
+const zoom = d3.zoom()
+  .scaleExtent([0.15, 4])
+  .on('zoom', (event) => {
+    g.attr('transform', event.transform);
+  });
+
+svg.call(zoom);
+
+document.getElementById('zoomIn').addEventListener('click', () => {
+  svg.transition().duration(300).call(zoom.scaleBy, 1.4);
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+});
+document.getElementById('zoomReset').addEventListener('click', () => {
+  svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+});
+
+// Force simulation
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(links).id(d => d.id).distance(120).strength(0.4))
+  .force('charge', d3.forceManyBody().strength(-500))
+  .force('center', d3.forceCenter(width / 2, height / 2))
+  .force('collision', d3.forceCollide().radius(d => nodeTypes[d.type].radius + 12))
+  .force('x', d3.forceX(width / 2).strength(0.04))
+  .force('y', d3.forceY(height / 2).strength(0.04));
+
+// Draw links
+const linkElements = g.append('g')
+  .selectAll('path')
+  .data(links)
+  .join('path')
+  .attr('class', 'link')
+  .attr('stroke', d => relationTypes[d.relation]?.color || '#555')
+  .attr('stroke-dasharray', d => relationTypes[d.relation]?.dash || null)
+  .attr('marker-end', d => `url(#arrow-${d.relation})`);
+
+// Link labels
+const labelElements = g.append('g')
+  .selectAll('text')
+  .data(links)
+  .join('text')
+  .attr('class', 'link-label')
+  .text(d => d.relation);
+
+// Draw nodes
+const nodeElements = g.append('g')
+  .selectAll('g')
+  .data(nodes)
+  .join('g')
+  .attr('class', 'node')
+  .call(d3.drag()
+    .on('start', dragStarted)
+    .on('drag', dragged)
+    .on('end', dragEnded));
+
+nodeElements.append('circle')
+  .attr('r', d => nodeTypes[d.type].radius)
+  .attr('fill', d => {
+    const c = nodeTypes[d.type].color;
+    return c;
+  })
+  .attr('stroke', d => nodeTypes[d.type].color)
+  .attr('stroke-width', 2)
+  .attr('stroke-opacity', 0.3)
+  .attr('filter', d => `url(#glow-${d.type})`)
+  .attr('fill-opacity', 0.2);
+
+nodeElements.append('circle')
+  .attr('r', d => nodeTypes[d.type].radius * 0.55)
+  .attr('fill', d => nodeTypes[d.type].color)
+  .attr('fill-opacity', 0.9);
+
+nodeElements.append('text')
+  .attr('dy', d => nodeTypes[d.type].radius + 14)
+  .text(d => d.name);
+
+// Tick
+simulation.on('tick', () => {
+  linkElements
+    .attr('d', d => {
+      const dx = d.target.x - d.source.x;
+      const dy = d.target.y - d.source.y;
+      const dr = Math.sqrt(dx * dx + dy * dy) * 1.2;
+      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+    });
+
+  labelElements
+    .attr('x', d => (d.source.x + d.target.x) / 2)
+    .attr('y', d => (d.source.y + d.target.y) / 2 - 6);
+
+  nodeElements.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+
+// Drag
+function dragStarted(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
+function dragged(event, d) {
+  d.fx = event.x;
+  d.fy = event.y;
+}
+function dragEnded(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
+
+// ==================== INTERACTIONS ====================
+const tooltip = document.getElementById('tooltip');
+const detailPanel = document.getElementById('detailPanel');
+
+// Hover highlight
+nodeElements
+  .on('mouseenter', function(event, d) {
+    const connected = new Set();
+    connected.add(d.id);
+    links.forEach(l => {
+      const sid = typeof l.source === 'object' ? l.source.id : l.source;
+      const tid = typeof l.target === 'object' ? l.target.id : l.target;
+      if (sid === d.id) connected.add(tid);
+      if (tid === d.id) connected.add(sid);
+    });
+
+    nodeElements.classed('dimmed', n => !connected.has(n.id));
+    linkElements.classed('dimmed', l => {
+      const sid = typeof l.source === 'object' ? l.source.id : l.source;
+      const tid = typeof l.target === 'object' ? l.target.id : l.target;
+      return sid !== d.id && tid !== d.id;
+    }).classed('highlighted', l => {
+      const sid = typeof l.source === 'object' ? l.source.id : l.source;
+      const tid = typeof l.target === 'object' ? l.target.id : l.target;
+      return sid === d.id || tid === d.id;
+    });
+
+    labelElements.classed('visible', l => {
+      const sid = typeof l.source === 'object' ? l.source.id : l.source;
+      const tid = typeof l.target === 'object' ? l.target.id : l.target;
+      return sid === d.id || tid === d.id;
+    });
+
+    // Tooltip
+    tooltip.classList.add('active');
+    document.getElementById('ttName').textContent = d.name;
+    document.getElementById('ttType').textContent = nodeTypes[d.type].label;
+  })
+  .on('mousemove', function(event) {
+    tooltip.style.left = (event.clientX + 16) + 'px';
+    tooltip.style.top = (event.clientY - 10) + 'px';
+  })
+  .on('mouseleave', function() {
+    nodeElements.classed('dimmed', false);
+    linkElements.classed('dimmed', false).classed('highlighted', false);
+    labelElements.classed('visible', false);
+    tooltip.classList.remove('active');
+  });
+
+// Click to show detail
+nodeElements.on('click', function(event, d) {
+  event.stopPropagation();
+  showDetail(d);
+});
+
+svg.on('click', () => {
+  detailPanel.classList.remove('active');
+});
+
+function showDetail(d) {
+  const typeInfo = nodeTypes[d.type];
+
+  document.getElementById('detailIcon').style.background = typeInfo.color;
+  document.getElementById('detailIcon').innerHTML = `<i class="fas ${typeInfo.icon}"></i>`;
+  document.getElementById('detailName').textContent = d.name;
+
+  const badge = document.getElementById('detailBadge');
+  badge.textContent = typeInfo.label;
+  badge.style.background = typeInfo.color + '22';
+  badge.style.color = typeInfo.color;
+
+  let bodyHTML = '';
+
+  // Description
+  if (d.desc) {
+    bodyHTML += `<div class="detail-section"><h4>描述</h4><p>${d.desc}</p></div>`;
+  }
+
+  // Properties
+  if (d.props && Object.keys(d.props).length) {
+    bodyHTML += `<div class="detail-section"><h4>属性</h4><div class="detail-props">`;
+    Object.entries(d.props).forEach(([k, v]) => {
+      bodyHTML += `<div class="detail-prop"><span class="key">${k}</span><span class="val">${v}</span></div>`;
+    });
+    bodyHTML += `</div></div>`;
+  }
+
+  // Relations
+  const relations = links.filter(l => {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    return sid === d.id || tid === d.id;
+  });
+
+  if (relations.length) {
+    bodyHTML += `<div class="detail-section"><h4>关联关系 (${relations.length})</h4><div class="detail-relations">`;
+    relations.forEach(r => {
+      const sid = typeof r.source === 'object' ? r.source.id : r.source;
+      const tid = typeof r.target === 'object' ? r.target.id : r.target;
+      const isSource = sid === d.id;
+      const otherId = isSource ? tid : sid;
+      const other = nodes.find(n => n.id === otherId);
+      if (!other) return;
+      const otherColor = nodeTypes[other.type]?.color || '#888';
+      const relColor = relationTypes[r.relation]?.color || '#888';
+      const arrow = isSource ? '→' : '←';
+      bodyHTML += `
+        <div class="detail-relation" data-node-id="${other.id}">
+          <div class="rel-dot" style="background:${otherColor}"></div>
+          <span class="rel-label" style="color:${relColor}">${arrow} ${r.relation}</span>
+          <span class="rel-target">${other.name}</span>
+        </div>`;
+    });
+    bodyHTML += `</div></div>`;
+  }
+
+  document.getElementById('detailBody').innerHTML = bodyHTML;
+  detailPanel.classList.add('active');
+
+  // Click relation to navigate
+  document.querySelectorAll('.detail-relation').forEach(el => {
+    el.addEventListener('click', () => {
+      const nodeId = el.dataset.nodeId;
+      const target = nodes.find(n => n.id === nodeId);
+      if (target) {
+        // Pan to node
+        const scale = 1.2;
+        const transform = d3.zoomIdentity
+          .translate(width / 2 - target.x * scale, height / 2 - target.y * scale)
+          .scale(scale);
+        svg.transition().duration(600).call(zoom.transform, transform);
+        showDetail(target);
+      }
+    });
+  });
+}
+
+document.getElementById('detailClose').addEventListener('click', () => {
+  detailPanel.classList.remove('active');
+});
+
+// ==================== SEARCH ====================
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  if (!q) {
+    searchResults.classList.remove('active');
+    return;
+  }
+
+  const matches = nodes.filter(n =>
+    n.name.toLowerCase().includes(q) ||
+    nodeTypes[n.type].label.includes(q) ||
+    (n.desc && n.desc.toLowerCase().includes(q))
+  );
+
+  if (!matches.length) {
+    searchResults.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px;text-align:center">未找到匹配节点</div>';
+  } else {
+    searchResults.innerHTML = matches.map(n => `
+      <div class="result-item" data-node-id="${n.id}">
+        <div class="dot" style="background:${nodeTypes[n.type].color}"></div>
+        <span>${n.name}</span>
+        <span class="label">${nodeTypes[n.type].label}</span>
+      </div>`).join('');
+  }
+
+  searchResults.classList.add('active');
+
+  document.querySelectorAll('.result-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const nodeId = el.dataset.nodeId;
+      const target = nodes.find(n => n.id === nodeId);
+      if (target) {
+        const scale = 1.5;
+        const transform = d3.zoomIdentity
+          .translate(width / 2 - target.x * scale, height / 2 - target.y * scale)
+          .scale(scale);
+        svg.transition().duration(600).call(zoom.transform, transform);
+        showDetail(target);
+        searchResults.classList.remove('active');
+        searchInput.value = target.name;
+      }
+    });
+  });
+});
+
+searchInput.addEventListener('blur', () => {
+  setTimeout(() => searchResults.classList.remove('active'), 200);
+});
+
+searchInput.addEventListener('focus', function() {
+  if (this.value.trim()) {
+    this.dispatchEvent(new Event('input'));
+  }
+});
+
+// ==================== STATS ====================
+document.getElementById('statNodes').textContent = nodes.length;
+document.getElementById('statLinks').textContent = links.length;
+document.getElementById('statVisible').textContent = nodes.length;
+
+// ==================== RESIZE ====================
+window.addEventListener('resize', () => {
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  svg.attr('width', w).attr('height', h);
+  simulation.force('center', d3.forceCenter(w / 2, h / 2));
+  simulation.force('x', d3.forceX(w / 2).strength(0.04));
+  simulation.force('y', d3.forceY(h / 2).strength(0.04));
+  simulation.alpha(0.3).restart();
+});
+</script>
+</body>
+</html>

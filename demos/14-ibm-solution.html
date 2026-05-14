@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBM企业级AI解决方案 - 农夫山泉本体论知识图谱落地方案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0A0E1A;
+  --bg-secondary: #111827;
+  --bg-card: #151C2E;
+  --bg-card-hover: #1A2340;
+  --ibm-blue: #054ADA;
+  --ibm-blue-light: #3B7DFF;
+  --ibm-blue-dark: #0335A0;
+  --accent: #00D4AA;
+  --accent-light: #33E0BE;
+  --accent-dark: #00A888;
+  --text-primary: #F0F4FF;
+  --text-secondary: #8B95B0;
+  --text-muted: #5A6380;
+  --border-color: #1E293B;
+  --danger: #FF4757;
+  --warning: #FFA502;
+  --success: #2ED573;
+  --shadow-blue: rgba(5, 74, 218, 0.3);
+  --shadow-accent: rgba(0, 212, 170, 0.2);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ===== Top Bar ===== */
+.top-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px;
+  background: rgba(10, 14, 26, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
+}
+.top-bar .logo {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 15px; color: var(--ibm-blue-light);
+  letter-spacing: 0.5px;
+}
+.top-bar .logo i { font-size: 20px; color: var(--accent); }
+.top-bar .back-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 8px;
+  background: rgba(5, 74, 218, 0.15);
+  border: 1px solid rgba(5, 74, 218, 0.3);
+  color: var(--ibm-blue-light); font-size: 13px; font-weight: 500;
+  text-decoration: none; transition: all 0.3s;
+}
+.top-bar .back-btn:hover {
+  background: rgba(5, 74, 218, 0.3);
+  border-color: var(--ibm-blue);
+  transform: translateY(-1px);
+}
+
+/* ===== Slide Container ===== */
+.slides-wrapper {
+  position: absolute; top: 56px; left: 0; right: 0; bottom: 72px;
+  overflow: hidden;
+}
+.slide {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 60px;
+  opacity: 0; visibility: hidden;
+  transform: translateX(60px);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide.active {
+  opacity: 1; visibility: visible;
+  transform: translateX(0);
+}
+.slide.exit-left {
+  opacity: 0; visibility: hidden;
+  transform: translateX(-60px);
+}
+
+.slide-inner {
+  width: 100%; max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ===== Bottom Bar ===== */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: 72px; display: flex; align-items: center; justify-content: center; gap: 16px;
+  background: rgba(10, 14, 26, 0.9);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-color);
+}
+.page-indicators {
+  display: flex; gap: 8px; align-items: center;
+}
+.page-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--text-muted); cursor: pointer;
+  transition: all 0.3s; border: none; outline: none;
+}
+.page-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--shadow-accent);
+  width: 28px; border-radius: 5px;
+}
+.nav-btn {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  color: var(--text-secondary); font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+}
+.nav-btn:hover {
+  background: var(--ibm-blue); color: #fff;
+  border-color: var(--ibm-blue);
+  transform: translateY(-1px);
+}
+.nav-btn:disabled {
+  opacity: 0.3; cursor: not-allowed;
+  transform: none; background: var(--bg-card); color: var(--text-muted);
+  border-color: var(--border-color);
+}
+.page-label {
+  font-size: 13px; color: var(--text-muted);
+  min-width: 80px; text-align: center;
+}
+.copyright {
+  position: absolute; right: 24px;
+  font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+/* ===== Typography ===== */
+.section-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  background: rgba(5, 74, 218, 0.12);
+  border: 1px solid rgba(5, 74, 218, 0.25);
+  color: var(--ibm-blue-light); font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.section-tag.accent {
+  background: rgba(0, 212, 170, 0.1);
+  border-color: rgba(0, 212, 170, 0.25);
+  color: var(--accent);
+}
+.slide-title {
+  font-size: 38px; font-weight: 800; line-height: 1.2;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #fff 0%, #c0ccf0 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.slide-subtitle {
+  font-size: 17px; color: var(--text-secondary);
+  line-height: 1.6; max-width: 700px;
+}
+
+/* ===== Cards ===== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px; padding: 28px;
+  transition: all 0.3s;
+}
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(5, 74, 218, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.card-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 16px;
+}
+.card-icon.blue { background: rgba(5, 74, 218, 0.15); color: var(--ibm-blue-light); }
+.card-icon.accent { background: rgba(0, 212, 170, 0.12); color: var(--accent); }
+.card-icon.danger { background: rgba(255, 71, 87, 0.12); color: var(--danger); }
+.card-icon.warning { background: rgba(255, 165, 2, 0.12); color: var(--warning); }
+.card-icon.success { background: rgba(46, 213, 115, 0.12); color: var(--success); }
+.card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+.card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+/* ===== Grid Layouts ===== */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 28px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 28px; }
+
+/* ===== Cover Slide ===== */
+.cover-content {
+  text-align: center; max-width: 900px; margin: 0 auto;
+}
+.cover-logo {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-bottom: 40px;
+}
+.cover-logo .ibm-mark {
+  font-size: 36px; font-weight: 900; color: var(--ibm-blue-light);
+  letter-spacing: 2px;
+}
+.cover-logo .divider {
+  width: 2px; height: 36px; background: var(--border-color);
+}
+.cover-logo .partner {
+  font-size: 18px; color: var(--text-secondary); font-weight: 400;
+}
+.cover-title {
+  font-size: 48px; font-weight: 900; line-height: 1.15;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #fff 0%, #7EB3FF 50%, var(--accent) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.cover-desc {
+  font-size: 20px; color: var(--text-secondary); line-height: 1.6;
+  margin-bottom: 36px;
+}
+.cover-badges {
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+}
+.cover-badge {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 10px;
+  background: rgba(5, 74, 218, 0.1);
+  border: 1px solid rgba(5, 74, 218, 0.2);
+  font-size: 14px; color: var(--ibm-blue-light); font-weight: 500;
+}
+.cover-badge i { font-size: 16px; color: var(--accent); }
+.cover-line {
+  width: 80px; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--ibm-blue), var(--accent));
+  margin: 0 auto 24px;
+}
+
+/* ===== Comparison Table ===== */
+.compare-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border-color);
+  margin-top: 24px;
+}
+.compare-table thead th {
+  padding: 14px 20px; text-align: left;
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.compare-table thead th:first-child {
+  background: var(--bg-card); color: var(--text-secondary);
+}
+.compare-table thead th:nth-child(2) {
+  background: rgba(255, 71, 87, 0.08); color: var(--danger);
+  border-left: 1px solid var(--border-color);
+}
+.compare-table thead th:nth-child(3) {
+  background: rgba(0, 212, 170, 0.08); color: var(--accent);
+  border-left: 1px solid var(--border-color);
+}
+.compare-table tbody td {
+  padding: 13px 20px; font-size: 14px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+.compare-table tbody td:first-child {
+  background: var(--bg-card); font-weight: 600; color: var(--text-primary);
+}
+.compare-table tbody td:nth-child(2) {
+  background: rgba(255, 71, 87, 0.03);
+  border-left: 1px solid var(--border-color);
+}
+.compare-table tbody td:nth-child(3) {
+  background: rgba(0, 212, 170, 0.03);
+  border-left: 1px solid var(--border-color);
+  color: var(--accent-light); font-weight: 500;
+}
+.compare-table .check { color: var(--accent); }
+.compare-table .cross { color: var(--danger); }
+
+/* ===== Architecture Diagram ===== */
+.arch-diagram {
+  display: flex; flex-direction: column; gap: 0;
+  margin-top: 28px; position: relative;
+}
+.arch-layer {
+  display: flex; align-items: stretch; border-radius: 12px;
+  overflow: hidden; border: 1px solid var(--border-color);
+  position: relative;
+}
+.arch-layer + .arch-layer { margin-top: -1px; }
+.arch-label {
+  width: 140px; min-width: 140px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 16px 12px; gap: 6px;
+  font-weight: 700; font-size: 14px;
+}
+.arch-label i { font-size: 20px; }
+.arch-label.app { background: rgba(0, 212, 170, 0.1); color: var(--accent); }
+.arch-label.reason { background: rgba(5, 74, 218, 0.12); color: var(--ibm-blue-light); }
+.arch-label.onto { background: rgba(123, 58, 237, 0.1); color: #A78BFA; }
+.arch-label.data { background: rgba(255, 165, 2, 0.08); color: var(--warning); }
+.arch-content {
+  flex: 1; display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px; flex-wrap: wrap;
+  background: var(--bg-card);
+}
+.arch-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  font-size: 13px; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.arch-chip i { font-size: 14px; }
+.arch-arrow {
+  display: flex; justify-content: center; padding: 6px 0;
+  color: var(--text-muted); font-size: 18px;
+  position: relative; z-index: 2;
+}
+
+/* ===== Ontology Elements ===== */
+.onto-element {
+  text-align: center; padding: 24px 16px;
+}
+.onto-element .onto-icon {
+  width: 64px; height: 64px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin: 0 auto 16px;
+  position: relative;
+}
+.onto-element .onto-icon::after {
+  content: ''; position: absolute; inset: -4px;
+  border-radius: 20px; border: 2px dashed;
+  opacity: 0.3;
+}
+.onto-element h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.onto-element p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.onto-element .onto-tag {
+  display: inline-block; margin-top: 10px;
+  padding: 4px 12px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Scenario ===== */
+.scenario-flow {
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 24px; flex-wrap: wrap;
+}
+.scenario-before {
+  flex: 1; min-width: 260px;
+  padding: 20px; border-radius: 12px;
+  background: rgba(255, 71, 87, 0.06);
+  border: 1px solid rgba(255, 71, 87, 0.15);
+}
+.scenario-after {
+  flex: 1; min-width: 260px;
+  padding: 20px; border-radius: 12px;
+  background: rgba(0, 212, 170, 0.06);
+  border: 1px solid rgba(0, 212, 170, 0.15);
+}
+.scenario-arrow {
+  font-size: 28px; color: var(--accent);
+  flex-shrink: 0;
+}
+.scenario-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; margin-bottom: 12px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.scenario-label.before { color: var(--danger); }
+.scenario-label.after { color: var(--accent); }
+.scenario-list {
+  list-style: none; padding: 0;
+}
+.scenario-list li {
+  padding: 6px 0; font-size: 13px; color: var(--text-secondary);
+  display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+}
+.scenario-list li i { margin-top: 3px; font-size: 12px; flex-shrink: 0; }
+
+/* ===== Timeline / ROI ===== */
+.timeline {
+  display: flex; gap: 0; margin-top: 28px; position: relative;
+}
+.timeline::before {
+  content: ''; position: absolute; top: 32px; left: 40px; right: 40px;
+  height: 3px; background: linear-gradient(90deg, var(--ibm-blue), var(--accent));
+  border-radius: 2px;
+}
+.timeline-item {
+  flex: 1; text-align: center; position: relative; padding: 0 12px;
+}
+.timeline-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: 3px solid var(--bg-primary);
+  margin: 24px auto 16px; position: relative; z-index: 2;
+  box-shadow: 0 0 12px var(--shadow-accent);
+}
+.timeline-item h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.timeline-item p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.timeline-item .time-label {
+  font-size: 11px; color: var(--accent); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.roi-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-top: 24px;
+}
+.roi-card {
+  text-align: center; padding: 20px 12px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+.roi-card .roi-value {
+  font-size: 32px; font-weight: 900; margin-bottom: 4px;
+}
+.roi-card .roi-value.blue { color: var(--ibm-blue-light); }
+.roi-card .roi-value.accent { color: var(--accent); }
+.roi-card .roi-value.warning { color: var(--warning); }
+.roi-card .roi-value.danger { color: var(--danger); }
+.roi-card .roi-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+}
+
+/* ===== Highlight Box ===== */
+.highlight-box {
+  padding: 20px 24px; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(5, 74, 218, 0.08), rgba(0, 212, 170, 0.06));
+  border: 1px solid rgba(5, 74, 218, 0.2);
+  margin-top: 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.highlight-box i {
+  font-size: 20px; color: var(--accent); margin-top: 2px; flex-shrink: 0;
+}
+.highlight-box p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+.highlight-box strong { color: var(--text-primary); }
+
+/* ===== Animations ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.15); }
+  50% { box-shadow: 0 0 40px rgba(0, 212, 170, 0.3); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.slide.active .card { animation: fadeInUp 0.5s ease both; }
+.slide.active .card:nth-child(1) { animation-delay: 0.1s; }
+.slide.active .card:nth-child(2) { animation-delay: 0.2s; }
+.slide.active .card:nth-child(3) { animation-delay: 0.3s; }
+.slide.active .card:nth-child(4) { animation-delay: 0.4s; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .slide { padding: 24px 20px; }
+  .slide-title { font-size: 28px; }
+  .cover-title { font-size: 32px; }
+  .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .roi-grid { grid-template-columns: 1fr 1fr; }
+  .arch-label { width: 100px; min-width: 100px; font-size: 12px; }
+  .compare-table { font-size: 12px; }
+  .compare-table thead th, .compare-table tbody td { padding: 10px 12px; }
+  .scenario-flow { flex-direction: column; }
+  .scenario-arrow { transform: rotate(90deg); }
+}
+@media (max-width: 600px) {
+  .grid-3, .grid-4, .roi-grid { grid-template-columns: 1fr; }
+  .timeline { flex-direction: column; gap: 16px; }
+  .timeline::before { display: none; }
+  .cover-badges { flex-direction: column; align-items: center; }
+  .copyright { display: none; }
+}
+
+/* ===== Keyboard Hint ===== */
+.key-hint {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: var(--text-muted);
+  opacity: 0.5; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.key-hint kbd {
+  padding: 2px 6px; border-radius: 4px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  font-family: inherit; font-size: 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="logo">
+    <i class="fas fa-cube"></i>
+    <span>IBM Ontology POC Platform</span>
+  </div>
+  <a href="../index.html" class="back-btn">
+    <i class="fas fa-arrow-left"></i>
+    返回平台
+  </a>
+</div>
+
+<!-- Slides -->
+<div class="slides-wrapper">
+
+  <!-- ==================== SLIDE 1: Cover ==================== -->
+  <div class="slide active" data-slide="0">
+    <div class="slide-inner cover-content">
+      <div class="cover-logo">
+        <span class="ibm-mark">IBM</span>
+        <div class="divider"></div>
+        <span class="partner">Consulting</span>
+      </div>
+      <div class="cover-line"></div>
+      <h1 class="cover-title">农夫山泉营销供应链协同<br>本体论知识图谱落地方案</h1>
+      <p class="cover-desc">基于IBM企业级AI技术，构建语义驱动的智能决策平台<br>实现从数据孤岛到知识融合的跨越式升级</p>
+      <div class="cover-badges">
+        <div class="cover-badge"><i class="fas fa-brain"></i> 本体论 Ontology</div>
+        <div class="cover-badge"><i class="fas fa-project-diagram"></i> 知识图谱</div>
+        <div class="cover-badge"><i class="fas fa-robot"></i> AI推理引擎</div>
+        <div class="cover-badge"><i class="fas fa-shield-halved"></i> 自主可控</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 2: Why Ontology ==================== -->
+  <div class="slide" data-slide="1">
+    <div class="slide-inner">
+      <div class="section-tag"><i class="fas fa-question-circle"></i> 问题诊断</div>
+      <h2 class="slide-title">为什么需要本体论？</h2>
+      <p class="slide-subtitle">传统IT架构在应对复杂业务场景时，面临三大根本性困境</p>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon danger"><i class="fas fa-database"></i></div>
+          <h3>数据孤岛</h3>
+          <p>ERP、CRM、MES、WMS等系统各自为政，数据无法互通。同一产品在不同系统中名称、编码、属性完全不同，跨部门协作成本极高。</p>
+          <div style="margin-top:12px;padding:10px;border-radius:8px;background:rgba(255,71,87,0.06);font-size:12px;color:var(--danger);">
+            <i class="fas fa-exclamation-triangle"></i> 农夫山泉现有 <strong>17+ 核心系统</strong>，数据一致性不足 40%
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-icon warning"><i class="fas fa-language"></i></div>
+          <h3>语义不一致</h3>
+          <p>"SKU"、"产品"、"物料"、"品项"在不同部门含义各异。销售说的"缺货"和生产说的"缺料"是两回事，导致决策偏差和沟通成本。</p>
+          <div style="margin-top:12px;padding:10px;border-radius:8px;background:rgba(255,165,2,0.06);font-size:12px;color:var(--warning);">
+            <i class="fas fa-exclamation-triangle"></i> 跨部门会议 <strong>60% 时间</strong>花在对齐概念定义
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-icon danger"><i class="fas fa-ban"></i></div>
+          <h3>推理缺失</h3>
+          <p>现有系统只能"查询"不能"推理"。当原料价格上涨时，无法自动推导出对哪些终端产品、哪些渠道、哪些区域会产生连锁影响。</p>
+          <div style="margin-top:12px;padding:10px;border-radius:8px;background:rgba(255,71,87,0.06);font-size:12px;color:var(--danger);">
+            <i class="fas fa-exclamation-triangle"></i> 供应链异常响应时间 <strong>平均 72 小时</strong>
+          </div>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <i class="fas fa-lightbulb"></i>
+        <p><strong>本体论（Ontology）</strong>是解决这三大困境的根本方法 -- 它提供统一的语义框架，让不同系统能够"理解"彼此的数据含义，并支持自动化逻辑推理。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 3: Palantir困境 ==================== -->
+  <div class="slide" data-slide="2">
+    <div class="slide-inner">
+      <div class="section-tag"><i class="fas fa-triangle-exclamation"></i> 竞品分析</div>
+      <h2 class="slide-title">Palantir 在中国：理想很丰满，现实很骨感</h2>
+      <p class="slide-subtitle">作为全球知名的数据平台，Palantir在中国市场面临不可逾越的障碍</p>
+      <div class="grid-2">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div class="card-icon danger"><i class="fas fa-ban"></i></div>
+            <h3>合规不可用</h3>
+            <p>Palantir Foundry / Gotham 未通过中国网络安全审查，无法部署在境内数据中心，数据出境存在法律风险。</p>
+          </div>
+          <div class="card">
+            <div class="card-icon danger"><i class="fas fa-coins"></i></div>
+            <h3>成本极其高昂</h3>
+            <p>年费通常在数百万至数千万美元，且实施周期长达12-18个月，中小企业难以承受。</p>
+          </div>
+          <div class="card">
+            <div class="card-icon danger"><i class="fas fa-flag"></i></div>
+            <h3>数据主权风险</h3>
+            <p>核心数据需经过美国公司技术栈处理，在当前地缘政治环境下存在不可接受的数据安全风险。</p>
+          </div>
+          <div class="card">
+            <div class="card-icon warning"><i class="fas fa-wrench"></i></div>
+            <h3>定制化困难</h3>
+            <p>Palantir以"黑盒"模式运行，深度定制需依赖原厂，中国本土团队难以自主掌控。</p>
+          </div>
+        </div>
+        <div>
+          <div style="padding:24px;border-radius:12px;background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.15);height:100%;display:flex;flex-direction:column;justify-content:center;">
+            <div style="text-align:center;margin-bottom:24px;">
+              <i class="fas fa-shield-halved" style="font-size:48px;color:var(--danger);opacity:0.6;"></i>
+            </div>
+            <h3 style="text-align:center;color:var(--danger);margin-bottom:16px;font-size:20px;">Palantir 核心风险评估</h3>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,0,0,0.2);border-radius:8px;">
+                <span style="font-size:13px;">数据合规风险</span>
+                <span style="color:var(--danger);font-weight:700;font-size:14px;">极高</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,0,0,0.2);border-radius:8px;">
+                <span style="font-size:13px;">供应链中断风险</span>
+                <span style="color:var(--danger);font-weight:700;font-size:14px;">极高</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,0,0,0.2);border-radius:8px;">
+                <span style="font-size:13px;">技术依赖风险</span>
+                <span style="color:var(--warning);font-weight:700;font-size:14px;">高</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,0,0,0.2);border-radius:8px;">
+                <span style="font-size:13px;">成本可控性</span>
+                <span style="color:var(--danger);font-weight:700;font-size:14px;">极低</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 4: IBM方案优势 ==================== -->
+  <div class="slide" data-slide="3">
+    <div class="slide-inner">
+      <div class="section-tag accent"><i class="fas fa-star"></i> IBM 方案</div>
+      <h2 class="slide-title">IBM 方案：自主可控，快速见效</h2>
+      <p class="slide-subtitle">基于IBM企业级AI技术栈，打造完全本地化的本体论知识图谱平台</p>
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-icon accent"><i class="fas fa-shield-halved"></i></div>
+          <h3>完全自主可控</h3>
+          <p>全栈技术部署在客户私有云/本地环境，代码和数据100%可控，符合等保2.0要求。</p>
+        </div>
+        <div class="card">
+          <div class="card-icon blue"><i class="fas fa-bolt"></i></div>
+          <h3>2-3个月快速见效</h3>
+          <p>基于IBM预置行业本体模板和加速器，MVP周期从12个月缩短至2-3个月。</p>
+        </div>
+        <div class="card">
+          <div class="card-icon success"><i class="fas fa-chart-line"></i></div>
+          <h3>效率提升200%</h3>
+          <p>语义统一消除跨部门沟通障碍，AI推理引擎将异常响应时间从72小时降至4小时。</p>
+        </div>
+        <div class="card">
+          <div class="card-icon warning"><i class="fas fa-piggy-bank"></i></div>
+          <h3>成本仅1/5</h3>
+          <p>总体拥有成本（TCO）仅为Palantir方案的20%，且后续维护无需依赖外部厂商。</p>
+        </div>
+      </div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>对比维度</th>
+            <th><i class="fas fa-times-circle"></i> Palantir</th>
+            <th><i class="fas fa-check-circle"></i> IBM 方案</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>数据合规</td>
+            <td><span class="cross"><i class="fas fa-times"></i> 无法通过中国网安审查</span></td>
+            <td><span class="check"><i class="fas fa-check"></i> 完全本地化部署，等保2.0</span></td>
+          </tr>
+          <tr>
+            <td>实施周期</td>
+            <td><span class="cross"><i class="fas fa-times"></i> 12-18个月</span></td>
+            <td><span class="check"><i class="fas fa-check"></i> 2-3个月MVP</span></td>
+          </tr>
+          <tr>
+            <td>年费成本</td>
+            <td><span class="cross"><i class="fas fa-times"></i> $2M - $10M+</span></td>
+            <td><span class="check"><i class="fas fa-check"></i> 约Palantir 1/5</span></td>
+          </tr>
+          <tr>
+            <td>定制化</td>
+            <td><span class="cross"><i class="fas fa-times"></i> 黑盒模式，依赖原厂</span></td>
+            <td><span class="check"><i class="fas fa-check"></i> 白盒交付，完全可控</span></td>
+          </tr>
+          <tr>
+            <td>语义推理</td>
+            <td><span class="cross"><i class="fas fa-times"></i> 需大量定制开发</span></td>
+            <td><span class="check"><i class="fas fa-check"></i> 内置本体推理引擎</span></td>
+          </tr>
+          <tr>
+            <td>技术自主</td>
+            <td><span class="cross"><i class="fas fa-times"></i> 依赖美国技术栈</span></td>
+            <td><span class="check"><i class="fas fa-check"></i> 可选国产化替代方案</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 5: 本体论四要素 ==================== -->
+  <div class="slide" data-slide="4">
+    <div class="slide-inner">
+      <div class="section-tag accent"><i class="fas fa-cubes"></i> 核心概念</div>
+      <h2 class="slide-title">本体论四要素</h2>
+      <p class="slide-subtitle">本体（Ontology）是形式化的领域知识模型，由四个核心要素构成</p>
+      <div class="grid-4">
+        <div class="card onto-element">
+          <div class="onto-icon" style="background:rgba(5,74,218,0.15);color:var(--ibm-blue-light);">
+            <i class="fas fa-cube"></i>
+            <div style="position:absolute;inset:-4px;border-radius:20px;border:2px dashed rgba(5,74,218,0.3);"></div>
+          </div>
+          <h3>类 Object Types</h3>
+          <p>定义领域中的核心概念实体，如"产品"、"原料"、"工厂"、"渠道"等</p>
+          <div class="onto-tag" style="background:rgba(5,74,218,0.1);color:var(--ibm-blue-light);">T-Box 模式层</div>
+        </div>
+        <div class="card onto-element">
+          <div class="onto-icon" style="background:rgba(0,212,170,0.12);color:var(--accent);">
+            <i class="fas fa-tags"></i>
+            <div style="position:absolute;inset:-4px;border-radius:20px;border:2px dashed rgba(0,212,170,0.3);"></div>
+          </div>
+          <h3>属性 Properties</h3>
+          <p>描述实体的特征，如产品的"容量"、"保质期"、"包装类型"等数据属性</p>
+          <div class="onto-tag" style="background:rgba(0,212,170,0.1);color:var(--accent);">数据标注</div>
+        </div>
+        <div class="card onto-element">
+          <div class="onto-icon" style="background:rgba(123,58,237,0.12);color:#A78BFA;">
+            <i class="fas fa-link"></i>
+            <div style="position:absolute;inset:-4px;border-radius:20px;border:2px dashed rgba(123,58,237,0.3);"></div>
+          </div>
+          <h3>关系 Relations</h3>
+          <p>定义实体间的语义关联，如"原料→组成→产品"、"工厂→生产→产品"</p>
+          <div class="onto-tag" style="background:rgba(123,58,237,0.1);color:#A78BFA;">语义连接</div>
+        </div>
+        <div class="card onto-element">
+          <div class="onto-icon" style="background:rgba(255,165,2,0.12);color:var(--warning);">
+            <i class="fas fa-cogs"></i>
+            <div style="position:absolute;inset:-4px;border-radius:20px;border:2px dashed rgba(255,165,2,0.3);"></div>
+          </div>
+          <h3>约束 Axioms</h3>
+          <p>定义业务规则与逻辑约束，如"每种产品必须至少有一种包装规格"</p>
+          <div class="onto-tag" style="background:rgba(255,165,2,0.1);color:var(--warning);">规则引擎</div>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <i class="fas fa-info-circle"></i>
+        <p><strong>农夫山泉本体示例：</strong>产品(类) --hasCapacity→ 550ml(属性) --producedBy→ 千岛湖工厂(关系) --约束→ 同一SKU不可同时在两个产线生产(Axiom)。通过四要素的有机结合，构建出完整的饮料行业知识模型。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 6: 业务场景1 - 销售预测 ==================== -->
+  <div class="slide" data-slide="5">
+    <div class="slide-inner">
+      <div class="section-tag"><i class="fas fa-chart-bar"></i> 业务场景 1</div>
+      <h2 class="slide-title">销售预测脱节 → 本体统一需求语义层</h2>
+      <p class="slide-subtitle">销售、生产、供应链三方对"需求"的理解完全不同，导致预测偏差高达35%</p>
+      <div class="scenario-flow">
+        <div class="scenario-before">
+          <div class="scenario-label before"><i class="fas fa-times-circle"></i> 当前痛点</div>
+          <ul class="scenario-list">
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 销售预测基于经销商订单，未考虑终端动销</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 生产计划按SKU排产，无法感知渠道库存</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 供应链备料按历史均值，无法响应促销波动</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 三方数据口径不一致，月度对齐需3天</li>
+          </ul>
+        </div>
+        <div class="scenario-arrow"><i class="fas fa-arrow-right"></i></div>
+        <div class="scenario-after">
+          <div class="scenario-label after"><i class="fas fa-check-circle"></i> 本体方案</div>
+          <ul class="scenario-list">
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 统一"需求"本体定义：终端需求 + 渠道需求 + 工厂需求</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 本体推理自动关联：促销活动 → 需求波动 → 产能影响</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 语义层实时汇聚三方数据，口径自动对齐</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 预测准确率从65%提升至88%</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top:24px;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:var(--danger);margin-bottom:4px;">35%</div>
+          <div style="font-size:13px;color:var(--text-secondary);">当前预测偏差率</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:var(--accent);margin-bottom:4px;">88%</div>
+          <div style="font-size:13px;color:var(--text-secondary);">本体方案预测准确率</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:var(--ibm-blue-light);margin-bottom:4px;">3天→实时</div>
+          <div style="font-size:13px;color:var(--text-secondary);">数据对齐时间</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 7: 业务场景2 - 质量追溯 ==================== -->
+  <div class="slide" data-slide="6">
+    <div class="slide-inner">
+      <div class="section-tag"><i class="fas fa-search"></i> 业务场景 2</div>
+      <h2 class="slide-title">质量追溯困难 → 本体跨系统实体映射</h2>
+      <p class="slide-subtitle">一批次产品出现质量问题，从终端追溯到原料需跨5个系统、耗时48小时</p>
+      <div class="scenario-flow">
+        <div class="scenario-before">
+          <div class="scenario-label before"><i class="fas fa-times-circle"></i> 当前痛点</div>
+          <ul class="scenario-list">
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> ERP批号、MES工单号、WMS托盘号互不关联</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 原料供应商信息在SRM，检验数据在QMS</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 人工逐系统查询，信息遗漏率高</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 无法自动识别受影响的关联批次</li>
+          </ul>
+        </div>
+        <div class="scenario-arrow"><i class="fas fa-arrow-right"></i></div>
+        <div class="scenario-after">
+          <div class="scenario-label after"><i class="fas fa-check-circle"></i> 本体方案</div>
+          <ul class="scenario-list">
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 本体实体映射：批号↔工单↔托盘↔原料批次 一键关联</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 知识图谱自动绘制完整追溯链路</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 推理引擎自动发现潜在受影响批次</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 全链路追溯从48小时缩短至30分钟</li>
+          </ul>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <i class="fas fa-route"></i>
+        <p><strong>追溯链路示例：</strong>消费者投诉(终端) → 产品批号(WMS) → 生产工单(MES) → 灌装线(生产) → 水源批次(原料) → 检验报告(QMS) → 供应商(SRM)，本体引擎自动串联全链路。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 8: 业务场景3 - 供应链响应 ==================== -->
+  <div class="slide" data-slide="7">
+    <div class="slide-inner">
+      <div class="section-tag"><i class="fas fa-truck-fast"></i> 业务场景 3</div>
+      <h2 class="slide-title">供应链响应慢 → 本体供应链知识图谱</h2>
+      <p class="slide-subtitle">原料价格波动、极端天气、物流中断等突发事件，无法快速评估业务影响</p>
+      <div class="scenario-flow">
+        <div class="scenario-before">
+          <div class="scenario-label before"><i class="fas fa-times-circle"></i> 当前痛点</div>
+          <ul class="scenario-list">
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> PET原料涨价5%，无法快速算出对哪些产品影响最大</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 台风预警后，无法自动评估受影响工厂和渠道</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 供应商停产，替代方案评估需1周以上</li>
+            <li><i class="fas fa-times" style="color:var(--danger);"></i> 决策依赖个人经验，缺乏系统化知识支撑</li>
+          </ul>
+        </div>
+        <div class="scenario-arrow"><i class="fas fa-arrow-right"></i></div>
+        <div class="scenario-after">
+          <div class="scenario-label after"><i class="fas fa-check-circle"></i> 本体方案</div>
+          <ul class="scenario-list">
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 供应链知识图谱：原料→产品→工厂→渠道→区域全关联</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 推理引擎：输入事件 → 自动推导影响范围和程度</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 替代方案自动生成：基于本体约束推荐最优替代路径</li>
+            <li><i class="fas fa-check" style="color:var(--accent);"></i> 响应时间从72小时缩短至4小时</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top:24px;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:var(--danger);margin-bottom:4px;">72h</div>
+          <div style="font-size:13px;color:var(--text-secondary);">当前异常响应时间</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:var(--accent);margin-bottom:4px;">4h</div>
+          <div style="font-size:13px;color:var(--text-secondary);">本体方案响应时间</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:var(--ibm-blue-light);margin-bottom:4px;">18x</div>
+          <div style="font-size:13px;color:var(--text-secondary);">响应速度提升倍数</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 9: 技术架构 ==================== -->
+  <div class="slide" data-slide="8">
+    <div class="slide-inner">
+      <div class="section-tag accent"><i class="fas fa-layer-group"></i> 技术架构</div>
+      <h2 class="slide-title">四层本体论平台架构</h2>
+      <p class="slide-subtitle">从数据接入到智能应用的完整技术栈，基于IBM企业级组件构建</p>
+      <div class="arch-diagram">
+        <!-- Application Layer -->
+        <div class="arch-layer">
+          <div class="arch-label app">
+            <i class="fas fa-desktop"></i>
+            应用层
+          </div>
+          <div class="arch-content">
+            <div class="arch-chip"><i class="fas fa-chart-line" style="color:var(--accent);"></i> 销售预测看板</div>
+            <div class="arch-chip"><i class="fas fa-search" style="color:var(--accent);"></i> 质量追溯系统</div>
+            <div class="arch-chip"><i class="fas fa-truck-fast" style="color:var(--accent);"></i> 供应链协同</div>
+            <div class="arch-chip"><i class="fas fa-robot" style="color:var(--accent);"></i> AI Copilot</div>
+            <div class="arch-chip"><i class="fas fa-bell" style="color:var(--accent);"></i> 智能预警</div>
+          </div>
+        </div>
+        <div class="arch-arrow"><i class="fas fa-arrow-up"></i></div>
+        <!-- Reasoning Layer -->
+        <div class="arch-layer">
+          <div class="arch-label reason">
+            <i class="fas fa-brain"></i>
+            推理层
+          </div>
+          <div class="arch-content">
+            <div class="arch-chip"><i class="fas fa-gears" style="color:var(--ibm-blue-light);"></i> 规则推理引擎</div>
+            <div class="arch-chip"><i class="fas fa-diagram-project" style="color:var(--ibm-blue-light);"></i> 图推理算法</div>
+            <div class="arch-chip"><i class="fas fa-wand-magic-sparkles" style="color:var(--ibm-blue-light);"></i> IBM watsonx.ai</div>
+            <div class="arch-chip"><i class="fas fa-code-branch" style="color:var(--ibm-blue-light);"></i> 逻辑推理 (OWL/SWRL)</div>
+          </div>
+        </div>
+        <div class="arch-arrow"><i class="fas fa-arrow-up"></i></div>
+        <!-- Ontology Layer -->
+        <div class="arch-layer">
+          <div class="arch-label onto">
+            <i class="fas fa-project-diagram"></i>
+            本体层
+          </div>
+          <div class="arch-content">
+            <div class="arch-chip"><i class="fas fa-cube" style="color:#A78BFA;"></i> 饮料行业本体</div>
+            <div class="arch-chip"><i class="fas fa-tags" style="color:#A78BFA;"></i> 产品本体</div>
+            <div class="arch-chip"><i class="fas fa-link" style="color:#A78BFA;"></i> 供应链本体</div>
+            <div class="arch-chip"><i class="fas fa-sitemap" style="color:#A78BFA;"></i> 组织本体</div>
+            <div class="arch-chip"><i class="fas fa-cogs" style="color:#A78BFA;"></i> 本体管理平台</div>
+          </div>
+        </div>
+        <div class="arch-arrow"><i class="fas fa-arrow-up"></i></div>
+        <!-- Data Layer -->
+        <div class="arch-layer">
+          <div class="arch-label data">
+            <i class="fas fa-database"></i>
+            数据层
+          </div>
+          <div class="arch-content">
+            <div class="arch-chip"><i class="fas fa-box" style="color:var(--warning);"></i> ERP (SAP)</div>
+            <div class="arch-chip"><i class="fas fa-industry" style="color:var(--warning);"></i> MES</div>
+            <div class="arch-chip"><i class="fas fa-warehouse" style="color:var(--warning);"></i> WMS</div>
+            <div class="arch-chip"><i class="fas fa-users" style="color:var(--warning);"></i> CRM</div>
+            <div class="arch-chip"><i class="fas fa-flask" style="color:var(--warning);"></i> QMS</div>
+            <div class="arch-chip"><i class="fas fa-handshake" style="color:var(--warning);"></i> SRM</div>
+          </div>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <i class="fas fa-server"></i>
+        <p><strong>技术栈：</strong>IBM watsonx.ai + IBM Cloud Pak for Data + Neo4j/ArangoDB(图数据库) + Protégé(本体编辑器) + Apache Jena(语义推理)。支持国产化替代：华为昇腾AI + 达梦数据库 + OpenKG。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 10: 实施计划与ROI ==================== -->
+  <div class="slide" data-slide="9">
+    <div class="slide-inner">
+      <div class="section-tag accent"><i class="fas fa-rocket"></i> 实施路线</div>
+      <h2 class="slide-title">3个月MVP路线图 & ROI</h2>
+      <p class="slide-subtitle">快速验证、迭代优化、全面推广的三阶段实施策略</p>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="time-label">第1个月</div>
+          <div class="timeline-dot"></div>
+          <h4>本体建模</h4>
+          <p>梳理农夫山泉核心业务概念<br>构建饮料行业本体模型<br>完成3个核心场景的实体映射</p>
+        </div>
+        <div class="timeline-item">
+          <div class="time-label">第2个月</div>
+          <div class="timeline-dot"></div>
+          <h4>数据接入</h4>
+          <p>对接ERP/MES/WMS等核心系统<br>完成数据语义标注<br>构建初始知识图谱</p>
+        </div>
+        <div class="timeline-item">
+          <div class="time-label">第3个月</div>
+          <div class="timeline-dot"></div>
+          <h4>MVP验证</h4>
+          <p>上线销售预测+质量追溯场景<br>验证推理引擎效果<br>收集反馈迭代优化</p>
+        </div>
+        <div class="timeline-item">
+          <div class="time-label">4-6个月</div>
+          <div class="timeline-dot"></div>
+          <h4>全面推广</h4>
+          <p>扩展至全部业务场景<br>接入AI Copilot能力<br>建立持续运营体系</p>
+        </div>
+      </div>
+      <h3 style="margin-top:32px;margin-bottom:4px;font-size:18px;color:var(--text-primary);">预期ROI（12个月）</h3>
+      <div class="roi-grid">
+        <div class="roi-card">
+          <div class="roi-value accent">200%</div>
+          <div class="roi-label">跨部门协作效率提升</div>
+        </div>
+        <div class="roi-card">
+          <div class="roi-value blue">88%</div>
+          <div class="roi-label">销售预测准确率</div>
+        </div>
+        <div class="roi-card">
+          <div class="roi-value warning">18x</div>
+          <div class="roi-label">供应链响应速度提升</div>
+        </div>
+        <div class="roi-card">
+          <div class="roi-value danger">1/5</div>
+          <div class="roi-label">TCO vs Palantir</div>
+        </div>
+      </div>
+      <div class="highlight-box" style="margin-top:20px;">
+        <i class="fas fa-handshake"></i>
+        <p><strong>IBM承诺：</strong>3个月内交付可运行的MVP系统，以实际业务数据验证效果。如果MVP阶段未能达到约定的KPI指标，IBM将免费延长优化周期。我们用结果说话。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Bar -->
+<div class="bottom-bar">
+  <button class="nav-btn" id="prevBtn" disabled><i class="fas fa-chevron-left"></i></button>
+  <div class="page-indicators" id="pageIndicators"></div>
+  <span class="page-label" id="pageLabel">1 / 10</span>
+  <button class="nav-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+  <div class="copyright">IBM Consulting &middot; Richard Chen 陈宏强</div>
+</div>
+
+<!-- Keyboard Hint -->
+<div class="key-hint" id="keyHint">
+  使用 <kbd>&larr;</kbd> <kbd>&rarr;</kbd> 键或点击翻页
+</div>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let currentSlide = 0;
+  let isAnimating = false;
+
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const pageIndicators = document.getElementById('pageIndicators');
+  const pageLabel = document.getElementById('pageLabel');
+  const keyHint = document.getElementById('keyHint');
+
+  // Build page dots
+  for (let i = 0; i < totalSlides; i++) {
+    const dot = document.createElement('button');
+    dot.className = 'page-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('data-index', i);
+    dot.addEventListener('click', () => goToSlide(i));
+    pageIndicators.appendChild(dot);
+  }
+
+  function updateUI() {
+    prevBtn.disabled = currentSlide === 0;
+    nextBtn.disabled = currentSlide === totalSlides - 1;
+    pageLabel.textContent = (currentSlide + 1) + ' / ' + totalSlides;
+
+    const dots = pageIndicators.querySelectorAll('.page-dot');
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle('active', idx === currentSlide);
+    });
+  }
+
+  function goToSlide(index) {
+    if (isAnimating || index === currentSlide || index < 0 || index >= totalSlides) return;
+    isAnimating = true;
+
+    const direction = index > currentSlide ? 1 : -1;
+    const currentEl = slides[currentSlide];
+    const nextEl = slides[index];
+
+    // Exit current
+    currentEl.classList.remove('active');
+    currentEl.classList.add(direction > 0 ? 'exit-left' : '');
+    if (direction < 0) {
+      currentEl.style.transform = 'translateX(60px)';
+      currentEl.style.opacity = '0';
+    }
+
+    // Prepare next
+    nextEl.style.transition = 'none';
+    nextEl.style.transform = direction > 0 ? 'translateX(60px)' : 'translateX(-60px)';
+    nextEl.style.opacity = '0';
+    nextEl.style.visibility = 'visible';
+
+    // Reset animations on new slide
+    const animCards = nextEl.querySelectorAll('.card');
+    animCards.forEach(el => {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    });
+
+    // Force reflow
+    void nextEl.offsetWidth;
+
+    nextEl.style.transition = '';
+    nextEl.classList.add('active');
+    nextEl.classList.remove('exit-left');
+    nextEl.style.transform = '';
+    nextEl.style.opacity = '';
+
+    currentSlide = index;
+    updateUI();
+
+    // Hide keyboard hint after first navigation
+    if (keyHint) keyHint.style.opacity = '0';
+
+    setTimeout(() => {
+      currentEl.classList.remove('exit-left');
+      currentEl.style.transform = '';
+      currentEl.style.opacity = '';
+      isAnimating = false;
+    }, 600);
+  }
+
+  prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
+  nextBtn.addEventListener('click', () => goToSlide(currentSlide + 1));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      goToSlide(currentSlide + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      goToSlide(currentSlide - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goToSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goToSlide(totalSlides - 1);
+    }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  let touchEndX = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goToSlide(currentSlide + 1);
+      else goToSlide(currentSlide - 1);
+    }
+  }, { passive: true });
+
+  updateUI();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palantir 本体论深度解析 - IBM Ontology POC Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ========== Reset & Base ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0A0E1A;
+  color: #CBD5E1;
+  line-height: 1.75;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ========== Scrollbar ========== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0F1629; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* ========== Top Toolbar ========== */
+.toolbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 56px;
+  background: rgba(10, 14, 26, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(5, 74, 218, 0.15);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+}
+.toolbar-left { display: flex; align-items: center; gap: 16px; }
+.toolbar-title {
+  font-size: 14px; font-weight: 600; color: #E2E8F0;
+  display: flex; align-items: center; gap: 8px;
+}
+.toolbar-title i { color: #054ADA; font-size: 16px; }
+.toolbar-center { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 480px; margin: 0 24px; }
+.search-box {
+  flex: 1; position: relative;
+}
+.search-box input {
+  width: 100%; padding: 8px 12px 8px 36px;
+  background: #1E293B; border: 1px solid #334155;
+  border-radius: 8px; color: #E2E8F0; font-size: 13px;
+  font-family: inherit; outline: none; transition: all 0.2s;
+}
+.search-box input:focus { border-color: #054ADA; box-shadow: 0 0 0 3px rgba(5,74,218,0.15); }
+.search-box input::placeholder { color: #64748B; }
+.search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748B; font-size: 13px; }
+.search-results {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #1E293B; border: 1px solid #334155; border-radius: 8px;
+  margin-top: 4px; max-height: 300px; overflow-y: auto;
+  display: none; z-index: 200;
+}
+.search-results.active { display: block; }
+.search-result-item {
+  padding: 10px 14px; cursor: pointer; font-size: 13px;
+  border-bottom: 1px solid #334155; transition: background 0.15s;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: #334155; }
+.search-result-item .chapter-label { color: #054ADA; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.search-result-item .match-text { color: #E2E8F0; margin-top: 2px; }
+.search-result-item mark { background: rgba(5,74,218,0.3); color: #93C5FD; border-radius: 2px; padding: 0 2px; }
+.toolbar-right { display: flex; align-items: center; gap: 6px; }
+.tool-btn {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: #1E293B; border: 1px solid #334155;
+  color: #94A3B8; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 14px;
+  transition: all 0.2s;
+}
+.tool-btn:hover { background: #334155; color: #E2E8F0; border-color: #475569; }
+.tool-btn.active { background: #054ADA; color: #fff; border-color: #054ADA; }
+.back-btn {
+  padding: 7px 16px; border-radius: 8px;
+  background: linear-gradient(135deg, #054ADA, #0339B5);
+  border: none; color: #fff; font-size: 13px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  font-family: inherit; transition: all 0.2s; text-decoration: none;
+}
+.back-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,74,218,0.4); }
+.font-size-display { font-size: 12px; color: #64748B; min-width: 32px; text-align: center; font-weight: 600; }
+
+/* ========== Layout ========== */
+.layout { display: flex; height: calc(100vh - 56px); margin-top: 56px; }
+
+/* ========== Sidebar ========== */
+.sidebar {
+  width: 300px; min-width: 300px;
+  background: #0F1629;
+  border-right: 1px solid rgba(5, 74, 218, 0.1);
+  overflow-y: auto; padding: 24px 0;
+  position: relative;
+}
+.sidebar-header {
+  padding: 0 20px 20px; border-bottom: 1px solid #1E293B;
+  margin-bottom: 12px;
+}
+.sidebar-header h2 {
+  font-size: 13px; font-weight: 700; color: #64748B;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-header h2 i { color: #054ADA; }
+.progress-bar-container {
+  margin-top: 12px; height: 3px; background: #1E293B; border-radius: 2px; overflow: hidden;
+}
+.progress-bar {
+  height: 100%; background: linear-gradient(90deg, #054ADA, #3B82F6);
+  border-radius: 2px; width: 0%; transition: width 0.3s;
+}
+.nav-list { list-style: none; }
+.nav-item { margin: 2px 8px; }
+.nav-link {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  color: #94A3B8; text-decoration: none; font-size: 13px;
+  font-weight: 400; transition: all 0.2s; cursor: pointer;
+  line-height: 1.5;
+}
+.nav-link:hover { background: rgba(5, 74, 218, 0.08); color: #E2E8F0; }
+.nav-link.active {
+  background: rgba(5, 74, 218, 0.12); color: #3B82F6;
+  font-weight: 500;
+}
+.nav-link .nav-num {
+  font-size: 11px; font-weight: 700; color: #475569;
+  min-width: 22px; height: 22px; border-radius: 6px;
+  background: #1E293B; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; margin-top: 1px;
+  transition: all 0.2s;
+}
+.nav-link.active .nav-num { background: #054ADA; color: #fff; }
+.nav-link .nav-text { flex: 1; }
+.nav-link .nav-sub { font-size: 11px; color: #475569; margin-top: 2px; display: block; }
+
+/* ========== Main Content ========== */
+.main-content {
+  flex: 1; overflow-y: auto; padding: 40px 60px 80px;
+  max-width: calc(100% - 300px);
+}
+.content-wrapper { max-width: 860px; margin: 0 auto; }
+
+/* ========== Chapter Styles ========== */
+.chapter { margin-bottom: 64px; scroll-margin-top: 80px; }
+.chapter-header {
+  margin-bottom: 28px; padding-bottom: 20px;
+  border-bottom: 1px solid rgba(5, 74, 218, 0.15);
+}
+.chapter-num {
+  font-size: 12px; font-weight: 700; color: #054ADA;
+  text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.chapter-num::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(5,74,218,0.3), transparent);
+}
+.chapter-title {
+  font-size: 28px; font-weight: 700; color: #F1F5F9;
+  line-height: 1.3; margin-bottom: 8px;
+}
+.chapter-subtitle { font-size: 15px; color: #64748B; font-weight: 400; }
+
+/* ========== Text Content ========== */
+.content p { margin-bottom: 16px; color: #CBD5E1; font-size: 15px; }
+.content h3 {
+  font-size: 18px; font-weight: 600; color: #E2E8F0;
+  margin: 32px 0 12px; display: flex; align-items: center; gap: 8px;
+}
+.content h3 i { color: #054ADA; font-size: 16px; }
+.content h4 {
+  font-size: 15px; font-weight: 600; color: #CBD5E1;
+  margin: 24px 0 8px;
+}
+.content ul, .content ol { margin: 12px 0 16px 20px; }
+.content li { margin-bottom: 6px; color: #CBD5E1; font-size: 15px; }
+.content strong { color: #E2E8F0; font-weight: 600; }
+.content em { color: #93C5FD; font-style: italic; }
+.content a { color: #3B82F6; text-decoration: none; border-bottom: 1px solid rgba(59,130,246,0.3); transition: all 0.2s; }
+.content a:hover { color: #60A5FA; border-bottom-color: #60A5FA; }
+
+/* ========== Callout / Info Box ========== */
+.callout {
+  padding: 16px 20px; border-radius: 10px; margin: 20px 0;
+  border-left: 4px solid;
+}
+.callout-info {
+  background: rgba(5, 74, 218, 0.08);
+  border-color: #054ADA;
+}
+.callout-info .callout-title { color: #3B82F6; }
+.callout-warning {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: #F59E0B;
+}
+.callout-warning .callout-title { color: #FBBF24; }
+.callout-success {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: #10B981;
+}
+.callout-success .callout-title { color: #34D399; }
+.callout-title {
+  font-size: 13px; font-weight: 700; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.callout p { margin-bottom: 0; font-size: 14px; }
+
+/* ========== Code Blocks ========== */
+.code-block {
+  margin: 20px 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid #334155;
+}
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: #1E293B;
+  border-bottom: 1px solid #334155;
+}
+.code-lang {
+  font-size: 12px; font-weight: 600; color: #64748B;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  display: flex; align-items: center; gap: 6px;
+}
+.code-lang i { color: #054ADA; }
+.code-copy {
+  font-size: 12px; color: #64748B; cursor: pointer;
+  background: none; border: 1px solid #334155; padding: 4px 10px;
+  border-radius: 6px; font-family: inherit; transition: all 0.2s;
+  display: flex; align-items: center; gap: 4px;
+}
+.code-copy:hover { background: #334155; color: #E2E8F0; }
+.code-body {
+  padding: 16px 20px; background: #0F172A;
+  overflow-x: auto;
+}
+.code-body pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; line-height: 1.7; color: #E2E8F0;
+  white-space: pre; margin: 0;
+}
+/* Syntax Highlighting */
+.code-body .kw { color: #C084FC; } /* keyword */
+.code-body .str { color: #34D399; } /* string */
+.code-body .num { color: #FB923C; } /* number */
+.code-body .cm { color: #64748B; font-style: italic; } /* comment */
+.code-body .fn { color: #60A5FA; } /* function */
+.code-body .type { color: #FBBF24; } /* type */
+.code-body .op { color: #94A3B8; } /* operator */
+.code-body .prop { color: #7DD3FC; } /* property */
+.code-body .tag { color: #F472B6; } /* tag */
+
+/* Inline code */
+code.inline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; background: #1E293B;
+  padding: 2px 8px; border-radius: 4px;
+  color: #93C5FD; border: 1px solid #334155;
+}
+
+/* ========== Tables ========== */
+.table-container {
+  margin: 20px 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid #334155;
+}
+.table-title {
+  padding: 12px 16px; background: #1E293B;
+  font-size: 13px; font-weight: 600; color: #E2E8F0;
+  border-bottom: 1px solid #334155;
+  display: flex; align-items: center; gap: 8px;
+}
+.table-title i { color: #054ADA; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+}
+thead th {
+  padding: 12px 16px; text-align: left;
+  background: #1E293B; color: #E2E8F0;
+  font-weight: 600; font-size: 13px;
+  border-bottom: 2px solid #334155;
+}
+tbody td {
+  padding: 11px 16px; border-bottom: 1px solid #1E293B;
+  color: #CBD5E1;
+}
+tbody tr:nth-child(even) { background: rgba(30, 41, 59, 0.4); }
+tbody tr:hover { background: rgba(5, 74, 218, 0.06); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ========== Diagram / Architecture Box ========== */
+.arch-box {
+  margin: 20px 0; padding: 24px; border-radius: 10px;
+  background: linear-gradient(135deg, #0F172A, #1E293B);
+  border: 1px solid #334155;
+}
+.arch-box .arch-title {
+  font-size: 14px; font-weight: 600; color: #E2E8F0;
+  margin-bottom: 16px; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.arch-box .arch-title i { color: #054ADA; }
+.arch-flow {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; flex-wrap: wrap;
+}
+.arch-node {
+  padding: 10px 18px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; text-align: center;
+  border: 1px solid;
+}
+.arch-node.primary {
+  background: rgba(5, 74, 218, 0.15); border-color: #054ADA; color: #93C5FD;
+}
+.arch-node.secondary {
+  background: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #6EE7B7;
+}
+.arch-node.tertiary {
+  background: rgba(245, 158, 11, 0.1); border-color: #F59E0B; color: #FCD34D;
+}
+.arch-arrow { color: #475569; font-size: 18px; }
+
+/* ========== Feature Grid ========== */
+.feature-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px; margin: 20px 0;
+}
+.feature-card {
+  padding: 16px; border-radius: 10px;
+  background: #0F172A; border: 1px solid #1E293B;
+  transition: all 0.2s;
+}
+.feature-card:hover { border-color: #054ADA; transform: translateY(-2px); }
+.feature-card .fc-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; margin-bottom: 10px;
+}
+.feature-card .fc-icon.blue { background: rgba(5,74,218,0.15); color: #3B82F6; }
+.feature-card .fc-icon.green { background: rgba(16,185,129,0.15); color: #10B981; }
+.feature-card .fc-icon.amber { background: rgba(245,158,11,0.15); color: #F59E0B; }
+.feature-card .fc-icon.purple { background: rgba(168,85,247,0.15); color: #A855F7; }
+.feature-card .fc-icon.pink { background: rgba(236,72,153,0.15); color: #EC4899; }
+.feature-card .fc-icon.cyan { background: rgba(6,182,212,0.15); color: #06B6D4; }
+.feature-card .fc-icon.red { background: rgba(239,68,68,0.15); color: #EF4444; }
+.feature-card h4 { font-size: 14px; font-weight: 600; color: #E2E8F0; margin-bottom: 4px; }
+.feature-card p { font-size: 13px; color: #94A3B8; margin-bottom: 0; }
+
+/* ========== Back to Top ========== */
+.back-to-top {
+  position: fixed; bottom: 32px; right: 32px;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, #054ADA, #0339B5);
+  color: #fff; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; z-index: 90;
+  opacity: 0; transform: translateY(20px);
+  transition: all 0.3s; box-shadow: 0 4px 16px rgba(5,74,218,0.3);
+}
+.back-to-top.visible { opacity: 1; transform: translateY(0); }
+.back-to-top:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,74,218,0.5); }
+
+/* ========== Footer ========== */
+.footer {
+  padding: 32px 0; border-top: 1px solid #1E293B;
+  text-align: center; color: #475569; font-size: 13px;
+}
+.footer a { color: #3B82F6; text-decoration: none; }
+
+/* ========== Print Styles ========== */
+@media print {
+  .toolbar, .sidebar, .back-to-top { display: none !important; }
+  .main-content { max-width: 100%; padding: 20px; overflow: visible; }
+  .layout { height: auto; }
+  body { background: #fff; color: #1a1a1a; overflow: visible; }
+  .chapter-title { color: #1a1a1a; }
+  .content p { color: #333; }
+  .code-body { background: #f5f5f5; }
+  .code-body pre { color: #333; }
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 1024px) {
+  .sidebar { width: 260px; min-width: 260px; }
+  .main-content { padding: 32px 40px 80px; }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { max-width: 100%; padding: 24px 20px 80px; }
+  .toolbar-center { display: none; }
+}
+
+/* ========== Highlight Animation ========== */
+.highlight-flash {
+  animation: flashHighlight 2s ease-out;
+}
+@keyframes flashHighlight {
+  0% { background: rgba(5, 74, 218, 0.3); }
+  100% { background: transparent; }
+}
+
+/* ========== Comparison Columns ========== */
+.compare-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;
+}
+.compare-col {
+  padding: 20px; border-radius: 10px;
+  border: 1px solid #334155;
+}
+.compare-col.col-a { background: rgba(5, 74, 218, 0.05); border-color: rgba(5, 74, 218, 0.2); }
+.compare-col.col-b { background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); }
+.compare-col h4 {
+  font-size: 15px; font-weight: 600; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.compare-col.col-a h4 { color: #3B82F6; }
+.compare-col.col-b h4 { color: #10B981; }
+.compare-col ul { margin-left: 16px; }
+.compare-col li { font-size: 14px; margin-bottom: 6px; }
+
+/* ========== Step Flow ========== */
+.step-flow { margin: 20px 0; }
+.step-item {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  padding: 16px; border-radius: 10px;
+  background: #0F172A; border: 1px solid #1E293B;
+}
+.step-num {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, #054ADA, #0339B5);
+  color: #fff; display: flex; align-items: center;
+  justify-content: center; font-size: 14px; font-weight: 700;
+  flex-shrink: 0;
+}
+.step-content h4 { font-size: 14px; font-weight: 600; color: #E2E8F0; margin-bottom: 4px; }
+.step-content p { font-size: 14px; color: #94A3B8; margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<!-- ========== Toolbar ========== -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <a href="../index.html" class="back-btn">
+      <i class="fas fa-arrow-left"></i> 返回平台
+    </a>
+    <div class="toolbar-title">
+      <i class="fas fa-brain"></i>
+      Palantir Ontology Deep Dive
+    </div>
+  </div>
+  <div class="toolbar-center">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" placeholder="搜索章节内容..." autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+  </div>
+  <div class="toolbar-right">
+    <button class="tool-btn" id="fontDecrease" title="缩小字体"><i class="fas fa-minus"></i></button>
+    <span class="font-size-display" id="fontSizeDisplay">100%</span>
+    <button class="tool-btn" id="fontIncrease" title="放大字体"><i class="fas fa-plus"></i></button>
+    <button class="tool-btn" id="printBtn" title="打印"><i class="fas fa-print"></i></button>
+  </div>
+</div>
+
+<!-- ========== Layout ========== -->
+<div class="layout">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2><i class="fas fa-list-ul"></i> 目录导航</h2>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+    <ul class="nav-list" id="navList">
+      <li class="nav-item"><a class="nav-link active" href="#ch1" data-chapter="ch1">
+        <span class="nav-num">01</span><span class="nav-text">统一语义层的必要性<span class="nav-sub">为什么企业需要本体论</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch2" data-chapter="ch2">
+        <span class="nav-num">02</span><span class="nav-text">Ontology 核心组成<span class="nav-sub">七类核心能力解析</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch3" data-chapter="ch3">
+        <span class="nav-num">03</span><span class="nav-text">工程实现方法<span class="nav-sub">技术栈与数据建模流程</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch4" data-chapter="ch4">
+        <span class="nav-num">04</span><span class="nav-text">AI 接入方式<span class="nav-sub">LLM 与本体论的融合</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch5" data-chapter="ch5">
+        <span class="nav-num">05</span><span class="nav-text">是否需要微调大模型<span class="nav-sub">RAG vs Fine-tuning</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch6" data-chapter="ch6">
+        <span class="nav-num">06</span><span class="nav-text">Realtime Mapping<span class="nav-sub">实时数据映射技术</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch7" data-chapter="ch7">
+        <span class="nav-num">07</span><span class="nav-text">存储策略<span class="nav-sub">图数据库 vs 关系型数据库</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch8" data-chapter="ch8">
+        <span class="nav-num">08</span><span class="nav-text">轻量级落地实例<span class="nav-sub">农夫山泉 MVP 方案</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch9" data-chapter="ch9">
+        <span class="nav-num">09</span><span class="nav-text">核心思想总结<span class="nav-sub">从 Palantir 到 IBM 的路径</span></span>
+      </a></li>
+      <li class="nav-item"><a class="nav-link" href="#ch10" data-chapter="ch10">
+        <span class="nav-num">10</span><span class="nav-text">参考资源<span class="nav-sub">外部链接与进一步阅读</span></span>
+      </a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <div class="content-wrapper">
+
+      <!-- ==================== Ch1 ==================== -->
+      <section class="chapter" id="ch1">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 01</div>
+          <h1 class="chapter-title">统一语义层的必要性</h1>
+          <p class="chapter-subtitle">为什么企业需要本体论 -- 从数据孤岛到语义统一</p>
+        </div>
+        <div class="content">
+          <p>在当今企业数字化转型的浪潮中，数据已成为最核心的战略资产。然而，大多数企业面临着一个根本性的挑战：<strong>数据虽然丰富，但语义却是碎片化的</strong>。ERP 系统中的"客户"与 CRM 系统中的"客户"可能指向完全不同的实体；供应链系统中的"工厂"在生产管理系统中可能被称为"车间"或"生产基地"。这种语义层面的不一致，使得跨系统的数据整合和智能分析变得异常困难。</p>
+
+          <p>Palantir Foundry 的核心洞察在于：<em>企业需要的不是一个更大的数据库，而是一个统一的语义层（Unified Semantic Layer）</em>。这个语义层定义了企业中所有关键概念的含义、关系和约束，使得不同的系统、不同的团队、甚至不同的 AI 模型都能在同一个"语言"下进行对话。这就是本体论（Ontology）在企业级软件中的核心价值。</p>
+
+          <h3><i class="fas fa-exclamation-triangle"></i> 数据孤岛的本质问题</h3>
+          <p>传统的数据集成方案（如 ETL、数据湖、数据仓库）主要解决的是<strong>数据搬运</strong>的问题，而非<strong>语义对齐</strong>的问题。当我们将 ERP 的数据复制到数据仓库时，我们只是改变了数据的存储位置，却没有解决"这些数据意味着什么"的问题。这导致了以下典型痛点：</p>
+          <ul>
+            <li><strong>口径不一致</strong>：不同部门对同一个 KPI 的计算方式不同，导致报表数据打架</li>
+            <li><strong>上下文缺失</strong>：数据离开了原始系统后，丢失了业务上下文和操作约束</li>
+            <li><strong>变更传播困难</strong>：业务规则变化后，需要在多个系统中同步修改</li>
+            <li><strong>AI 应用受限</strong>：大语言模型无法理解企业内部的数据语义，导致幻觉和误读</li>
+          </ul>
+
+          <h3><i class="fas fa-lightbulb"></i> 本体论作为"企业语言"</h3>
+          <p>本体论的本质是一套<strong>形式化的概念体系</strong>。在企业语境下，它定义了：我们有哪些"事物"（Object Types），这些事物有哪些"属性"（Properties），事物之间如何"关联"（Links），可以对事物执行哪些"操作"（Actions），以及必须遵守哪些"规则"（Rules）。通过这层抽象，本体论为企业构建了一个<strong>共享的概念模型</strong>。</p>
+
+          <p>这个概念模型的价值在于：<strong>它使得数据不再是被动存储的信息，而是具有明确语义的、可计算的知识</strong>。当 AI 模型需要回答"哪个工厂的产能利用率最低"时，它不再需要在多个数据表中盲目搜索，而是可以直接通过本体论中定义的"工厂"对象类型及其"产能利用率"属性来精确获取信息。</p>
+
+          <div class="callout callout-info">
+            <div class="callout-title"><i class="fas fa-info-circle"></i> 核心观点</div>
+            <p>本体论不是数据库的替代品，而是数据库的"语义外壳"。它为底层的数据存储提供了一层统一的、可理解的、可计算的语义抽象，使得上层应用（包括 AI）能够以一致的方式访问和理解企业数据。</p>
+          </div>
+
+          <p>从 Palantir 的实践来看，统一语义层的建设通常遵循"自上而下"的方法论：首先从业务需求出发，定义核心概念和关系；然后逐步与底层系统对接，建立数据映射；最后通过持续迭代，使本体论成为企业数据治理的核心枢纽。这种方法论的最大优势在于，它<strong>以业务语义为中心</strong>，而非以技术实现为中心，从而确保了系统的长期可维护性和可扩展性。</p>
+        </div>
+      </section>
+
+      <!-- ==================== Ch2 ==================== -->
+      <section class="chapter" id="ch2">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 02</div>
+          <h1 class="chapter-title">Ontology 核心组成</h1>
+          <p class="chapter-subtitle">Object Types, Properties, Links, Actions, Rules, Tags, Sets -- 七类核心能力解析</p>
+        </div>
+        <div class="content">
+          <p>Palantir 的 Ontology 并非一个简单的数据模型，而是一个<strong>完整的语义建模框架</strong>。它通过七类核心构建块（Primitive），为企业提供了从静态数据描述到动态行为定义的全方位建模能力。理解这七类能力，是掌握 Palantir 方法论的关键。</p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <div class="fc-icon blue"><i class="fas fa-cube"></i></div>
+              <h4>Object Types</h4>
+              <p>定义企业中的核心实体类型，如"工厂"、"产品"、"订单"</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon green"><i class="fas fa-sliders-h"></i></div>
+              <h4>Properties</h4>
+              <p>描述实体的属性字段，如名称、产能、状态</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon amber"><i class="fas fa-project-diagram"></i></div>
+              <h4>Links</h4>
+              <p>定义实体间的关联关系，如"工厂-生产-产品"</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon purple"><i class="fas fa-bolt"></i></div>
+              <h4>Actions</h4>
+              <p>定义可对实体执行的操作，如"审批"、"派单"</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon pink"><i class="fas fa-shield-alt"></i></div>
+              <h4>Rules</h4>
+              <p>声明业务规则和约束，如"库存低于阈值时预警"</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon cyan"><i class="fas fa-tags"></i></div>
+              <h4>Tags</h4>
+              <p>灵活的标注机制，用于分类、过滤和检索</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon red"><i class="fas fa-layer-group"></i></div>
+              <h4>Sets</h4>
+              <p>动态集合，如"华东区所有活跃工厂"</p>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-cube"></i> Object Types -- 语义的基石</h3>
+          <p>Object Types 是本体论中最基础的构建块。每个 Object Type 代表企业中的一个<strong>概念类别</strong>，类似于面向对象编程中的"类"。但与传统数据库表不同，Object Type 不仅定义了数据结构，还承载了业务语义。例如，一个"工厂"Object Type 不仅仅有名称、地址等字段，还隐含了"工厂是一种生产设施"这一语义信息，以及与之关联的所有业务规则和操作。</p>
+
+          <p>在 Palantir 的实践中，Object Type 的设计遵循<strong>"业务驱动"原则</strong>：每个 Object Type 都应该对应业务人员能够理解的一个概念。这意味着 Object Type 的粒度需要精心设计 -- 太粗会丢失语义精度，太细会增加维护成本。通常建议从核心业务流程出发，识别关键实体，然后逐步细化。</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang"><i class="fas fa-code"></i> TypeScript -- Object Type 定义示例</span>
+              <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> 复制</button>
+            </div>
+            <div class="code-body"><pre><span class="cm">// 定义"工厂"Object Type</span>
+<span class="kw">interface</span> <span class="type">Factory</span> {
+  <span class="prop">id</span>: <span class="type">string</span>;                    <span class="cm">// 唯一标识</span>
+  <span class="prop">name</span>: <span class="type">string</span>;                  <span class="cm">// 工厂名称</span>
+  <span class="prop">location</span>: <span class="type">GeoLocation</span>;         <span class="cm">// 地理位置</span>
+  <span class="prop">capacity</span>: <span class="type">number</span>;              <span class="cm">// 设计产能（万瓶/日）</span>
+  <span class="prop">status</span>: <span class="type">FactoryStatus</span>;         <span class="cm">// 运营状态</span>
+  <span class="prop">productionLines</span>: <span class="type">ProductionLine</span>[]; <span class="cm">// 关联产线</span>
+  <span class="prop">dataSource</span>: <span class="type">DataSourceRef</span>;      <span class="cm">// 数据来源映射</span>
+}
+
+<span class="kw">type</span> <span class="type">FactoryStatus</span> = <span class="str">"active"</span> | <span class="str">"maintenance"</span> | <span class="str">"inactive"</span>;</pre></div>
+          </div>
+
+          <h3><i class="fas fa-project-diagram"></i> Links -- 关系即知识</h3>
+          <p>如果说 Object Types 定义了企业概念体系中的"名词"，那么 Links 就定义了"动词"和"关系"。Links 描述了不同 Object Type 之间的关联方式，是构建<strong>知识图谱</strong>的核心。在 Palantir 中，Links 不仅是数据关系，还承载了业务规则和约束。例如，"工厂-生产-产品"这一 Link 不仅表示工厂和产品之间的关联，还可以定义"一个工厂可以生产多种产品，但每种产品只能在一个工厂生产"这样的业务约束。</p>
+
+          <p>Links 的设计需要特别注意<strong>关系的方向性</strong>和<strong>基数约束</strong>。方向性决定了查询时的遍历路径，基数约束（一对一、一对多、多对多）决定了数据的完整性规则。在复杂的企业场景中，合理设计 Links 可以大幅简化数据查询和业务逻辑的实现。</p>
+
+          <h3><i class="fas fa-bolt"></i> Actions -- 从数据到操作</h3>
+          <p>Actions 是 Palantir Ontology 区别于传统数据模型的一个重要特征。它允许在本体论中定义<strong>可执行的业务操作</strong>，如"创建订单"、"审批采购申请"、"调整生产计划"等。Actions 将业务流程直接嵌入到语义层中，使得用户可以在统一的界面上完成从数据查看到业务操作的完整闭环。</p>
+
+          <p>更重要的是，Actions 与 Rules 紧密集成，确保所有操作都在业务规则的约束下执行。例如，一个"创建订单"Action 可以自动触发库存检查规则、信用额度验证规则等，从而在语义层层面保证了业务流程的合规性。这种设计极大地降低了应用层的复杂度，使得前端应用只需要调用 Action，而不需要关心背后的业务规则。</p>
+
+          <h3><i class="fas fa-shield-alt"></i> Rules -- 语义层的守护者</h3>
+          <p>Rules 定义了本体论中的<strong>业务规则和约束</strong>。它们可以是数据完整性约束（如"工厂名称不能为空"），也可以是业务逻辑规则（如"当库存低于安全库存时，自动生成补货建议"）。Rules 的存在使得本体论不仅是一个被动的数据模型，而是一个<strong>主动的业务规则引擎</strong>。</p>
+
+          <p>在 Palantir 的架构中，Rules 的执行是<strong>声明式</strong>的：业务人员通过自然语言或可视化界面定义规则，系统自动将其转化为可执行的逻辑。这种方式极大地降低了业务规则的维护成本，使得规则的变更不需要修改代码，只需要在 Ontology 中更新规则定义即可。</p>
+
+          <div class="table-container">
+            <div class="table-title"><i class="fas fa-table"></i> 七类能力对比总览</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>能力类型</th>
+                  <th>核心作用</th>
+                  <th>类比</th>
+                  <th>复杂度</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Object Types</strong></td><td>定义实体概念</td><td>OOP 中的 Class</td><td>中</td></tr>
+                <tr><td><strong>Properties</strong></td><td>描述实体属性</td><td>Class 的 Fields</td><td>低</td></tr>
+                <tr><td><strong>Links</strong></td><td>建立实体关联</td><td>Foreign Key + 语义</td><td>中</td></tr>
+                <tr><td><strong>Actions</strong></td><td>定义可执行操作</td><td>API Endpoints</td><td>高</td></tr>
+                <tr><td><strong>Rules</strong></td><td>声明业务约束</td><td>Business Rules Engine</td><td>高</td></tr>
+                <tr><td><strong>Tags</strong></td><td>灵活标注分类</td><td>Labels / Annotations</td><td>低</td></tr>
+                <tr><td><strong>Sets</strong></td><td>动态实体集合</td><td>Parameterized Views</td><td>中</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== Ch3 ==================== -->
+      <section class="chapter" id="ch3">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 03</div>
+          <h1 class="chapter-title">工程实现方法</h1>
+          <p class="chapter-subtitle">技术栈选择、数据建模流程与最佳实践</p>
+        </div>
+        <div class="content">
+          <p>理解了 Ontology 的理论框架后，关键问题是如何在工程上实现它。Palantir Foundry 是一个封闭的商业产品，但其设计理念是可以通过开源技术栈复现的。本章将从技术选型、架构设计和实施流程三个维度，详细解析如何构建一个企业级的本体论平台。</p>
+
+          <h3><i class="fas fa-server"></i> 技术栈选择</h3>
+          <p>构建本体论平台需要多个技术组件的协同工作。核心的技术选型需要考虑以下几个维度：<strong>数据存储</strong>（图数据库 vs 关系型数据库）、<strong>语义推理</strong>（规则引擎）、<strong>API 层</strong>（GraphQL vs REST）、<strong>前端框架</strong>（React/Vue）以及 <strong>AI 集成</strong>（LLM Gateway）。下面是一个推荐的技术栈组合：</p>
+
+          <div class="table-container">
+            <div class="table-title"><i class="fas fa-layer-group"></i> 推荐技术栈</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>层次</th>
+                  <th>推荐方案</th>
+                  <th>替代方案</th>
+                  <th>选型理由</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>图存储</td><td>Neo4j / Apache AGE</td><td>Amazon Neptune</td><td>成熟的图查询能力，Cypher 语法直观</td></tr>
+                <tr><td>关系存储</td><td>PostgreSQL</td><td>MySQL / TiDB</td><td>JSONB 支持灵活 schema，生态成熟</td></tr>
+                <tr><td>API 层</td><td>GraphQL (Hasura)</td><td>REST (FastAPI)</td><td>天然适合图数据查询，灵活的字段选择</td></tr>
+                <tr><td>规则引擎</td><td>Drools / OpenPolicyAgent</td><td>自研规则引擎</td><td>成熟的规则定义和执行能力</td></tr>
+                <tr><td>消息队列</td><td>Apache Kafka</td><td>RabbitMQ</td><td>实时数据同步和事件驱动</td></tr>
+                <tr><td>前端</td><td>React + TypeScript</td><td>Vue 3</td><td>组件生态丰富，适合复杂交互</td></tr>
+                <tr><td>AI 集成</td><td>LangChain / LlamaIndex</td><td>自研 RAG Pipeline</td><td>成熟的 LLM 集成框架</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3><i class="fas fa-drafting-compass"></i> 数据建模流程</h3>
+          <p>本体论的建模不是一次性的工作，而是一个<strong>持续迭代</strong>的过程。推荐的建模流程分为五个阶段，每个阶段都有明确的输入、输出和验证标准：</p>
+
+          <div class="step-flow">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h4>领域发现（Domain Discovery）</h4>
+                <p>通过业务访谈、流程分析、文档研究等方式，识别企业中的核心概念、关系和业务规则。输出为"领域概念清单"。</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h4>语义建模（Semantic Modeling）</h4>
+                <p>将领域概念转化为形式化的 Object Types、Properties、Links 定义。使用 Protobuf 或 JSON Schema 进行标准化描述。</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h4>数据映射（Data Mapping）</h4>
+                <p>建立 Ontology 概念与底层物理数据源之间的映射关系。定义同步策略（实时/批量）和转换规则。</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <h4>规则定义（Rule Definition）</h4>
+                <p>将业务规则形式化，定义在 Ontology 层面。包括数据完整性约束、业务逻辑规则和派生属性计算。</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <h4>验证与迭代（Validation & Iteration）</h4>
+                <p>通过实际业务场景验证 Ontology 的完整性和正确性。根据反馈持续调整和扩展模型。</p>
+              </div>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-code"></i> 架构设计示例</h3>
+          <p>以下是一个简化的本体论平台架构设计，展示了各组件之间的交互关系：</p>
+
+          <div class="arch-box">
+            <div class="arch-title"><i class="fas fa-sitemap"></i> 本体论平台参考架构</div>
+            <div class="arch-flow">
+              <div class="arch-node primary"><i class="fas fa-database"></i> 数据源层<br><small>ERP / MES / IoT</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node secondary"><i class="fas fa-sync"></i> 数据映射层<br><small>Kafka + ETL</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node primary"><i class="fas fa-brain"></i> 本体论引擎<br><small>Graph + Rules</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node tertiary"><i class="fas fa-robot"></i> AI 层<br><small>LLM + RAG</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node secondary"><i class="fas fa-desktop"></i> 应用层<br><small>Dashboard / Copilot</small></div>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang"><i class="fas fa-code"></i> Python -- Ontology 模型定义示例</span>
+              <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> 复制</button>
+            </div>
+            <div class="code-body"><pre><span class="kw">from</span> <span class="type">dataclasses</span> <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> <span class="type">typing</span> <span class="kw">import</span> List, Optional, Dict
+<span class="kw">from</span> <span class="type">enum</span> <span class="kw">import</span> Enum
+
+<span class="kw">class</span> <span class="type">FactoryStatus</span>(Enum):
+    ACTIVE = <span class="str">"active"</span>
+    MAINTENANCE = <span class="str">"maintenance"</span>
+    INACTIVE = <span class="str">"inactive"</span>
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="type">Factory</span>:
+    <span class="str">"""工厂 Object Type 定义"""</span>
+    <span class="prop">id</span>: str
+    <span class="prop">name</span>: str
+    <span class="prop">region</span>: str
+    <span class="prop">capacity_daily</span>: float  <span class="cm"># 万瓶/日</span>
+    <span class="prop">status</span>: FactoryStatus
+    <span class="prop">production_lines</span>: List[str] = field(default_factory=list)
+    <span class="prop">metadata</span>: Dict[str, str] = field(default_factory=dict)
+
+    <span class="kw">def</span> <span class="fn">utilization_rate</span>(self, actual_output: float) -> float:
+        <span class="str">"""计算产能利用率（派生属性）"""</span>
+        <span class="kw">return</span> round(actual_output / self.capacity_daily * <span class="num">100</span>, <span class="num">1</span>)
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="type">Product</span>:
+    <span class="str">"""产品 Object Type 定义"""</span>
+    <span class="prop">id</span>: str
+    <span class="prop">name</span>: str
+    <span class="prop">category</span>: str
+    <span class="prop">spec</span>: str  <span class="cm"># 规格: 550ml, 1.5L, etc.</span>
+    <span class="prop">produced_at</span>: Optional[str] = <span class="kw">None</span>  <span class="cm"># Link to Factory</span>
+
+<span class="cm"># Link 定义: 工厂 -> 生产 -> 产品</span>
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="type">ProductionLink</span>:
+    <span class="prop">factory_id</span>: str
+    <span class="prop">product_id</span>: str
+    <span class="prop">daily_volume</span>: float
+    <span class="prop">start_date</span>: str</pre></div>
+          </div>
+
+          <p>在实际工程中，本体论的定义通常不是硬编码在应用中的，而是通过<strong>元数据驱动的配置系统</strong>来管理。这意味着 Object Types、Properties、Links 等定义存储在专门的元数据存储中，应用在运行时动态加载和解析这些定义。这种设计使得本体论的演进可以独立于应用代码的发布，大大提高了系统的灵活性。</p>
+        </div>
+      </section>
+
+      <!-- ==================== Ch4 ==================== -->
+      <section class="chapter" id="ch4">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 04</div>
+          <h1 class="chapter-title">AI 接入方式</h1>
+          <p class="chapter-subtitle">LLM 与本体论的深度融合 -- 从自然语言到结构化查询</p>
+        </div>
+        <div class="content">
+          <p>大语言模型（LLM）的兴起为企业数据交互带来了革命性的变化。然而，LLM 天生缺乏对企业内部数据语义的理解。如果直接让 LLM 查询企业数据库，它会面临两个核心问题：<strong>不知道有哪些数据</strong>（Schema 盲区）和<strong>不理解数据的业务含义</strong>（语义盲区）。本体论正是解决这两个问题的最佳桥梁。</p>
+
+          <h3><i class="fas fa-plug"></i> 三种 AI 接入模式</h3>
+          <p>将 LLM 与本体论结合，主要有三种模式，各有优劣：</p>
+
+          <div class="compare-cols">
+            <div class="compare-col col-a">
+              <h4><i class="fas fa-route"></i> 模式一：Ontology-as-Context</h4>
+              <p>将本体论的 Schema 定义（Object Types、Properties、Links）作为上下文注入到 LLM 的 Prompt 中。LLM 基于这些 Schema 信息，将用户的自然语言问题转化为结构化查询。</p>
+              <ul>
+                <li>实现简单，快速上线</li>
+                <li>依赖 Prompt Engineering</li>
+                <li>适合 Schema 较小的场景</li>
+                <li>Token 消耗较高</li>
+              </ul>
+            </div>
+            <div class="compare-col col-b">
+              <h4><i class="fas fa-cogs"></i> 模式二：Ontology-as-API</h4>
+              <p>将本体论封装为标准化的 API（如 GraphQL），LLM 通过 Function Calling 机制调用这些 API。本体论引擎负责执行查询并返回结果。</p>
+              <ul>
+                <li>查询精确，可控性强</li>
+                <li>需要 API 层开发</li>
+                <li>适合复杂查询场景</li>
+                <li>支持事务和权限控制</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>第三种模式是<strong>Ontology-as-Knowledge</strong>，它将本体论中的知识（包括实例数据和关系）向量化存储，通过 RAG（Retrieval-Augmented Generation）的方式提供给 LLM。这种模式适合需要跨实体推理和自然语言叙述的场景，如"分析华东区工厂的整体运营状况"。</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang"><i class="fas fa-code"></i> Python -- Ontology-as-Context 实现示例</span>
+              <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> 复制</button>
+            </div>
+            <div class="code-body"><pre><span class="kw">import</span> openai
+
+<span class="kw">def</span> <span class="fn">build_ontology_context</span>() -> str:
+    <span class="str">"""构建本体论上下文描述"""</span>
+    <span class="kw">return</span> <span class="str">"""
+    你是一个企业数据查询助手。以下是企业的本体论定义：
+
+    ## Object Types:
+    - Factory: 工厂，属性包括 name, region, capacity_daily, status
+    - Product: 产品，属性包括 name, category, spec, produced_at
+    - ProductionLine: 产线，属性包括 line_id, factory_id, product_id, speed
+
+    ## Links:
+    - Factory [1] --has--> [N] ProductionLine
+    - ProductionLine [N] --produces--> [1] Product
+    - Factory [N] --located_in--> [1] Region
+
+    ## Rules:
+    - 产能利用率 = 实际产量 / 设计产能 * 100%
+    - 工厂状态: active | maintenance | inactive
+    """</span>
+
+<span class="kw">def</span> <span class="fn">query_ontology</span>(question: str) -> str:
+    <span class="str">"""通过 LLM 将自然语言转化为 Cypher 查询"""</span>
+    context = <span class="fn">build_ontology_context</span>()
+    response = openai.chat.completions.create(
+        model=<span class="str">"gpt-4"</span>,
+        messages=[
+            {<span class="str">"role"</span>: <span class="str">"system"</span>, <span class="str">"content"</span>: context},
+            {<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">f"""
+            请将以下自然语言问题转化为 Cypher 查询语句。
+            只输出 Cypher 语句，不要解释。
+
+            问题: {question}
+            """</span>}
+        ],
+        temperature=<span class="num">0</span>
+    )
+    <span class="kw">return</span> response.choices[<span class="num">0</span>].message.content
+
+<span class="cm"># 示例使用</span>
+cypher = <span class="fn">query_ontology</span>(<span class="str">"查询华东区所有活跃工厂的产能利用率"</span>)
+<span class="fn">print</span>(cypher)
+<span class="cm">// MATCH (f:Factory {status: 'active'})-[:LOCATED_IN]->(r:Region {name: '华东'})
+//   MATCH (f)-[:HAS]->(pl:ProductionLine)
+//   RETURN f.name, f.capacity_daily, sum(pl.actual_output) AS actual
+//   ORDER BY actual DESC</span></pre></div>
+          </div>
+
+          <h3><i class="fas fa-shield-alt"></i> 安全与权限</h3>
+          <p>在 AI 接入本体论时，安全是一个不可忽视的问题。LLM 生成的查询必须经过<strong>权限检查</strong>和<strong>SQL/Cypher 注入防护</strong>。推荐的方案是在 LLM 和数据库之间增加一个<strong>查询网关（Query Gateway）</strong>，负责：1）验证查询的合法性；2）根据当前用户的权限过滤查询结果；3）限制查询的复杂度和返回数据量；4）记录所有查询日志用于审计。</p>
+
+          <div class="callout callout-warning">
+            <div class="callout-title"><i class="fas fa-exclamation-circle"></i> 安全警告</div>
+            <p>永远不要直接将 LLM 生成的查询语句发送到生产数据库。即使使用了 Prompt Engineering 来约束输出格式，LLM 仍有可能生成不安全的查询。务必通过查询网关进行二次验证和过滤。</p>
+          </div>
+
+          <p>此外，对于敏感数据的访问，建议采用<strong>列级权限控制</strong>。例如，普通员工可以查看工厂的基本信息，但只有管理层才能查看财务相关的数据。这种权限控制应该在 Ontology 层面定义，而不是在应用层面实现，以确保所有 AI 和非 AI 的数据访问都遵循统一的权限模型。</p>
+        </div>
+      </section>
+
+      <!-- ==================== Ch5 ==================== -->
+      <section class="chapter" id="ch5">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 05</div>
+          <h1 class="chapter-title">是否需要微调大模型</h1>
+          <p class="chapter-subtitle">RAG vs Fine-tuning -- 企业 AI 落地的关键决策</p>
+        </div>
+        <div class="content">
+          <p>在构建基于本体论的 AI 系统时，一个常见的决策困境是：<strong>应该使用 RAG（检索增强生成）还是微调（Fine-tuning）来让 LLM 理解企业数据？</strong>这个问题的答案取决于多个因素，包括数据规模、更新频率、精度要求和成本预算。让我们深入分析两种方案的优劣和适用场景。</p>
+
+          <h3><i class="fas fa-search"></i> RAG 方案详解</h3>
+          <p>RAG 的核心思想是：<strong>不改变模型本身，而是在查询时动态注入相关上下文</strong>。在本体论的语境下，RAG 的工作流程是：1）将用户的自然语言问题转化为向量查询；2）在本体论的知识库中检索相关的实体、关系和文档；3）将检索到的上下文与用户问题一起发送给 LLM；4）LLM 基于上下文生成回答。</p>
+
+          <p>RAG 的最大优势在于<strong>数据的实时性</strong>和<strong>可追溯性</strong>。由于知识库是独立维护的，当企业数据更新时，只需要更新知识库中的向量索引，而不需要重新训练模型。同时，RAG 可以明确指出回答的来源，便于用户验证和审计。</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang"><i class="fas fa-code"></i> Python -- RAG Pipeline 核心逻辑</span>
+              <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> 复制</button>
+            </div>
+            <div class="code-body"><pre><span class="kw">from</span> <span class="type">langchain.vectorstores</span> <span class="kw">import</span> Chroma
+<span class="kw">from</span> <span class="type">langchain.embeddings</span> <span class="kw">import</span> OpenAIEmbeddings
+<span class="kw">from</span> <span class="type">langchain.chat_models</span> <span class="kw">import</span> ChatOpenAI
+<span class="kw">from</span> <span class="type">langchain.chains</span> <span class="kw">import</span> RetrievalQA
+
+<span class="kw">def</span> <span class="fn">build_rag_pipeline</span>(ontology_docs):
+    <span class="str">"""构建基于本体论的 RAG Pipeline"""</span>
+    embeddings = OpenAIEmbeddings(model=<span class="str">"text-embedding-3-small"</span>)
+    vectorstore = Chroma.from_documents(
+        documents=ontology_docs,
+        embedding=embeddings,
+        collection_name=<span class="str">"enterprise_ontology"</span>
+    )
+    llm = ChatOpenAI(model=<span class="str">"gpt-4"</span>, temperature=<span class="num">0</span>)
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type=<span class="str">"stuff"</span>,
+        retriever=vectorstore.as_retriever(search_kwargs={<span class="str">"k"</span>: <span class="num">5</span>}),
+        return_source_documents=<span class="kw">True</span>
+    )
+    <span class="kw">return</span> qa_chain
+
+<span class="cm"># 使用示例</span>
+result = qa_chain({<span class="str">"query"</span>: <span class="str">"农夫山泉千岛湖工厂的产能利用率是多少？"</span>})
+<span class="fn">print</span>(result[<span class="str">"result"</span>])        <span class="cm"># LLM 生成的回答</span>
+<span class="fn">print</span>(result[<span class="str">"source_documents"</span>])  <span class="cm"># 引用的本体论文档</span></pre></div>
+          </div>
+
+          <h3><i class="fas fa-microchip"></i> Fine-tuning 方案详解</h3>
+          <p>Fine-tuning 的核心思想是：<strong>通过在特定领域的训练数据上继续训练模型，使其"内化"领域知识</strong>。在本体论的语境下，Fine-tuning 的训练数据通常包括：1）本体论的 Schema 定义；2）常见查询的示例（自然语言到查询语句的映射）；3）企业特定的术语和表达习惯。</p>
+
+          <p>Fine-tuning 的优势在于<strong>推理速度更快</strong>（不需要额外的检索步骤）和<strong>输出格式更稳定</strong>（模型学会了特定的输出模式）。但它的劣势也很明显：<strong>知识更新成本高</strong>（每次数据变化都需要重新微调）、<strong>幻觉风险</strong>（模型可能"记住"了错误的模式）以及<strong>缺乏可追溯性</strong>（无法指出回答的具体来源）。</p>
+
+          <div class="table-container">
+            <div class="table-title"><i class="fas fa-balance-scale"></i> RAG vs Fine-tuning 全面对比</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>维度</th>
+                  <th>RAG</th>
+                  <th>Fine-tuning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>知识更新</strong></td><td>实时更新知识库即可</td><td>需要重新训练模型</td></tr>
+                <tr><td><strong>数据精度</strong></td><td>高（直接检索原始数据）</td><td>中（依赖模型记忆）</td></tr>
+                <tr><td><strong>推理延迟</strong></td><td>较高（检索 + 生成）</td><td>较低（直接生成）</td></tr>
+                <tr><td><strong>可追溯性</strong></td><td>强（可引用来源）</td><td>弱（黑盒推理）</td></tr>
+                <tr><td><strong>实现复杂度</strong></td><td>中（需要向量数据库）</td><td>高（需要训练数据和算力）</td></tr>
+                <tr><td><strong>成本</strong></td><td>按查询计费</td><td>一次性训练成本高</td></tr>
+                <tr><td><strong>幻觉风险</strong></td><td>低（有上下文约束）</td><td>中（可能产生错误记忆）</td></tr>
+                <tr><td><strong>适用场景</strong></td><td>知识密集型、数据频繁更新</td><td>格式标准化、模式固定</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3><i class="fas fa-check-double"></i> 推荐策略：混合方案</h3>
+          <p>在实际项目中，我们推荐采用<strong>RAG 为主、Fine-tuning 为辅</strong>的混合策略。具体来说：</p>
+          <ul>
+            <li><strong>使用 RAG 处理数据查询</strong>：所有涉及企业数据的查询都通过 RAG 完成，确保数据精度和可追溯性</li>
+            <li><strong>使用 Fine-tuning 优化查询理解</strong>：对 LLM 进行轻量级微调，使其更准确地理解企业术语和查询意图，但不让它记忆具体数据</li>
+            <li><strong>使用本体论作为统一知识源</strong>：RAG 的知识库直接基于本体论构建，确保知识的一致性和权威性</li>
+          </ul>
+
+          <div class="callout callout-success">
+            <div class="callout-title"><i class="fas fa-check-circle"></i> 实践建议</div>
+            <p>对于大多数企业场景，RAG 已经足够满足需求。Fine-tuning 应该仅在以下情况考虑：1）需要高度标准化的输出格式；2）有大量高质量的训练数据；3）推理延迟是关键瓶颈。在 MVP 阶段，建议只使用 RAG，待验证业务价值后再考虑 Fine-tuning。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== Ch6 ==================== -->
+      <section class="chapter" id="ch6">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 06</div>
+          <h1 class="chapter-title">Realtime Mapping</h1>
+          <p class="chapter-subtitle">实时数据映射技术 -- 让本体论与业务数据保持同步</p>
+        </div>
+        <div class="content">
+          <p>本体论的价值在于它能够<strong>实时反映企业的业务状态</strong>。如果本体论中的数据是过时的，那么基于它构建的所有分析和决策都将是错误的。因此，实时数据映射（Realtime Mapping）是本体论平台的核心技术能力之一。它确保底层业务系统的数据变化能够<strong>快速、准确、一致</strong>地反映到本体论层。</p>
+
+          <h3><i class="fas fa-exchange-alt"></i> 数据映射的核心挑战</h3>
+          <p>数据映射面临的核心挑战不是技术层面的，而是<strong>语义层面的</strong>。具体来说，需要解决以下问题：</p>
+          <ul>
+            <li><strong>Schema 对齐</strong>：源系统的数据结构与 Ontology 的 Object Type 定义之间可能存在结构差异（如字段拆分、合并、类型转换）</li>
+            <li><strong>语义转换</strong>：源系统中的编码值需要转换为 Ontology 中定义的标准枚举值（如 "01" -> "active"）</li>
+            <li><strong>实体解析</strong>：源系统中的同一条记录可能对应 Ontology 中的不同实体（如"农夫山泉股份有限公司"和"农夫山泉"是否是同一个实体）</li>
+            <li><strong>增量同步</strong>：如何高效地识别和同步源系统中的增量变更，而不是每次都全量同步</li>
+          </ul>
+
+          <h3><i class="fas fa-stream"></i> 实时同步架构</h3>
+          <p>推荐的实时同步架构基于 <strong>Change Data Capture (CDC)</strong> 模式。CDC 通过监听源数据库的事务日志（如 PostgreSQL 的 WAL、MySQL 的 Binlog），实时捕获数据变更事件，然后将这些事件转化为 Ontology 的更新操作。</p>
+
+          <div class="arch-box">
+            <div class="arch-title"><i class="fas fa-exchange-alt"></i> CDC 实时同步架构</div>
+            <div class="arch-flow">
+              <div class="arch-node primary"><i class="fas fa-database"></i> 源数据库<br><small>PostgreSQL / Oracle</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node secondary"><i class="fas fa-broadcast-tower"></i> CDC 捕获<br><small>Debezium / Maxwell</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node tertiary"><i class="fas fa-envelope"></i> 消息队列<br><small>Apache Kafka</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node primary"><i class="fas fa-cogs"></i> 映射引擎<br><small>Transform + Validate</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node secondary"><i class="fas fa-brain"></i> Ontology Store<br><small>Neo4j / PostgreSQL</small></div>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang"><i class="fas fa-code"></i> Python -- CDC 事件处理示例</span>
+              <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> 复制</button>
+            </div>
+            <div class="code-body"><pre><span class="kw">from</span> <span class="type">confluent_kafka</span> <span class="kw">import</span> Consumer, KafkaError
+<span class="kw">import</span> json
+
+<span class="kw">class</span> <span class="type">OntologyMappingEngine</span>:
+    <span class="str">"""本体论映射引擎 -- 处理 CDC 事件并更新 Ontology"""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, ontology_store):
+        self.store = ontology_store
+        self.mapping_rules = self._load_mapping_rules()
+
+    <span class="kw">def</span> <span class="fn">process_cdc_event</span>(self, event: dict):
+        <span class="str">"""处理单个 CDC 事件"""</span>
+        operation = event[<span class="str">"op"</span>]  <span class="cm"># "c"=create, "u"=update, "d"=delete</span>
+        source_table = event[<span class="str">"source"</span>][<span class="str">"table"</span>]
+        before = event.get(<span class="str">"before"</span>, {})
+        after = event.get(<span class="str">"after"</span>, {})
+
+        <span class="cm"># 查找映射规则</span>
+        rule = self.mapping_rules.get(source_table)
+        <span class="kw">if not</span> rule:
+            <span class="fn">print</span>(<span class="str">f"No mapping rule for table: {source_table}"</span>)
+            <span class="kw">return</span>
+
+        <span class="cm"># 执行语义转换</span>
+        ontology_obj = self._transform(rule, after)
+
+        <span class="cm"># 更新 Ontology</span>
+        <span class="kw">if</span> operation == <span class="str">"c"</span>:
+            self.store.create(rule[<span class="str">"object_type"</span>], ontology_obj)
+        <span class="kw">elif</span> operation == <span class="str">"u"</span>:
+            self.store.update(rule[<span class="str">"object_type"</span>], ontology_obj[<span class="str">"id"</span>], ontology_obj)
+        <span class="kw">elif</span> operation == <span class="str">"d"</span>:
+            self.store.delete(rule[<span class="str">"object_type"</span>], before[<span class="str">"id"</span>])
+
+    <span class="kw">def</span> <span class="fn">_transform</span>(self, rule: dict, data: dict) -> dict:
+        <span class="str">"""执行字段映射和语义转换"""</span>
+        result = {}
+        <span class="kw">for</span> target_field, source_expr <span class="kw">in</span> rule[<span class="str">"field_mappings"</span>].items():
+            <span class="kw">if</span> source_expr.startswith(<span class="str">"lookup:"</span>):
+                <span class="cm"># 值映射（如编码转枚举）</span>
+                lookup_table = source_expr.split(<span class="str">":"</span>)[<span class="num">1</span>]
+                raw_value = data.get(rule[<span class="str">"source_fields"</span>][target_field])
+                result[target_field] = rule[<span class="str">"lookups"</span>][lookup_table].get(raw_value, raw_value)
+            <span class="kw">else</span>:
+                result[target_field] = data.get(source_expr)
+        <span class="kw">return</span> result</pre></div>
+          </div>
+
+          <h3><i class="fas fa-clock"></i> 一致性保障</h3>
+          <p>在分布式系统中，数据一致性是一个核心挑战。本体论平台需要在以下三个层面保证一致性：</p>
+          <ul>
+            <li><strong>顺序一致性</strong>：确保 CDC 事件按照源系统中的事务顺序处理，避免数据状态的混乱</li>
+            <li><strong>事务一致性</strong>：一个业务事务涉及多个 Object Type 的更新时，确保要么全部成功，要么全部回滚</li>
+            <li><strong>最终一致性</strong>：在网络分区或服务故障时，允许短暂的数据不一致，但确保最终达到一致状态</li>
+          </ul>
+
+          <p>在实际实现中，建议使用 Kafka 的<strong>分区有序</strong>特性来保证顺序一致性，使用<strong>Saga 模式</strong>来处理跨 Object Type 的事务一致性，并通过<strong>定期对账</strong>机制来检测和修复数据不一致。</p>
+        </div>
+      </section>
+
+      <!-- ==================== Ch7 ==================== -->
+      <section class="chapter" id="ch7">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 07</div>
+          <h1 class="chapter-title">存储策略</h1>
+          <p class="chapter-subtitle">图数据库 vs 关系型数据库 -- 本体论存储的终极选择</p>
+        </div>
+        <div class="content">
+          <p>本体论的存储选型是一个在工程实践中经常被讨论的话题。图数据库（如 Neo4j）和关系型数据库（如 PostgreSQL）各有优势，选择哪种方案取决于具体的业务场景、数据特征和团队能力。本章将从多个维度进行深入对比分析，帮助读者做出明智的技术决策。</p>
+
+          <h3><i class="fas fa-project-diagram"></i> 图数据库的优势场景</h3>
+          <p>图数据库天然适合本体论的存储，因为本体论的核心就是<strong>实体和关系</strong>，而这正是图数据库的基本数据模型。在以下场景中，图数据库具有明显优势：</p>
+          <ul>
+            <li><strong>多跳关系查询</strong>：如"查找与指定供应商有间接关联的所有产品"，这种需要遍历多层关系的查询在图数据库中性能优异</li>
+            <li><strong>路径分析</strong>：如"分析从原材料到最终产品的完整供应链路径"，图数据库的路径查找算法（如 Dijkstra、A*）可以直接使用</li>
+            <li><strong>关系密集型数据</strong>：当实体之间的关系数量接近或超过实体数量时，图数据库的存储效率更高</li>
+            <li><strong>模式灵活</strong>：本体论的 Schema 可能频繁演进，图数据库的 Schema-less 特性更适应这种变化</li>
+          </ul>
+
+          <h3><i class="fas fa-table"></i> 关系型数据库的优势场景</h3>
+          <p>关系型数据库在企业级应用中有着数十年的积累，在以下方面具有不可替代的优势：</p>
+          <ul>
+            <li><strong>事务处理</strong>：ACID 事务的成熟度远超图数据库，适合金融级的数据一致性要求</li>
+            <li><strong>复杂聚合查询</strong>：如"按区域统计各产品类别的月度销售额"，SQL 的聚合能力远比 Cypher 强大</li>
+            <li><strong>运维成熟度</strong>：DBA 人才储备丰富，监控、备份、高可用方案成熟</li>
+            <li><strong>JSONB 支持</strong>：PostgreSQL 的 JSONB 类型可以灵活存储半结构化数据，部分替代图数据库的灵活性</li>
+          </ul>
+
+          <div class="table-container">
+            <div class="table-title"><i class="fas fa-balance-scale"></i> 图数据库 vs 关系型数据库详细对比</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>评估维度</th>
+                  <th>图数据库 (Neo4j)</th>
+                  <th>关系型数据库 (PostgreSQL)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>关系查询性能</strong></td><td>优秀（O(1) 关系遍历）</td><td>一般（JOIN 性能随深度下降）</td></tr>
+                <tr><td><strong>聚合查询</strong></td><td>一般（Cypher 聚合能力有限）</td><td>优秀（SQL 聚合功能强大）</td></tr>
+                <tr><td><strong>事务支持</strong></td><td>基本 ACID</td><td>完整 ACID + MVCC</td></tr>
+                <tr><td><strong>水平扩展</strong></td><td>有限（企业版支持）</td><td>良好（Citus / TiDB）</td></tr>
+                <tr><td><strong>运维复杂度</strong></td><td>较高（专业人才稀缺）</td><td>低（生态成熟）</td></tr>
+                <tr><td><strong>Schema 灵活性</strong></td><td>高（Schema-less）</td><td>中（JSONB 补充）</td></tr>
+                <tr><td><strong>全文搜索</strong></td><td>需要集成外部引擎</td><td>内置支持</td></tr>
+                <tr><td><strong>学习曲线</strong></td><td>陡峭（Cypher 语法）</td><td>平缓（SQL 通用）</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3><i class="fas fa-layer-group"></i> 推荐方案：混合存储架构</h3>
+          <p>在实际项目中，我们推荐采用<strong>混合存储架构</strong>，根据数据特征选择最适合的存储引擎：</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang"><i class="fas fa-code"></i> SQL -- PostgreSQL + Apache AGE 混合方案</span>
+              <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> 复制</button>
+            </div>
+            <div class="code-body"><pre><span class="cm">-- 在 PostgreSQL 中使用 Apache AGE 扩展实现图查询能力</span>
+<span class="cm">-- 这样既保留了关系型数据库的成熟生态，又获得了图查询能力</span>
+
+<span class="cm">-- 1. 创建常规关系表（适合聚合查询）</span>
+<span class="kw">CREATE TABLE</span> <span class="type">factories</span> (
+    <span class="prop">id</span>          <span class="type">VARCHAR(32)</span> <span class="kw">PRIMARY KEY</span>,
+    <span class="prop">name</span>        <span class="type">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    <span class="prop">region</span>      <span class="type">VARCHAR(50)</span>,
+    <span class="prop">capacity</span>    <span class="type">DECIMAL(10,2)</span>,
+    <span class="prop">status</span>      <span class="type">VARCHAR(20)</span>,
+    <span class="prop">created_at</span>  <span class="type">TIMESTAMP</span> <span class="kw">DEFAULT</span> <span class="fn">NOW()</span>
+);
+
+<span class="cm">-- 2. 创建图（适合关系遍历）</span>
+<span class="kw">SELECT</span> <span class="fn">create_graph</span>(<span class="str">'supply_chain'</span>);
+
+<span class="cm">-- 3. 加载关系数据到图中</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> cypher(<span class="str">'supply_chain'</span>, $$
+    <span class="cm">-- 创建工厂节点</span>
+    <span class="kw">LOAD CSV WITH HEADERS FROM</span> <span class="str">'file:///factories.csv'</span> <span class="kw">AS</span> row
+    <span class="kw">CREATE</span> (f:Factory {id: row.id, name: row.name, region: row.region})
+$$) <span class="kw">AS</span> (v agtype);
+
+<span class="cm">-- 4. 执行图查询（多跳关系遍历）</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> cypher(<span class="str">'supply_chain'</span>, $$
+    <span class="cm">-- 查找与指定原材料相关的所有最终产品</span>
+    <span class="kw">MATCH</span> (m:Material {name: $material_name})
+          <-[:USES*1..4]-(p:Product)
+    <span class="kw">RETURN DISTINCT</span> p.name, p.category
+    <span class="kw">ORDER BY</span> p.category
+$$, <span class="str">'PET树脂'</span>) <span class="kw">AS</span> (name <span class="type">text</span>, category <span class="type">text</span>);
+
+<span class="cm">-- 5. 执行 SQL 聚合查询（利用关系型数据库优势）</span>
+<span class="kw">SELECT</span>
+    region,
+    <span class="fn">COUNT</span>(*) <span class="kw">AS</span> factory_count,
+    <span class="fn">SUM</span>(capacity) <span class="kw">AS</span> total_capacity,
+    <span class="fn">AVG</span>(capacity) <span class="kw">AS</span> avg_capacity
+<span class="kw">FROM</span> factories
+<span class="kw">WHERE</span> status = <span class="str">'active'</span>
+<span class="kw">GROUP BY</span> region
+<span class="kw">ORDER BY</span> total_capacity <span class="kw">DESC</span>;</pre></div>
+          </div>
+
+          <p>混合存储架构的核心思想是：<strong>关系数据用关系表存储，图关系用图引擎存储，两者共享同一个物理数据库实例</strong>。PostgreSQL + Apache AGE 是目前最成熟的实现方案，它允许在同一个 SQL 查询中混合使用关系查询和图查询，极大地简化了应用层的开发复杂度。</p>
+
+          <div class="callout callout-info">
+            <div class="callout-title"><i class="fas fa-info-circle"></i> 技术趋势</div>
+            <p>Apache AGE 是 PostgreSQL 的图数据库扩展，由 Apache 基金会孵化。它将图查询能力直接嵌入到 PostgreSQL 中，使得用户可以在同一个数据库中同时使用 SQL 和 Cypher 查询。对于希望获得图查询能力但又不想引入额外数据库组件的团队，这是一个非常值得关注的方案。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== Ch8 ==================== -->
+      <section class="chapter" id="ch8">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 08</div>
+          <h1 class="chapter-title">轻量级落地实例</h1>
+          <p class="chapter-subtitle">农夫山泉 MVP 方案 -- 从概念到可运行的系统</p>
+        </div>
+        <div class="content">
+          <p>理论分析之后，最关键的是<strong>如何落地</strong>。本章将以农夫山泉为背景，设计一个最小可行产品（MVP）方案，展示如何用最少的资源构建一个具有本体论核心能力的系统。这个 MVP 的目标不是复制 Palantir Foundry 的全部功能，而是验证本体论方法论的<strong>核心价值</strong>。</p>
+
+          <h3><i class="fas fa-bullseye"></i> MVP 目标与范围</h3>
+          <p>农夫山泉 MVP 聚焦于<strong>供应链可视化与智能问答</strong>两个核心场景：</p>
+          <ul>
+            <li><strong>场景一</strong>：通过统一的语义层，将 ERP、MES、WMS 三个系统的数据整合，提供端到端的供应链可视化</li>
+            <li><strong>场景二</strong>：基于本体论 + RAG，实现自然语言问答，如"千岛湖工厂目前的产能利用率是多少？""哪些产线正在生产550ml天然水？"</li>
+          </ul>
+
+          <h3><i class="fas fa-cubes"></i> 核心数据模型</h3>
+          <p>MVP 阶段只需要定义<strong>4个核心 Object Type</strong>和<strong>3条 Links</strong>：</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang"><i class="fas fa-code"></i> YAML -- 农夫山泉 MVP Ontology 定义</span>
+              <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> 复制</button>
+            </div>
+            <div class="code-body"><pre><span class="cm"># ============================================</span>
+<span class="cm"># 农夫山泉 MVP Ontology 定义</span>
+<span class="cm"># ============================================</span>
+
+<span class="prop">object_types</span>:
+  <span class="kw">Factory</span>:
+    <span class="prop">display_name</span>: <span class="str">"工厂"</span>
+    <span class="prop">properties</span>:
+      <span class="prop">id</span>:           { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">primary_key</span>: <span class="kw">true</span> }
+      <span class="prop">name</span>:         { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">required</span>: <span class="kw">true</span> }
+      <span class="prop">region</span>:       { <span class="prop">type</span>: <span class="str">"enum"</span>,     <span class="prop">values</span>: [<span class="str">"华东"</span>, <span class="str">"华南"</span>, <span class="str">"华中"</span>, <span class="str">"西南"</span>, <span class="str">"华北"</span>] }
+      <span class="prop">capacity</span>:     { <span class="prop">type</span>: <span class="str">"decimal"</span>,  <span class="prop">description</span>: <span class="str">"设计产能（万瓶/日）"</span> }
+      <span class="prop">status</span>:       { <span class="prop">type</span>: <span class="str">"enum"</span>,     <span class="prop">values</span>: [<span class="str">"active"</span>, <span class="str">"maintenance"</span>, <span class="str">"inactive"</span>] }
+    <span class="prop">data_source</span>:   <span class="str">"erp://factories"</span>
+
+  <span class="kw">ProductionLine</span>:
+    <span class="prop">display_name</span>: <span class="str">"产线"</span>
+    <span class="prop">properties</span>:
+      <span class="prop">id</span>:           { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">primary_key</span>: <span class="kw">true</span> }
+      <span class="prop">factory_id</span>:   { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">ref</span>: <span class="str">"Factory"</span> }
+      <span class="prop">line_type</span>:    { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">description</span>: <span class="str">"产线类型"</span> }
+      <span class="prop">speed</span>:        { <span class="prop">type</span>: <span class="str">"decimal"</span>,  <span class="prop">description</span>: <span class="str">"生产速度（瓶/分钟）"</span> }
+      <span class="prop">current_product</span>: { <span class="prop">type</span>: <span class="str">"string"</span>, <span class="prop">ref</span>: <span class="str">"Product"</span> }
+    <span class="prop">data_source</span>:   <span class="str">"mes://production_lines"</span>
+
+  <span class="kw">Product</span>:
+    <span class="prop">display_name</span>: <span class="str">"产品"</span>
+    <span class="prop">properties</span>:
+      <span class="prop">id</span>:           { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">primary_key</span>: <span class="kw">true</span> }
+      <span class="prop">name</span>:         { <span class="prop">type</span>: <span class="str">"string"</span> }
+      <span class="prop">category</span>:     { <span class="prop">type</span>: <span class="str">"enum"</span>,     <span class="prop">values</span>: [<span class="str">"天然水"</span>, <span class="str">"茶饮料"</span>, <span class="str">"果汁"</span>, <span class="str">"功能饮料"</span>] }
+      <span class="prop">spec</span>:         { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">description</span>: <span class="str">"规格: 550ml, 1.5L, etc."</span> }
+    <span class="prop">data_source</span>:   <span class="str">"erp://products"</span>
+
+  <span class="kw">Warehouse</span>:
+    <span class="prop">display_name</span>: <span class="str">"仓库"</span>
+    <span class="prop">properties</span>:
+      <span class="prop">id</span>:           { <span class="prop">type</span>: <span class="str">"string"</span>,   <span class="prop">primary_key</span>: <span class="kw">true</span> }
+      <span class="prop">name</span>:         { <span class="prop">type</span>: <span class="str">"string"</span> }
+      <span class="prop">region</span>:       { <span class="prop">type</span>: <span class="str">"string"</span> }
+      <span class="prop">capacity</span>:     { <span class="prop">type</span>: <span class="str">"decimal"</span> }
+    <span class="prop">data_source</span>:   <span class="str">"wms://warehouses"</span>
+
+<span class="prop">links</span>:
+  - <span class="prop">name</span>: <span class="str">"factory_has_lines"</span>
+    <span class="prop">from</span>: <span class="str">"Factory"</span>
+    <span class="prop">to</span>: <span class="str">"ProductionLine"</span>
+    <span class="prop">cardinality</span>: <span class="str">"one_to_many"</span>
+  - <span class="prop">name</span>: <span class="str">"line_produces_product"</span>
+    <span class="prop">from</span>: <span class="str">"ProductionLine"</span>
+    <span class="prop">to</span>: <span class="str">"Product"</span>
+    <span class="prop">cardinality</span>: <span class="str">"many_to_one"</span>
+  - <span class="prop">name</span>: <span class="str">"factory_supplies_warehouse"</span>
+    <span class="prop">from</span>: <span class="str">"Factory"</span>
+    <span class="prop">to</span>: <span class="str">"Warehouse"</span>
+    <span class="prop">cardinality</span>: <span class="str">"many_to_many"</span></pre></div>
+          </div>
+
+          <h3><i class="fas fa-rocket"></i> 实施路线图</h3>
+          <p>农夫山泉 MVP 的实施分为三个阶段，总周期建议控制在 <strong>8-12 周</strong>：</p>
+
+          <div class="table-container">
+            <div class="table-title"><i class="fas fa-road"></i> MVP 实施路线图</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>阶段</th>
+                  <th>周期</th>
+                  <th>核心任务</th>
+                  <th>交付物</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Phase 1: 基础搭建</strong></td>
+                  <td>3 周</td>
+                  <td>Ontology 模型定义、数据源对接、基础 API</td>
+                  <td>GraphQL API + 数据映射 Pipeline</td>
+                </tr>
+                <tr>
+                  <td><strong>Phase 2: 可视化</strong></td>
+                  <td>3 周</td>
+                  <td>供应链可视化 Dashboard、实时数据同步</td>
+                  <td>React Dashboard + CDC Pipeline</td>
+                </tr>
+                <tr>
+                  <td><strong>Phase 3: AI 集成</strong></td>
+                  <td>4 周</td>
+                  <td>RAG Pipeline、自然语言问答、权限控制</td>
+                  <td>AI Copilot + 权限网关</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3><i class="fas fa-users-cog"></i> 团队配置建议</h3>
+          <p>MVP 阶段建议配置 <strong>4-5 人</strong>的小型精锐团队：</p>
+          <ul>
+            <li><strong>Ontology Engineer x1</strong>：负责本体论模型设计、数据映射规则定义</li>
+            <li><strong>Backend Developer x1-2</strong>：负责 API 层、数据同步 Pipeline、规则引擎</li>
+            <li><strong>Frontend Developer x1</strong>：负责 Dashboard 和 AI Copilot 界面</li>
+            <li><strong>AI/ML Engineer x1</strong>：负责 RAG Pipeline、Prompt Engineering、模型评估</li>
+          </ul>
+
+          <div class="callout callout-success">
+            <div class="callout-title"><i class="fas fa-lightbulb"></i> 关键成功因素</div>
+            <p>农夫山泉 MVP 成功的关键不在于技术实现，而在于<strong>业务语义的准确性</strong>。建议在 Phase 1 投入足够的时间与业务部门进行领域建模工作坊（Domain Modeling Workshop），确保 Ontology 中的每个概念都得到业务人员的认可。这将大幅减少后续阶段的返工。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== Ch9 ==================== -->
+      <section class="chapter" id="ch9">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 09</div>
+          <h1 class="chapter-title">核心思想总结</h1>
+          <p class="chapter-subtitle">从 Palantir 到 IBM -- 构建企业级本体论平台的路径</p>
+        </div>
+        <div class="content">
+          <p>经过前面八个章节的深入分析，现在是时候对核心思想进行系统性的总结了。Palantir 的本体论方法论不仅是一种技术架构，更是一种<strong>企业数据治理的哲学</strong>。它要求我们从"数据驱动"转向"语义驱动"，从"系统集成"转向"概念统一"。</p>
+
+          <h3><i class="fas fa-key"></i> 五个核心原则</h3>
+          <p>从 Palantir 的实践中，我们可以提炼出以下五个核心原则，这些原则是构建任何企业级本体论平台的基础：</p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <div class="fc-icon blue"><i class="fas fa-1"></i></div>
+              <h4>语义优先</h4>
+              <p>先定义"数据意味着什么"，再考虑"数据怎么存储"。业务语义是本体论的灵魂。</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon green"><i class="fas fa-2"></i></div>
+              <h4>渐进式建模</h4>
+              <p>从核心概念开始，通过持续迭代逐步完善。不要追求一步到位的完美模型。</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon amber"><i class="fas fa-3"></i></div>
+              <h4>数据不动</h4>
+              <p>本体论是语义层，不是数据仓库。数据留在原处，本体论提供统一的访问视图。</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon purple"><i class="fas fa-4"></i></div>
+              <h4>AI 原生</h4>
+              <p>本体论应该为 AI 设计，而非事后适配。让 LLM 通过本体论理解企业数据。</p>
+            </div>
+            <div class="feature-card">
+              <div class="fc-icon pink"><i class="fas fa-5"></i></div>
+              <h4>开放架构</h4>
+              <p>避免供应商锁定，基于开源技术栈构建，保持架构的灵活性和可移植性。</p>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-road"></i> 从 Palantir 到 IBM 的路径</h3>
+          <p>IBM 作为企业级服务的领导者，在构建本体论平台方面具有独特的优势。IBM 的策略不是简单地复制 Palantir Foundry，而是<strong>将 Palantir 的方法论与 IBM 的企业级能力相结合</strong>，打造一个更开放、更灵活、更易于集成的本体论平台。</p>
+
+          <p>具体来说，IBM 的差异化优势在于：</p>
+          <ul>
+            <li><strong>混合云能力</strong>：IBM Cloud + Red Hat OpenShift 提供了真正的混合云部署能力，而 Palantir Foundry 主要依赖公有云</li>
+            <li><strong>企业级安全</strong>：IBM 的数据安全、隐私保护和合规能力（如 Data Fabric）是 Palantir 所不具备的</li>
+            <li><strong>行业 know-how</strong>：IBM 在制造、金融、医疗等行业的深厚积累，使得本体论模型可以更快地适配行业需求</li>
+            <li><strong>AI 能力</strong>：IBM watsonx 提供了企业级的 AI 平台，与本体论的集成更加紧密</li>
+            <li><strong>开源生态</strong>：IBM 是开源社区的重要贡献者，基于开源技术栈构建的本体论平台具有更好的生态兼容性</li>
+          </ul>
+
+          <div class="arch-box">
+            <div class="arch-title"><i class="fas fa-sitemap"></i> IBM 本体论平台愿景架构</div>
+            <div class="arch-flow">
+              <div class="arch-node primary"><i class="fas fa-building"></i> 企业数据源<br><small>ERP / MES / IoT / CRM</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node secondary"><i class="fas fa-exchange-alt"></i> IBM Data Fabric<br><small>统一数据集成</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node primary"><i class="fas fa-brain"></i> Ontology Engine<br><small>语义层 + 规则引擎</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node tertiary"><i class="fas fa-robot"></i> watsonx.ai<br><small>LLM + RAG</small></div>
+              <div class="arch-arrow"><i class="fas fa-arrow-right"></i></div>
+              <div class="arch-node secondary"><i class="fas fa-chart-line"></i> 行业应用<br><small>Dashboard / Copilot</small></div>
+            </div>
+          </div>
+
+          <h3><i class="fas fa-flag-checkered"></i> 最终建议</h3>
+          <p>对于正在考虑构建本体论平台的企业，我们的最终建议是：<strong>从小处着手，以价值验证为导向，逐步扩展</strong>。不要试图在第一天就构建一个完整的 Palantir Foundry 替代品。相反，选择一个具体的业务场景（如农夫山泉的供应链可视化），用 8-12 周的时间构建一个 MVP，验证本体论方法论的价值。一旦核心价值得到验证，再逐步扩展到更多的业务场景和数据源。</p>
+
+          <p>记住，本体论平台的建设是一个<strong>马拉松，而非冲刺</strong>。它需要业务部门和技术部门的深度协作，需要持续的迭代和优化。但一旦建成，它将成为企业数字化转型的<strong>核心基础设施</strong>，为所有的数据驱动决策和 AI 应用提供坚实的语义基础。</p>
+
+          <div class="callout callout-info">
+            <div class="callout-title"><i class="fas fa-quote-left"></i> 核心洞察</div>
+            <p>Palantir 的成功不在于其技术的复杂性，而在于其对"语义统一"这一核心问题的深刻理解。企业不需要一个更大的数据平台，而需要一个更聪明的语义层。这就是本体论的价值所在。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== Ch10 ==================== -->
+      <section class="chapter" id="ch10">
+        <div class="chapter-header">
+          <div class="chapter-num">Chapter 10</div>
+          <h1 class="chapter-title">参考资源</h1>
+          <p class="chapter-subtitle">外部链接与进一步阅读</p>
+        </div>
+        <div class="content">
+          <p>为了帮助读者进一步深入学习本体论相关的技术和方法论，我们整理了以下参考资源。这些资源涵盖了从理论基础到工程实践的各个方面。</p>
+
+          <h3><i class="fas fa-book"></i> Palantir 官方资源</h3>
+          <ul>
+            <li><a href="https://www.palantir.com/platforms/foundry/ontology/" target="_blank">Palantir Foundry Ontology 官方文档</a> -- 了解 Palantir 对本体论的定义和实现方式</li>
+            <li><a href="https://www.palantir.com/news/palantir-ontology/" target="_blank">Palantir Ontology 博客系列</a> -- Palantir 工程团队分享的本体论设计理念</li>
+            <li><a href="https://www.palantir.com/resources/" target="_blank">Palantir 资源中心</a> -- 白皮书、案例研究和技术文档</li>
+          </ul>
+
+          <h3><i class="fas fa-code"></i> 开源技术栈</h3>
+          <ul>
+            <li><a href="https://neo4j.com/docs/" target="_blank">Neo4j 图数据库文档</a> -- 最流行的原生图数据库</li>
+            <li><a href="https://age.apache.org/" target="_blank">Apache AGE</a> -- PostgreSQL 的图数据库扩展</li>
+            <li><a href="https://hasura.io/docs/" target="_blank">Hasura GraphQL Engine</a> -- 快速构建 GraphQL API 的开源工具</li>
+            <li><a href="https://www.langchain.com/docs/" target="_blank">LangChain 文档</a> -- LLM 应用开发框架</li>
+            <li><a href="https://docs.llamaindex.ai/" target="_blank">LlamaIndex 文档</a> -- 数据框架，专注于 RAG 场景</li>
+            <li><a href="https://debezium.io/documentation/" target="_blank">Debezium CDC 文档</a> -- 变更数据捕获平台</li>
+          </ul>
+
+          <h3><i class="fas fa-graduation-cap"></i> 学术与理论</h3>
+          <ul>
+            <li><a href="https://www.w3.org/standards/semanticweb/ontology" target="_blank">W3C 语义网本体论标准</a> -- OWL、RDF 等标准规范</li>
+            <li><a href="https://protege.stanford.edu/" target="_blank">Stanford Protégé</a> -- 本体论建模工具</li>
+            <li><a href="https://arxiv.org/list/cs.AI/recent" target="_blank">arXiv AI 论文</a> -- 最新的人工智能研究论文</li>
+          </ul>
+
+          <h3><i class="fas fa-building"></i> IBM 相关资源</h3>
+          <ul>
+            <li><a href="https://www.ibm.com/products/watsonx-ai" target="_blank">IBM watsonx.ai</a> -- IBM 的企业级 AI 平台</li>
+            <li><a href="https://www.ibm.com/products/data-fabric" target="_blank">IBM Data Fabric</a> -- 统一数据集成与管理平台</li>
+            <li><a href="https://www.ibm.com/cloud/openshift" target="_blank">Red Hat OpenShift</a> -- 混合云应用平台</li>
+            <li><a href="https://www.ibm.com/think" target="_blank">IBM Think 博客</a> -- IBM 技术洞察和行业分析</li>
+          </ul>
+
+          <h3><i class="fas fa-podcast"></i> 推荐播客与视频</h3>
+          <ul>
+            <li><a href="https://www.youtube.com/@PalantirTech" target="_blank">Palantir Technology YouTube</a> -- Palantir 技术分享和产品演示</li>
+            <li><a href="https://www.youtube.com/@IBMTech" target="_blank">IBM Technology YouTube</a> -- IBM 技术教程和架构分享</li>
+            <li><a href="https://www.latent.space/" target="_blank">Latent Space Podcast</a> -- AI 工程实践深度访谈</li>
+          </ul>
+
+          <div class="table-container">
+            <div class="table-title"><i class="fas fa-bookmark"></i> 推荐阅读清单</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>资源</th>
+                  <th>类型</th>
+                  <th>难度</th>
+                  <th>推荐理由</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Palantir Foundry 文档</td><td>官方文档</td><td>中</td><td>理解 Ontology 的最佳参考</td></tr>
+                <tr><td>《Designing Data-Intensive Applications》</td><td>书籍</td><td>高</td><td>分布式数据系统设计经典</td></tr>
+                <tr><td>Neo4j Graph Algorithms</td><td>官方文档</td><td>中</td><td>图算法在本体论中的应用</td></tr>
+                <tr><td>LangChain RAG 教程</td><td>教程</td><td>低</td><td>快速上手 RAG Pipeline</td></tr>
+                <tr><td>Apache AGE 文档</td><td>官方文档</td><td>中</td><td>PostgreSQL + 图查询实战</td></tr>
+                <tr><td>IBM watsonx 文档</td><td>官方文档</td><td>中</td><td>企业级 AI 平台集成</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout-success">
+            <div class="callout-title"><i class="fas fa-hand-point-right"></i> 下一步行动</div>
+            <p>建议读者按照以下顺序进行学习：1）通读本文档，建立整体认知；2）阅读 Palantir Foundry 官方文档，深入理解 Ontology 设计理念；3）使用 Neo4j 或 Apache AGE 动手实践图查询；4）基于 LangChain 构建 RAG Pipeline；5）参考农夫山泉 MVP 方案，开始构建自己的本体论平台。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>IBM Consulting &middot; Richard Chen &middot; 2026</p>
+        <p style="margin-top: 8px; font-size: 12px; color: #334155;">
+          Built for IBM Ontology POC Platform &middot;
+          <a href="../index.html">返回平台首页</a>
+        </p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Back to Top Button -->
+<button class="back-to-top" id="backToTop" title="返回顶部">
+  <i class="fas fa-arrow-up"></i>
+</button>
+
+<script>
+// ========== Navigation & Scroll Tracking ==========
+const mainContent = document.getElementById('mainContent');
+const navLinks = document.querySelectorAll('.nav-link');
+const chapters = document.querySelectorAll('.chapter');
+const progressBar = document.getElementById('progressBar');
+const backToTop = document.getElementById('backToTop');
+
+// Scroll spy - highlight current chapter
+function updateActiveNav() {
+  const scrollTop = mainContent.scrollTop;
+  const scrollHeight = mainContent.scrollHeight - mainContent.clientHeight;
+  const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+  progressBar.style.width = progress + '%';
+
+  // Back to top visibility
+  if (scrollTop > 400) {
+    backToTop.classList.add('visible');
+  } else {
+    backToTop.classList.remove('visible');
+  }
+
+  // Find current chapter
+  let currentChapter = 'ch1';
+  chapters.forEach(ch => {
+    const rect = ch.getBoundingClientRect();
+    const containerRect = mainContent.getBoundingClientRect();
+    if (rect.top - containerRect.top < 120) {
+      currentChapter = ch.id;
+    }
+  });
+
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('data-chapter') === currentChapter) {
+      link.classList.add('active');
+    }
+  });
+}
+
+mainContent.addEventListener('scroll', updateActiveNav);
+
+// Smooth scroll for nav links
+navLinks.forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const targetId = link.getAttribute('href').substring(1);
+    const target = document.getElementById(targetId);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Back to top
+backToTop.addEventListener('click', () => {
+  mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ========== Font Size Control ==========
+let fontSize = 100;
+const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+
+document.getElementById('fontIncrease').addEventListener('click', () => {
+  if (fontSize < 140) {
+    fontSize += 10;
+    document.querySelector('.content-wrapper').style.fontSize = fontSize + '%';
+    fontSizeDisplay.textContent = fontSize + '%';
+  }
+});
+
+document.getElementById('fontDecrease').addEventListener('click', () => {
+  if (fontSize > 70) {
+    fontSize -= 10;
+    document.querySelector('.content-wrapper').style.fontSize = fontSize + '%';
+    fontSizeDisplay.textContent = fontSize + '%';
+  }
+});
+
+// ========== Print ==========
+document.getElementById('printBtn').addEventListener('click', () => {
+  window.print();
+});
+
+// ========== Search ==========
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+// Build search index
+const searchIndex = [];
+chapters.forEach(ch => {
+  const title = ch.querySelector('.chapter-title').textContent;
+  const subtitle = ch.querySelector('.chapter-subtitle').textContent;
+  const content = ch.querySelector('.content').textContent;
+  searchIndex.push({
+    id: ch.id,
+    title: title,
+    subtitle: subtitle,
+    content: content,
+    element: ch
+  });
+});
+
+searchInput.addEventListener('input', (e) => {
+  const query = e.target.value.trim().toLowerCase();
+  if (query.length < 2) {
+    searchResults.classList.remove('active');
+    searchResults.innerHTML = '';
+    return;
+  }
+
+  const results = [];
+  searchIndex.forEach(item => {
+    const fullText = (item.title + ' ' + item.subtitle + ' ' + item.content).toLowerCase();
+    const idx = fullText.indexOf(query);
+    if (idx !== -1) {
+      // Extract context around match
+      const start = Math.max(0, idx - 30);
+      const end = Math.min(fullText.length, idx + query.length + 50);
+      let context = fullText.substring(start, end);
+      // Highlight match
+      context = context.replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), match => `<mark>${match}</mark>`);
+      if (start > 0) context = '...' + context;
+      if (end < fullText.length) context = context + '...';
+
+      results.push({
+        id: item.id,
+        title: item.title,
+        context: context
+      });
+    }
+  });
+
+  if (results.length === 0) {
+    searchResults.innerHTML = '<div class="search-result-item"><span class="match-text" style="color:#64748B;">未找到匹配内容</span></div>';
+  } else {
+    searchResults.innerHTML = results.map(r => `
+      <div class="search-result-item" data-target="${r.id}">
+        <div class="chapter-label">${r.title}</div>
+        <div class="match-text">${r.context}</div>
+      </div>
+    `).join('');
+  }
+  searchResults.classList.add('active');
+});
+
+// Handle search result click
+searchResults.addEventListener('click', (e) => {
+  const item = e.target.closest('.search-result-item');
+  if (item && item.dataset.target) {
+    const target = document.getElementById(item.dataset.target);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Flash highlight
+      target.classList.add('highlight-flash');
+      setTimeout(() => target.classList.remove('highlight-flash'), 2000);
+    }
+    searchResults.classList.remove('active');
+    searchInput.value = '';
+  }
+});
+
+// Close search on click outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-box')) {
+    searchResults.classList.remove('active');
+  }
+});
+
+// ========== Code Copy ==========
+function copyCode(btn) {
+  const codeBlock = btn.closest('.code-block');
+  const code = codeBlock.querySelector('pre').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+    btn.style.color = '#10B981';
+    btn.style.borderColor = '#10B981';
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+
+// Initial scroll update
+updateActiveNav();
+</script>
+</body>
+</html>

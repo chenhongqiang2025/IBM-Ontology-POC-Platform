@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宇宙级动态本体论推演系统 | IBM Consulting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050510;--cyan:#00D4AA;--purple:#7C3AED;--gold:#F59E0B;
+  --text:#e2e8f0;--text-dim:#94a3b8;--panel-bg:rgba(10,10,30,0.85);
+  --border:rgba(100,100,180,0.2);--glow-cyan:rgba(0,212,170,0.4);
+  --glow-purple:rgba(124,58,237,0.4);--glow-gold:rgba(245,158,11,0.4);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter','Noto Sans SC',sans-serif}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%}
+#starCanvas{z-index:0}
+#mainCanvas{z-index:1}
+.ui-layer{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.ui-layer>*{pointer-events:auto}
+
+/* Top bar */
+.top-bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:20px 32px}
+.logo{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;text-shadow:0 0 20px var(--glow-cyan)}
+.back-btn{font-family:'Inter','Noto Sans SC',sans-serif;font-size:13px;font-weight:500;color:var(--text-dim);background:rgba(255,255,255,0.06);border:1px solid var(--border);padding:8px 18px;border-radius:8px;cursor:pointer;transition:all .3s;text-decoration:none;display:flex;align-items:center;gap:6px}
+.back-btn:hover{background:rgba(255,255,255,0.12);color:#fff;border-color:var(--cyan)}
+
+/* Progress indicator */
+.progress-bar{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:0}
+.step-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);background:transparent;cursor:pointer;transition:all .4s;position:relative}
+.step-dot.active{border-color:var(--cyan);background:var(--cyan);box-shadow:0 0 16px var(--glow-cyan)}
+.step-dot.completed{border-color:var(--cyan);background:var(--cyan)}
+.step-line{width:40px;height:2px;background:rgba(255,255,255,0.1);transition:background .4s}
+.step-line.active{background:linear-gradient(90deg,var(--cyan),var(--purple))}
+
+/* Controls */
+.controls{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px}
+.ctrl-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;font-size:16px}
+.ctrl-btn:hover{background:rgba(255,255,255,0.12);border-color:var(--cyan);color:var(--cyan)}
+.ctrl-btn.play-btn{width:52px;height:52px;font-size:18px;border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 20px rgba(0,212,170,0.15)}
+.ctrl-btn.play-btn:hover{background:rgba(0,212,170,0.15)}
+.stage-label{font-family:'Orbitron',monospace;font-size:12px;color:var(--text-dim);letter-spacing:2px;min-width:120px;text-align:center}
+
+/* Right panel */
+.info-panel{position:absolute;top:80px;right:32px;width:340px;max-height:calc(100vh - 200px);background:var(--panel-bg);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:28px;overflow-y:auto;transition:all .5s}
+.info-panel::-webkit-scrollbar{width:4px}
+.info-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.panel-stage-num{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--cyan);margin-bottom:8px;text-transform:uppercase}
+.panel-title{font-family:'Noto Sans SC','Inter',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px;line-height:1.4}
+.panel-subtitle{font-size:13px;color:var(--text-dim);margin-bottom:20px;line-height:1.6}
+.panel-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:16px 0}
+.panel-desc{font-size:13px;color:var(--text-dim);line-height:1.8;margin-bottom:16px}
+.panel-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.stat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px}
+.stat-value{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:11px;color:var(--text-dim);letter-spacing:1px}
+.cyan{color:var(--cyan)}.purple{color:var(--purple)}.gold{color:var(--gold)}
+
+/* Left stage title */
+.stage-title-left{position:absolute;top:50%;left:40px;transform:translateY(-50%);max-width:280px;opacity:0;transition:opacity .6s}
+.stage-title-left.visible{opacity:1}
+.stage-title-left h2{font-family:'Orbitron',monospace;font-size:28px;font-weight:800;line-height:1.3;margin-bottom:12px;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stage-title-left p{font-size:13px;color:var(--text-dim);line-height:1.7}
+
+/* Footer */
+.footer{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;font-family:'Inter',sans-serif}
+
+/* Animations */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.fade-in{animation:fadeInUp .6s ease forwards}
+
+/* Responsive */
+@media(max-width:900px){
+  .info-panel{width:280px;right:16px;padding:20px}
+  .stage-title-left{display:none}
+}
+@media(max-width:600px){
+  .info-panel{width:calc(100% - 32px);right:16px;top:auto;bottom:140px;max-height:40vh}
+}
+</style>
+</head>
+<body>
+
+<canvas id="starCanvas"></canvas>
+<canvas id="mainCanvas"></canvas>
+
+<div class="ui-layer">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="logo">Universe Ontology</div>
+    <a href="../index.html" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      返回平台
+    </a>
+  </div>
+
+  <!-- Left stage title -->
+  <div class="stage-title-left visible" id="stageTitleLeft">
+    <h2 id="leftTitle">瓶盖</h2>
+    <p id="leftDesc">一切伟大的本体，都始于一个微小的节点</p>
+  </div>
+
+  <!-- Right info panel -->
+  <div class="info-panel" id="infoPanel">
+    <div class="panel-stage-num" id="panelStageNum">Stage 01 / 07</div>
+    <div class="panel-title" id="panelTitle">瓶盖 — 本体起源</div>
+    <div class="panel-subtitle" id="panelSubtitle">一个瓶盖，是万物本体的起点</div>
+    <div class="panel-divider"></div>
+    <div class="panel-desc" id="panelDesc">
+      在本体论的世界中，一切复杂系统都始于一个最简单的实体。一个瓶盖，承载着密封、保护、标识的功能，它是产品本体的第一个节点。
+    </div>
+    <div class="panel-stats" id="panelStats">
+      <div class="stat-card"><div class="stat-value cyan" id="statNodes">1</div><div class="stat-label">本体节点</div></div>
+      <div class="stat-card"><div class="stat-value purple" id="statRelations">0</div><div class="stat-label">关系连接</div></div>
+      <div class="stat-card"><div class="stat-value gold" id="statLevel">1</div><div class="stat-label">推演层级</div></div>
+      <div class="stat-card"><div class="stat-value cyan" id="statScale">1x</div><div class="stat-label">规模倍数</div></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-btn" id="prevBtn" title="上一阶段">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="ctrl-btn play-btn" id="playBtn" title="自动播放">
+      <svg id="playIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      <svg id="pauseIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+    </button>
+    <button class="ctrl-btn" id="nextBtn" title="下一阶段">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div class="stage-label" id="stageLabel">STAGE 01</div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-bar" id="progressBar"></div>
+
+  <!-- Footer -->
+  <div class="footer">IBM Consulting &middot; Richard Chen</div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const STAGES = [
+  {
+    id: 1, name: '瓶盖', title: '瓶盖 — 本体起源',
+    subtitle: '一个瓶盖，是万物本体的起点',
+    leftTitle: '瓶盖', leftDesc: '一切伟大的本体，都始于一个微小的节点',
+    desc: '在本体论的世界中，一切复杂系统都始于一个最简单的实体。一个瓶盖，承载着密封、保护、标识的功能，它是产品本体的第一个节点。从这个节点出发，我们将逐步推演出一个完整的宇宙级本体网络。',
+    nodes: 1, relations: 0, level: 1, scale: '1x',
+    color: '#00D4AA'
+  },
+  {
+    id: 2, name: '产品', title: '产品 — 组成推演',
+    subtitle: '瓶盖、瓶身、标签、水源 — 组成一瓶水',
+    leftTitle: '产品本体', leftDesc: '四个核心组件，构成完整的产品语义',
+    desc: '通过"组成"关系，瓶盖与瓶身、标签、水源建立连接。每个组件都有独立的属性和功能，它们共同定义了"一瓶水"这个产品本体。这是本体推演的第一步：从单一实体到组合结构。',
+    nodes: 5, relations: 6, level: 2, scale: '5x',
+    color: '#00D4AA'
+  },
+  {
+    id: 3, name: '供应链', title: '供应链 — 流程推演',
+    subtitle: '从水源到消费者，构建完整的供应链网络',
+    leftTitle: '供应链网络', leftDesc: '产品在节点间流动，形成价值链',
+    desc: '产品本体嵌入到更大的供应链网络中。从水源采集、工厂生产、仓储物流到零售终端，每个环节都是供应链本体的一部分。节点之间的"流转"关系构成了动态的业务流程。',
+    nodes: 14, relations: 20, level: 3, scale: '14x',
+    color: '#00B4D8'
+  },
+  {
+    id: 4, name: '企业', title: '企业 — 组织推演',
+    subtitle: '多条供应链汇聚，形成企业级本体架构',
+    leftTitle: '企业本体', leftDesc: '组织、流程、资源的三维融合',
+    desc: '当多条供应链、财务系统、人力资源和战略规划汇聚在一起，就形成了企业级本体。这个层级的本体包含了组织结构、业务流程、资源配置等复杂关系，是企业数字化转型的语义基础。',
+    nodes: 28, relations: 45, level: 4, scale: '28x',
+    color: '#7C3AED'
+  },
+  {
+    id: 5, name: '行业', title: '行业 — 生态推演',
+    subtitle: '多个企业协同，构建行业生态本体',
+    leftTitle: '行业生态', leftDesc: '竞争与合作并存，形成复杂生态网络',
+    desc: '企业不是孤立存在的。在行业层面，多个企业通过竞争、合作、标准制定和政策约束形成复杂的生态网络。行业协会、技术标准、监管政策等节点，定义了行业的游戏规则。',
+    nodes: 50, relations: 85, level: 5, scale: '50x',
+    color: '#9333EA'
+  },
+  {
+    id: 6, name: '经济', title: '经济 — 宏观推演',
+    subtitle: '行业交织融合，形成宏观经济本体网络',
+    leftTitle: '经济网络', leftDesc: '万物互联，经济脉搏跳动于每个节点',
+    desc: '多个行业通过GDP贡献、贸易往来、金融流动紧密相连，形成了宏观经济本体网络。在这个层级，本体论帮助我们理解经济系统的深层结构和运行规律，为政策制定提供语义支撑。',
+    nodes: 85, relations: 150, level: 6, scale: '85x',
+    color: '#D97706'
+  },
+  {
+    id: 7, name: '宇宙', title: '宇宙 — 终极本体',
+    subtitle: '万物互联，宇宙级本体网络全景',
+    leftTitle: '宇宙本体', leftDesc: '从瓶盖到星辰，一切皆可推演',
+    desc: '当推演到达终极层级，所有实体、关系、属性融为一体，形成了宇宙级的本体网络。从微观的瓶盖到宏观的经济，从物质的产品到抽象的概念，本体论揭示了万物之间隐藏的深层联系。这就是本体论的终极愿景：用一张语义网络，描述整个宇宙。',
+    nodes: 150, relations: 280, level: 7, scale: '150x',
+    color: '#F59E0B'
+  }
+];
+
+// ============================================================
+// STAR CANVAS - Background
+// ============================================================
+const starCanvas = document.getElementById('starCanvas');
+const starCtx = starCanvas.getContext('2d');
+let stars = [];
+let nebulae = [];
+
+function resizeCanvases() {
+  const w = window.innerWidth, h = window.innerHeight;
+  starCanvas.width = w; starCanvas.height = h;
+  mainCanvas.width = w; mainCanvas.height = h;
+}
+
+function initStars() {
+  stars = [];
+  const count = 250;
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      x: Math.random() * starCanvas.width,
+      y: Math.random() * starCanvas.height,
+      r: Math.random() * 1.8 + 0.3,
+      alpha: Math.random(),
+      speed: Math.random() * 0.008 + 0.002,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+  nebulae = [];
+  for (let i = 0; i < 4; i++) {
+    nebulae.push({
+      x: Math.random() * starCanvas.width,
+      y: Math.random() * starCanvas.height,
+      r: Math.random() * 250 + 150,
+      hue: [170, 260, 40, 300][i],
+      alpha: Math.random() * 0.04 + 0.02,
+      dx: (Math.random() - 0.5) * 0.15,
+      dy: (Math.random() - 0.5) * 0.1
+    });
+  }
+}
+
+function drawStars(time) {
+  starCtx.fillStyle = '#050510';
+  starCtx.fillRect(0, 0, starCanvas.width, starCanvas.height);
+
+  // Nebulae
+  for (const n of nebulae) {
+    n.x += n.dx; n.y += n.dy;
+    if (n.x < -n.r) n.x = starCanvas.width + n.r;
+    if (n.x > starCanvas.width + n.r) n.x = -n.r;
+    if (n.y < -n.r) n.y = starCanvas.height + n.r;
+    if (n.y > starCanvas.height + n.r) n.y = -n.r;
+    const grad = starCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+    grad.addColorStop(0, `hsla(${n.hue},80%,50%,${n.alpha})`);
+    grad.addColorStop(0.5, `hsla(${n.hue},60%,30%,${n.alpha * 0.4})`);
+    grad.addColorStop(1, 'transparent');
+    starCtx.fillStyle = grad;
+    starCtx.fillRect(n.x - n.r, n.y - n.r, n.r * 2, n.r * 2);
+  }
+
+  // Stars
+  for (const s of stars) {
+    s.alpha = 0.3 + 0.7 * Math.abs(Math.sin(time * s.speed + s.phase));
+    starCtx.beginPath();
+    starCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    starCtx.fillStyle = `rgba(220,230,255,${s.alpha})`;
+    starCtx.fill();
+    if (s.r > 1.2) {
+      starCtx.beginPath();
+      starCtx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+      starCtx.fillStyle = `rgba(200,220,255,${s.alpha * 0.08})`;
+      starCtx.fill();
+    }
+  }
+}
+
+// ============================================================
+// MAIN CANVAS - Ontology Animation
+// ============================================================
+const mainCanvas = document.getElementById('mainCanvas');
+const ctx = mainCanvas.getContext('2d');
+
+let currentStage = 0;
+let animNodes = [];
+let animEdges = [];
+let transitioning = false;
+let transitionProgress = 0;
+let autoPlay = false;
+let autoPlayTimer = null;
+let globalTime = 0;
+let mouseX = 0, mouseY = 0;
+
+// Color interpolation
+function lerpColor(c1, c2, t) {
+  const h2r = c => {
+    c = c.replace('#','');
+    return [parseInt(c.substr(0,2),16), parseInt(c.substr(2,2),16), parseInt(c.substr(4,2),16)];
+  };
+  const [r1,g1,b1] = h2r(c1);
+  const [r2,g2,b2] = h2r(c2);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+function getStageColor(stageIdx) {
+  const colors = ['#00D4AA','#00D4AA','#00B4D8','#7C3AED','#9333EA','#D97706','#F59E0B'];
+  return colors[stageIdx] || '#00D4AA';
+}
+
+function hexToRgba(hex, a) {
+  const c = hex.replace('#','');
+  const r = parseInt(c.substr(0,2),16);
+  const g = parseInt(c.substr(2,2),16);
+  const b = parseInt(c.substr(4,2),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// Generate nodes for a stage
+function generateNodes(stageIdx) {
+  const stage = STAGES[stageIdx];
+  const cx = mainCanvas.width * 0.42;
+  const cy = mainCanvas.height * 0.5;
+  const maxR = Math.min(mainCanvas.width * 0.32, mainCanvas.height * 0.38);
+  const count = stage.nodes;
+  const nodes = [];
+  const color = stage.color;
+
+  if (stageIdx === 0) {
+    // Single pulsing node
+    nodes.push({ x: cx, y: cy, r: 22, color, label: '瓶盖', scale: 0, targetScale: 1, pulse: 0, vx: 0, vy: 0, fixed: true });
+  } else if (stageIdx === 1) {
+    // Product: center + 4 around
+    const labels = ['瓶盖','瓶身','标签','水源','产品'];
+    const angles = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
+    nodes.push({ x: cx, y: cy, r: 20, color, label: '产品', scale: 0, targetScale: 1, pulse: 0, vx: 0, vy: 0, fixed: true });
+    for (let i = 0; i < 4; i++) {
+      const dist = 110;
+      nodes.push({
+        x: cx + Math.cos(angles[i]) * dist,
+        y: cy + Math.sin(angles[i]) * dist,
+        r: 14, color, label: labels[i], scale: 0, targetScale: 1, pulse: Math.random() * Math.PI * 2,
+        vx: 0, vy: 0, fixed: false, delay: i * 0.15
+      });
+    }
+  } else {
+    // Multi-ring layout
+    const rings = stageIdx <= 3 ? 3 : (stageIdx <= 5 ? 4 : 5);
+    const labels_pool = [
+      '水源','工厂','生产','质检','仓储','物流','配送','零售','门店','消费者',
+      '财务','人力','战略','研发','营销','采购','法务','IT','品牌','供应链',
+      '协会','标准','政策','监管','认证','专利','竞争','合作','投资','融资',
+      'GDP','贸易','出口','进口','金融','银行','保险','证券','基金','期货',
+      '科技','教育','医疗','能源','农业','制造','服务','文化','交通','通信',
+      '数据','算法','模型','平台','生态','系统','架构','协议','接口','服务',
+      '节点','网络','图谱','语义','推理','知识','智能','认知','感知','决策',
+      '宇宙','星系','行星','生命','意识','文明','时间','空间','物质','能量',
+      '量子','引力','光速','维度','弦','膜','场','波','粒子','反物质',
+      '黑洞','中子星','超新星','暗物质','暗能量','膨胀','奇点','熵','信息','混沌',
+      '秩序','和谐','平衡','演化','涌现','自组织','复杂','分形','递归','反馈',
+      '因果','概率','统计','优化','搜索','匹配','分类','聚类','回归','预测',
+      '生成','推理','规划','调度','执行','监控','评估','反馈','迭代','进化',
+      '基因','蛋白质','细胞','组织','器官','个体','群体','社会','文明','宇宙',
+      '瓶盖','瓶身','标签','产品','品牌','企业','行业','经济','世界','宇宙'
+    ];
+    let idx = 0;
+    for (let ring = 0; ring < rings; ring++) {
+      const ringR = maxR * (0.15 + ring * (0.85 / rings));
+      const countInRing = ring === 0 ? 1 : Math.ceil((count - 1) / (rings - 1) * (1 / rings) * (ring + 1));
+      const actual = ring === 0 ? 1 : Math.min(countInRing, count - idx);
+      for (let i = 0; i < actual && idx < count; i++) {
+        const angle = (i / actual) * Math.PI * 2 + ring * 0.3;
+        const jitter = (Math.random() - 0.5) * 30;
+        const r = ringR + jitter;
+        nodes.push({
+          x: cx + Math.cos(angle) * r,
+          y: cy + Math.sin(angle) * r,
+          r: ring === 0 ? 18 : (6 + Math.random() * 8),
+          color,
+          label: labels_pool[idx % labels_pool.length],
+          scale: 0, targetScale: 1,
+          pulse: Math.random() * Math.PI * 2,
+          vx: 0, vy: 0,
+          fixed: ring === 0,
+          delay: idx * 0.012,
+          ring
+        });
+        idx++;
+      }
+    }
+    // Fill remaining
+    while (idx < count) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.random() * maxR;
+      nodes.push({
+        x: cx + Math.cos(angle) * dist,
+        y: cy + Math.sin(angle) * dist,
+        r: 4 + Math.random() * 7,
+        color,
+        label: labels_pool[idx % labels_pool.length],
+        scale: 0, targetScale: 1,
+        pulse: Math.random() * Math.PI * 2,
+        vx: 0, vy: 0,
+        fixed: false,
+        delay: idx * 0.008,
+        ring: Math.floor(Math.random() * rings)
+      });
+      idx++;
+    }
+  }
+  return nodes;
+}
+
+// Generate edges
+function generateEdges(nodes, stageIdx) {
+  const edges = [];
+  if (stageIdx === 0) return edges;
+  if (stageIdx === 1) {
+    // Connect center to all
+    for (let i = 1; i < nodes.length; i++) {
+      edges.push({ from: 0, to: i, progress: 0, speed: 0.02 + Math.random() * 0.01 });
+    }
+    return edges;
+  }
+  // Connect nearby nodes
+  const maxDist = stageIdx <= 3 ? 180 : (stageIdx <= 5 ? 140 : 120);
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < maxDist && Math.random() < (stageIdx <= 3 ? 0.5 : 0.35)) {
+        edges.push({ from: i, to: j, progress: 0, speed: 0.015 + Math.random() * 0.015 });
+      }
+    }
+    // Ensure center connected
+    if (i > 0 && i < 6) {
+      const exists = edges.some(e => (e.from === 0 && e.to === i) || (e.from === i && e.to === 0));
+      if (!exists) edges.push({ from: 0, to: i, progress: 0, speed: 0.02 });
+    }
+  }
+  return edges;
+}
+
+// ============================================================
+// DRAWING
+// ============================================================
+function drawEdge(from, to, progress, color, time) {
+  const p = Math.min(progress, 1);
+  const ex = from.x + (to.x - from.x) * p;
+  const ey = from.y + (to.y - from.y) * p;
+
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(ex, ey);
+  ctx.strokeStyle = hexToRgba(color, 0.15 + 0.1 * Math.sin(time * 0.002));
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Traveling particle
+  if (p >= 1) {
+    const t = (time * 0.001 + from.x * 0.01) % 1;
+    const px = from.x + (to.x - from.x) * t;
+    const py = from.y + (to.y - from.y) * t;
+    ctx.beginPath();
+    ctx.arc(px, py, 2, 0, Math.PI * 2);
+    ctx.fillStyle = hexToRgba(color, 0.6);
+    ctx.fill();
+  }
+}
+
+function drawNode(node, time) {
+  const s = node.scale;
+  if (s <= 0.01) return;
+  const pulseScale = 1 + 0.08 * Math.sin(time * 0.003 + node.pulse);
+  const r = node.r * s * pulseScale;
+
+  // Outer glow
+  const glowR = r * 3;
+  const glow = ctx.createRadialGradient(node.x, node.y, r * 0.5, node.x, node.y, glowR);
+  glow.addColorStop(0, hexToRgba(node.color, 0.2 * s));
+  glow.addColorStop(0.5, hexToRgba(node.color, 0.05 * s));
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(node.x - glowR, node.y - glowR, glowR * 2, glowR * 2);
+
+  // Core
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+  const coreGrad = ctx.createRadialGradient(node.x - r * 0.3, node.y - r * 0.3, 0, node.x, node.y, r);
+  coreGrad.addColorStop(0, '#ffffff');
+  coreGrad.addColorStop(0.3, node.color);
+  coreGrad.addColorStop(1, hexToRgba(node.color, 0.6));
+  ctx.fillStyle = coreGrad;
+  ctx.fill();
+
+  // Ring
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, r + 3, 0, Math.PI * 2);
+  ctx.strokeStyle = hexToRgba(node.color, 0.3 * s);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Label
+  if (s > 0.5 && node.r > 8) {
+    ctx.font = `${Math.max(9, Math.min(12, r * 0.7))}px "Noto Sans SC","Inter",sans-serif`;
+    ctx.fillStyle = `rgba(255,255,255,${0.8 * s})`;
+    ctx.textAlign = 'center';
+    ctx.fillText(node.label, node.x, node.y + r + 16);
+  }
+}
+
+function drawMainCanvas(time) {
+  ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+
+  // Update node animations
+  for (const node of animNodes) {
+    if (transitioning) {
+      const elapsed = (time - transitionStartTime) / 1000;
+      const delay = node.delay || 0;
+      if (elapsed > delay) {
+        node.scale += (node.targetScale - node.scale) * 0.06;
+      }
+    } else {
+      node.scale += (node.targetScale - node.scale) * 0.08;
+    }
+    // Gentle floating
+    if (!node.fixed) {
+      node.x += Math.sin(time * 0.0005 + node.pulse) * 0.15;
+      node.y += Math.cos(time * 0.0004 + node.pulse) * 0.1;
+    }
+  }
+
+  // Update edge animations
+  for (const edge of animEdges) {
+    edge.progress += edge.speed;
+    if (edge.progress > 1) edge.progress = 1;
+  }
+
+  // Draw edges
+  const color = STAGES[currentStage].color;
+  for (const edge of animEdges) {
+    drawEdge(animNodes[edge.from], animNodes[edge.to], edge.progress, color, time);
+  }
+
+  // Draw nodes
+  for (const node of animNodes) {
+    drawNode(node, time);
+  }
+
+  // Stage 7 special: draw constellation lines across entire canvas
+  if (currentStage === 6) {
+    drawConstellationOverlay(time);
+  }
+}
+
+function drawConstellationOverlay(time) {
+  // Subtle grid / constellation effect
+  ctx.save();
+  ctx.globalAlpha = 0.04 + 0.02 * Math.sin(time * 0.001);
+  ctx.strokeStyle = '#F59E0B';
+  ctx.lineWidth = 0.5;
+  const spacing = 80;
+  for (let x = 0; x < mainCanvas.width; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, mainCanvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < mainCanvas.height; y += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(mainCanvas.width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ============================================================
+// STAGE TRANSITIONS
+// ============================================================
+let transitionStartTime = 0;
+
+function setStage(idx) {
+  if (idx < 0 || idx >= STAGES.length || transitioning) return;
+  currentStage = idx;
+  transitioning = true;
+  transitionStartTime = performance.now();
+
+  const stage = STAGES[idx];
+  animNodes = generateNodes(idx);
+  animEdges = generateEdges(animNodes, idx);
+
+  // Update UI
+  updateUI(stage, idx);
+  updateProgress(idx);
+
+  setTimeout(() => { transitioning = false; }, 2000);
+}
+
+function updateUI(stage, idx) {
+  document.getElementById('panelStageNum').textContent = `Stage 0${stage.id} / 07`;
+  document.getElementById('panelTitle').textContent = stage.title;
+  document.getElementById('panelSubtitle').textContent = stage.subtitle;
+  document.getElementById('panelDesc').textContent = stage.desc;
+  document.getElementById('statNodes').textContent = stage.nodes;
+  document.getElementById('statRelations').textContent = stage.relations;
+  document.getElementById('statLevel').textContent = stage.level;
+  document.getElementById('statScale').textContent = stage.scale;
+  document.getElementById('stageLabel').textContent = `STAGE 0${stage.id}`;
+  document.getElementById('leftTitle').textContent = stage.leftTitle;
+  document.getElementById('leftDesc').textContent = stage.leftDesc;
+
+  // Color stat values
+  const colorClass = idx < 3 ? 'cyan' : (idx < 5 ? 'purple' : 'gold');
+  document.getElementById('statNodes').className = `stat-value ${colorClass}`;
+  document.getElementById('statRelations').className = `stat-value ${colorClass}`;
+  document.getElementById('statLevel').className = `stat-value ${colorClass}`;
+  document.getElementById('statScale').className = `stat-value ${colorClass}`;
+}
+
+// ============================================================
+// PROGRESS BAR
+// ============================================================
+function buildProgress() {
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < STAGES.length; i++) {
+    if (i > 0) {
+      const line = document.createElement('div');
+      line.className = 'step-line' + (i <= currentStage ? ' active' : '');
+      line.dataset.idx = i;
+      bar.appendChild(line);
+    }
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i === currentStage ? ' active' : '') + (i < currentStage ? ' completed' : '');
+    dot.title = STAGES[i].name;
+    dot.addEventListener('click', () => setStage(i));
+    bar.appendChild(dot);
+  }
+}
+
+function updateProgress(idx) {
+  const dots = document.querySelectorAll('.step-dot');
+  const lines = document.querySelectorAll('.step-line');
+  dots.forEach((d, i) => {
+    d.className = 'step-dot' + (i === idx ? ' active' : '') + (i < idx ? ' completed' : '');
+  });
+  lines.forEach((l, i) => {
+    l.className = 'step-line' + (i <= idx ? ' active' : '');
+  });
+}
+
+// ============================================================
+// AUTO PLAY
+// ============================================================
+function toggleAutoPlay() {
+  autoPlay = !autoPlay;
+  document.getElementById('playIcon').style.display = autoPlay ? 'none' : 'block';
+  document.getElementById('pauseIcon').style.display = autoPlay ? 'block' : 'none';
+  if (autoPlay) {
+    scheduleNext();
+  } else {
+    clearTimeout(autoPlayTimer);
+  }
+}
+
+function scheduleNext() {
+  if (!autoPlay) return;
+  autoPlayTimer = setTimeout(() => {
+    if (currentStage < STAGES.length - 1) {
+      setStage(currentStage + 1);
+      scheduleNext();
+    } else {
+      setStage(0);
+      scheduleNext();
+    }
+  }, 5000);
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (currentStage > 0) setStage(currentStage - 1);
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if (currentStage < STAGES.length - 1) setStage(currentStage + 1);
+});
+document.getElementById('playBtn').addEventListener('click', toggleAutoPlay);
+
+document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' && currentStage < STAGES.length - 1) setStage(currentStage + 1);
+  if (e.key === 'ArrowLeft' && currentStage > 0) setStage(currentStage - 1);
+  if (e.key === ' ') { e.preventDefault(); toggleAutoPlay(); }
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvases();
+  initStars();
+  setStage(currentStage);
+});
+
+// ============================================================
+// ANIMATION LOOP
+// ============================================================
+function animate(time) {
+  globalTime = time;
+  drawStars(time);
+  drawMainCanvas(time);
+  requestAnimationFrame(animate);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+resizeCanvases();
+initStars();
+buildProgress();
+setStage(0);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
