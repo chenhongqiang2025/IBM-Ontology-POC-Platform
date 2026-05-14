@@ -224,7 +224,7 @@
         .main {
             position: relative;
             z-index: 1;
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 28px 32px 40px;
         }
@@ -292,7 +292,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 900px;
+            min-width: 1100px;
         }
 
         thead {
@@ -347,13 +347,13 @@
 
         .cell-name {
             font-weight: 500;
-            max-width: 200px;
+            max-width: 180px;
         }
 
         .cell-text {
             color: var(--text-secondary);
             font-size: 13px;
-            max-width: 220px;
+            max-width: 200px;
             line-height: 1.5;
         }
 
@@ -362,6 +362,36 @@
             font-weight: 500;
             font-size: 13px;
             white-space: nowrap;
+        }
+
+        /* Authority link */
+        .cell-authority {
+            white-space: nowrap;
+        }
+
+        .authority-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--ibm-blue-light);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 4px 10px;
+            background: rgba(5, 74, 218, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(5, 74, 218, 0.2);
+        }
+
+        .authority-link:hover {
+            background: rgba(5, 74, 218, 0.2);
+            border-color: rgba(5, 74, 218, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .authority-link i {
+            font-size: 11px;
         }
 
         /* Priority badge */
@@ -486,6 +516,15 @@
             font-size: 14px;
             color: var(--text-primary);
             line-height: 1.7;
+        }
+
+        .detail-card-body a {
+            color: var(--ibm-blue-light);
+            text-decoration: none;
+        }
+
+        .detail-card-body a:hover {
+            text-decoration: underline;
         }
 
         /* Modal overlay */
@@ -752,7 +791,7 @@
         <div class="header-center">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="搜索痛点名称、原因或方案..." oninput="handleSearch()">
+                <input type="text" id="searchInput" placeholder="搜索痛点名称、实例或方案..." oninput="handleSearch()">
             </div>
         </div>
         <div class="header-right">
@@ -778,13 +817,14 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:60px">编号</th>
-                            <th style="width:180px">痛点名称</th>
-                            <th style="width:220px">产生原因</th>
-                            <th style="width:220px">本体解决方案</th>
-                            <th style="width:160px">预期效果</th>
-                            <th style="width:90px">优先级</th>
-                            <th style="width:100px">操作</th>
+                            <th style="width:50px">编号</th>
+                            <th style="width:120px">痛点名称</th>
+                            <th style="width:180px">实例场景</th>
+                            <th style="width:180px">本体解决方案</th>
+                            <th style="width:140px">预期效果</th>
+                            <th style="width:140px">权威来源</th>
+                            <th style="width:80px">优先级</th>
+                            <th style="width:90px">操作</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
@@ -810,11 +850,11 @@
                 <input type="hidden" id="editId">
                 <div class="form-group">
                     <label>痛点名称 <span class="required">*</span></label>
-                    <input type="text" class="form-control" id="formName" placeholder="例如：销售预测与生产计划脱节">
+                    <input type="text" class="form-control" id="formName" placeholder="例如：AI幻觉">
                 </div>
                 <div class="form-group">
-                    <label>产生原因 <span class="required">*</span></label>
-                    <textarea class="form-control" id="formCause" placeholder="描述痛点产生的根本原因..."></textarea>
+                    <label>实例场景 <span class="required">*</span></label>
+                    <textarea class="form-control" id="formCause" placeholder="描述具体实例场景..."></textarea>
                 </div>
                 <div class="form-group">
                     <label>本体解决方案 <span class="required">*</span></label>
@@ -823,6 +863,14 @@
                 <div class="form-group">
                     <label>预期效果 <span class="required">*</span></label>
                     <input type="text" class="form-control" id="formEffect" placeholder="例如：预测准确率提升25-35%">
+                </div>
+                <div class="form-group">
+                    <label>权威来源 <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="formAuthority" placeholder="例如：Palantir AIP">
+                </div>
+                <div class="form-group">
+                    <label>来源链接 <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="formLink" placeholder="https://...">
                 </div>
                 <div class="form-group">
                     <label>优先级 <span class="required">*</span></label>
@@ -873,79 +921,97 @@
         const DEFAULT_DATA = [
             {
                 id: 'P1',
-                name: '销售预测与生产计划脱节',
-                cause: '需求信号衰减导致牛鞭效应',
-                solution: '本体统一需求语义层',
-                effect: '预测准确率提升25-35%',
+                name: 'AI幻觉',
+                cause: '产能82%真实值（非猜测）',
+                solution: '本体锚定+事实API',
+                effect: '数据可信度提升',
+                authority: 'Palantir AIP',
+                link: 'https://www.palantir.com/platforms/aip/',
                 priority: '高'
             },
             {
                 id: 'P2',
-                name: '质量追溯链路断裂',
-                cause: '多系统数据孤岛无法关联',
-                solution: '本体跨系统实体映射',
-                effect: '追溯时间从天级到秒级',
+                name: '数据孤岛',
+                cause: '数据分散在三套ERP',
+                solution: '知识图谱统一语义层',
+                effect: '数据整合效率提升',
+                authority: 'W3C OWL',
+                link: 'https://www.w3.org/OWL/',
                 priority: '高'
             },
             {
                 id: 'P3',
-                name: '供应链响应速度慢',
-                cause: '供应商信息不透明',
-                solution: '本体供应链知识图谱',
-                effect: '响应速度提升300%',
+                name: '缺乏因果关系',
+                cause: '产能低→减产→缺货',
+                solution: '确定性推理+SWRL规则',
+                effect: '决策准确性提升',
+                authority: 'SWRL Standard',
+                link: 'https://www.w3.org/Submission/SWRL/',
                 priority: '高'
             },
             {
                 id: 'P4',
-                name: '包材成本波动大',
-                cause: '缺乏成本传导分析模型',
-                solution: '本体成本推理引擎',
-                effect: '成本优化10-15%',
-                priority: '中'
+                name: '跨企业协同',
+                cause: '金富/万凯/江天数据不可见',
+                solution: '开放本体+语义互操作',
+                effect: '供应链协同效率提升',
+                authority: 'IBM+Palantir',
+                link: 'https://www.ibm.com/consulting/',
+                priority: '高'
             },
             {
                 id: 'P5',
-                name: '水源地管理粗放',
-                cause: '水质数据分散',
-                solution: '本体环境监测本体',
-                effect: '水源管理效率提升200%',
+                name: 'ROI难量化',
+                cause: '瓶盖延迟致缺货损失',
+                solution: '经济影响模拟+价值仪表盘',
+                effect: '投资回报可量化',
+                authority: 'Gartner',
+                link: 'https://www.gartner.com/en/supply-chain',
                 priority: '中'
             },
             {
                 id: 'P6',
-                name: '新品上市周期长',
-                cause: '研产供销协同不足',
-                solution: '本体跨部门协作模型',
-                effect: '上市周期缩短30%',
-                priority: '中'
-            },
-            {
-                id: 'P7',
-                name: '渠道库存不均衡',
-                cause: '缺乏实时库存可见性',
-                solution: '本体库存智能调度',
-                effect: '库存周转率提升40%',
+                name: '决策冗长',
+                cause: '预警后人工下单需3-5天',
+                solution: 'Action Types自动补货',
+                effect: '决策时间缩短80%',
+                authority: 'Palantir Action Types',
+                link: 'https://www.palantir.com/platforms/ontology/',
                 priority: '高'
             },
             {
+                id: 'P7',
+                name: '技术选择困惑',
+                cause: 'Palantir闭源vs开源',
+                solution: 'IBM混合开放架构',
+                effect: '技术路线清晰化',
+                authority: 'IBM Hybrid Cloud',
+                link: 'https://www.ibm.com/hybrid-cloud',
+                priority: '中'
+            },
+            {
                 id: 'P8',
-                name: '经验依赖决策',
-                cause: '老员工知识无法传承',
-                solution: '本体知识沉淀与推理',
-                effect: '决策一致性提升80%',
-                priority: '低'
+                name: 'AI信任度低',
+                cause: 'AI建议无解释',
+                solution: '可解释AI+决策追溯',
+                effect: 'AI采纳率提升',
+                authority: 'IBM watsonx',
+                link: 'https://www.ibm.com/watsonx',
+                priority: '中'
             },
             {
                 id: 'P9',
-                name: '合规风险管控难',
-                cause: '法规标准更新频繁',
-                solution: '本体合规规则自动化',
-                effect: '合规风险降低60%',
+                name: '数据主权隐忧',
+                cause: '补货逻辑被平台复用',
+                solution: '数据与模型分离(OWL)',
+                effect: '数据主权可控',
+                authority: 'W3C OWL',
+                link: 'https://www.w3.org/OWL/',
                 priority: '中'
             }
         ];
 
-        const STORAGE_KEY = 'ontology_pain_points_data';
+        const STORAGE_KEY = 'ontology_pain_points_data_v2';
         let data = [];
         let expandedId = null;
         let deleteTargetId = null;
@@ -1036,7 +1102,8 @@
                 return item.name.toLowerCase().includes(keyword) ||
                        item.cause.toLowerCase().includes(keyword) ||
                        item.solution.toLowerCase().includes(keyword) ||
-                       item.effect.toLowerCase().includes(keyword);
+                       item.effect.toLowerCase().includes(keyword) ||
+                       item.authority.toLowerCase().includes(keyword);
             });
 
             if (filtered.length === 0) {
@@ -1059,6 +1126,12 @@
                         <td class="cell-text">${escapeHtml(item.cause)}</td>
                         <td class="cell-text">${escapeHtml(item.solution)}</td>
                         <td class="cell-effect">${escapeHtml(item.effect)}</td>
+                        <td class="cell-authority">
+                            <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" class="authority-link" onclick="event.stopPropagation()">
+                                ${escapeHtml(item.authority)}
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </td>
                         <td>
                             <span class="priority-badge ${pClass}">
                                 <i class="fas ${getPriorityIcon(item.priority)}"></i>
@@ -1077,17 +1150,17 @@
                         </td>
                     </tr>
                     <tr class="detail-row ${isExpanded ? 'visible' : ''}" id="detail-${item.id}">
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="detail-content">
                                 <div class="detail-card">
                                     <div class="detail-card-header">
-                                        <i class="fas fa-exclamation-circle"></i> 痛点描述
+                                        <i class="fas fa-exclamation-circle"></i> 痛点名称
                                     </div>
                                     <div class="detail-card-body">${escapeHtml(item.name)}</div>
                                 </div>
                                 <div class="detail-card">
                                     <div class="detail-card-header">
-                                        <i class="fas fa-magnifying-glass-chart"></i> 产生原因
+                                        <i class="fas fa-magnifying-glass-chart"></i> 实例场景
                                     </div>
                                     <div class="detail-card-body">${escapeHtml(item.cause)}</div>
                                 </div>
@@ -1102,6 +1175,16 @@
                                         <i class="fas fa-chart-line"></i> 预期效果
                                     </div>
                                     <div class="detail-card-body" style="color:var(--priority-low);font-weight:500">${escapeHtml(item.effect)}</div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-card-header">
+                                        <i class="fas fa-link"></i> 权威来源
+                                    </div>
+                                    <div class="detail-card-body">
+                                        <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" style="color:var(--ibm-blue-light)">
+                                            ${escapeHtml(item.authority)} <i class="fas fa-external-link-alt" style="font-size:11px"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -1140,6 +1223,8 @@
             document.getElementById('formCause').value = '';
             document.getElementById('formSolution').value = '';
             document.getElementById('formEffect').value = '';
+            document.getElementById('formAuthority').value = '';
+            document.getElementById('formLink').value = '';
             document.getElementById('formPriority').value = '';
             document.getElementById('formModal').classList.add('active');
         }
@@ -1154,6 +1239,8 @@
             document.getElementById('formCause').value = item.cause;
             document.getElementById('formSolution').value = item.solution;
             document.getElementById('formEffect').value = item.effect;
+            document.getElementById('formAuthority').value = item.authority;
+            document.getElementById('formLink').value = item.link;
             document.getElementById('formPriority').value = item.priority;
             document.getElementById('formModal').classList.add('active');
         }
@@ -1168,13 +1255,17 @@
             const cause = document.getElementById('formCause').value.trim();
             const solution = document.getElementById('formSolution').value.trim();
             const effect = document.getElementById('formEffect').value.trim();
+            const authority = document.getElementById('formAuthority').value.trim();
+            const link = document.getElementById('formLink').value.trim();
             const priority = document.getElementById('formPriority').value;
 
             // Validation
             if (!name) { showToast('请输入痛点名称', 'error'); return; }
-            if (!cause) { showToast('请输入产生原因', 'error'); return; }
+            if (!cause) { showToast('请输入实例场景', 'error'); return; }
             if (!solution) { showToast('请输入本体解决方案', 'error'); return; }
             if (!effect) { showToast('请输入预期效果', 'error'); return; }
+            if (!authority) { showToast('请输入权威来源', 'error'); return; }
+            if (!link) { showToast('请输入来源链接', 'error'); return; }
             if (!priority) { showToast('请选择优先级', 'error'); return; }
 
             if (editId) {
@@ -1185,6 +1276,8 @@
                     data[idx].cause = cause;
                     data[idx].solution = solution;
                     data[idx].effect = effect;
+                    data[idx].authority = authority;
+                    data[idx].link = link;
                     data[idx].priority = priority;
                     showToast('痛点已更新', 'success');
                 }
@@ -1202,6 +1295,8 @@
                     cause,
                     solution,
                     effect,
+                    authority,
+                    link,
                     priority
                 });
                 showToast('痛点已添加', 'success');
